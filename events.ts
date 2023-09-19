@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import { Effect, Console, Context, Brand } from "npm:effect@^2.0.0-next.34";
+import { Effect, Console, Context, Brand, Chunk } from "npm:effect@^2.0.0-next.34";
 
 // the program can be constructed from lists of input tags, then the pure handler and
 // a list of output tags
@@ -20,65 +20,118 @@ import { Effect, Console, Context, Brand } from "npm:effect@^2.0.0-next.34";
 export type UnionFromTuple<Tuple extends any[]> = Tuple[number];
 
 // utility types to extract the Service type from a Context.Tag
-export type ExtractContextTagServiceType<T> = T extends Context.Tag<infer _I, infer S> ? S : never;
-export type ExtractContextTagServiceTypes<Tuple extends [...any[]]> = {
-    [Index in keyof Tuple]: ExtractContextTagServiceType<Tuple[Index]>
-} & {length: Tuple['length']}
+export type ExtractTagServiceType<T> = T extends Context.Tag<infer _I, infer S> ? S : never;
+export type ExtractTagServiceTypes<Tuple extends [...any[]]> = {
+    [Index in keyof Tuple]: ExtractTagServiceType<Tuple[Index]>
+} & { length: Tuple['length'] }
 
-// an InputService is an effectful service with an .input method
-// which is given an 
-// optional paramater of type D to fetch some simple data of type I
-// cf: re-frame coeffect handlers
-export interface InputService<I,R=never,E=never,D=undefined> {
-    readonly input: (arg?: D) => Effect.Effect<R,E,I>
+// an FxService is an effectful service with an .fx method
+// which is given an optional argument of type D to return 
+// a value of type V
+// cf: re-frame effect/coeffect handlers
+export interface FxService<V, D=undefined, R=never, E=never> {
+    readonly fx: (arg?: D) => Effect.Effect<R, E, V>
 }
 
-export type InputServiceTag<I,R=never,E=never,D=undefined> = Context.Tag<InputService<I,R,E,D>, InputService<I,R,E,D>> 
-// extract a tuple of input types from a tuple of InputService Context.Tags
-export type ExtractInputValueType<T> = T extends InputServiceTag<infer I,infer _R, infer _E, infer _D> ? I : never;
-export type ExtractInputValueTypes<Tuple extends [...any[]]> = {
-    [Index in keyof Tuple]: ExtractInputValueType<Tuple[Index]>
-} & {length: Tuple['length']}
-export type ExtractInputErrorType<T> = T extends InputServiceTag<infer _I,infer _R, infer E, infer _D> ? E : never;
-export type ExtractInputErrorTypes<Tuple extends [...any[]]> = {
-    [Index in keyof Tuple]: ExtractInputErrorType<Tuple[Index]>
-} & {length: Tuple['length']}
 
-// an OutputService is an effectful service with an .output method
-// which outputs some simple data of type O and returns a value of type RET
-// cf: re-frame effect handlers
-export interface OutputService<O,R=never,E=never,RET=undefined> {
-    readonly output: (arg: O) => Effect.Effect<R,E,RET>
+export type FxServiceTag<V, D=undefined, R=never, E=never> = Context.Tag<FxService<V, D, R, E>, FxService<V, D, R, E>>
+// extract a tuple of value types from a tuple of FxService Context.Tags
+export type ExtractValueType<T> = T extends FxServiceTag<infer V, infer _D, infer _R, infer _E> ? V : never;
+export type ExtractValueTypes<Tuple extends [...any[]]> = {
+    [Index in keyof Tuple]: ExtractValueType<Tuple[Index]>
+} & { length: Tuple['length'] }
+export type ExtractArgType<T> = T extends FxServiceTag<infer _V, infer D, infer _R, infer _E> ? D : never;
+export type ExtractArgTypes<Tuple extends [...any[]]> = {
+    [Index in keyof Tuple]: ExtractArgType<Tuple[Index]>
+} & { length: Tuple['length'] }
+export type ExtractDepType<T> = T extends FxServiceTag<infer _V, infer _D, infer R, infer _E> ? R : never;
+export type ExtractDepTypes<Tuple extends [...any[]]> = {
+    [Index in keyof Tuple]: ExtractDepType<Tuple[Index]>
+} & { length: Tuple['length'] }
+export type ExtractErrorType<T> = T extends FxServiceTag<infer _I, infer _D, infer _R, infer E> ? E : never;
+export type ExtractErrorTypes<Tuple extends [...any[]]> = {
+    [Index in keyof Tuple]: ExtractErrorType<Tuple[Index]>
+} & { length: Tuple['length'] }
+
+export type ExtractFxServiceTagType<T> = T extends FxServiceTag<infer _V, infer _D, infer _R, infer _E> ? T : never;
+
+// allow steps to be defined with data or with a simple 
+export type ObjectServiceStepSpec<V,D=undefined,R=never,E=never> = {
+    fxServiceTag: FxServiceTag<V,D,R,E>
+    data?: D;
 }
-export type OutputServiceTag<O,R=never,E=never,RET=undefined> = Context.Tag<OutputService<O,R,E,RET>, OutputService<O,R,E,RET>> 
-// extract a tuple of output types from a tuple of OutputService Context.Tags
-export type ExtractOutputValueType<T> = T extends OutputServiceTag<infer O, infer _R, infer _E, infer _RET> ? O : never;
-export type ExtractOutputValueTypes<Tuple extends [...any[]]> = {
-    [Index in keyof Tuple]: ExtractOutputValueType<Tuple[Index]>
-} & {length: Tuple['length']}
-export type ExtractOutputErrorType<T> = T extends OutputServiceTag<infer _O, infer _R, infer E, infer _RET> ? E : never;
-export type ExtractOutputErrorTypes<Tuple extends [...any[]]> = {
-    [Index in keyof Tuple]: ExtractOutputErrorType<Tuple[Index]>
-} & {length: Tuple['length']}
-export type ExtractOutputReturnType<T> = T extends OutputServiceTag<infer _O, infer _R, infer _E, infer RET> ? RET : never;
-export type ExtractOutputReturnTypes<Tuple extends [...any[]]> = {
-    [Index in keyof Tuple]: ExtractOutputReturnType<Tuple[Index]>
-} & {length: Tuple['length']}
+export type NoDataServiceStepSpec<V,D,R,E> = FxServiceTag<V,D,R,E>
+export type ServiceStepSpec<V,D,R,E> = ObjectServiceStepSpec<V,D,R,E> | NoDataServiceStepSpec<V,D,R,E>;
+
+export function normalizeServiceStepSpec<V,D,R,E>(spec: ServiceStepSpec<V,D,R,E>) : ObjectServiceStepSpec<V,D,R,E> {
+    if ("fxServiceTag" in spec) {
+        return spec;
+    } else {
+        return {fxServiceTag: spec};
+    }
+}
+
+// do a single effectful step - fetch the FxService named by the tag and 
+// give it data to resolve a value
+// 
+// - adds the service referred to by the FxServiceTag into the Effect context
+export function applyStep<V, D, R, E>
+    ({fxServiceTag, data}: ObjectServiceStepSpec<V,D,R,E>)
+    : Effect.Effect<R | ExtractTagServiceType<FxServiceTag<V, D, R, E>>, E, V> {
+
+    return Effect.gen(function* (_) {
+        const s = yield* _(fxServiceTag);
+        const v = yield* _(s.fx(...[data]));
+        return v;
+    })
+}
+
+export class BadStepSpecError {
+    readonly _tag = "BadStepSpec"
+}
+
 
 // createProgram builds a program which uses the InputServices to gather the
 // inputs to the handler and the OutputServices to process the outputs from the handler.
 // the resulting program has all the dependent services in the Effect context 
 // type
-declare function createEventProgram<InputServiceTags extends any [], 
-                                    OutputServiceTags extends any []>(
-    inputServices: [...InputServiceTags], 
-    // the pureHandler is a pure fn which processes simple input data into simple output data
-    // cf: re-frame event-handlers
-    pureHandler: (...vals: ExtractInputValueTypes<InputServiceTags>) => ExtractOutputValueTypes<OutputServiceTags>, 
-    outputServices: [...OutputServiceTags]): 
-      Effect.Effect<UnionFromTuple<ExtractContextTagServiceTypes<InputServiceTags>> | UnionFromTuple<ExtractContextTagServiceTypes<OutputServiceTags>>,
-                    UnionFromTuple<ExtractInputErrorTypes<InputServiceTags>> | UnionFromTuple<ExtractOutputErrorTypes<OutputServiceTags>>, 
-                    ExtractOutputReturnTypes<OutputServiceTags>>
+export const createEventProgram =
+    <InputServiceTags extends any[], OutputServiceTags extends any[]>
+        (inputServices: [...InputServiceTags],
+            // the pureHandler is a pure fn which processes simple input data into simple output data
+            // cf: re-frame event-handlers
+            pureHandler: (...vals: ExtractValueTypes<InputServiceTags>) => ExtractValueTypes<OutputServiceTags>,
+            outputServices: [...OutputServiceTags])
+        : Effect.Effect<UnionFromTuple<ExtractTagServiceTypes<InputServiceTags>> | UnionFromTuple<ExtractTagServiceTypes<OutputServiceTags>>,
+            UnionFromTuple<ExtractErrorTypes<InputServiceTags>> | UnionFromTuple<ExtractErrorTypes<OutputServiceTags>>,
+            ExtractValueTypes<OutputServiceTags>> => {
+
+        let inputEffects = inputServices.map(normalizeServiceStepSpec).map(step);
+        let inputsEffect = inputEffects.reduce((vsEff, vEff, _i, _arr) => Effect.gen(function* (_) {
+            const vs = yield* _(vsEff);
+            const v = yield* _(vEff);
+            return vs.append(v);
+        }),
+            Effect.succeed(Chunk.empty()))
+
+        let handled = Effect.gen(function* (_) {
+            const inputs = yield* _(inputsEffect);
+            return pureHandler(...inputs);;
+        })
+
+        let outputEffects = outputServices.map(normalizeServiceStepSpec).map(step);
+        let outputsEffect = outputEffects.reduce((vsEff, vEff, _i, _arr) => Effect.gen(function* (_) {
+            const vs = yield* _(vsEff);
+            const v = yield* _(vEff);
+            return vs.append(v);
+        }),
+        Effect.succeed(Chunk.empty()))
+
+        return outputsEffect;
+    }
+
+
+export const foo = (f: number):string => f.toString();
 
 // what next
 // - validate that the OutputServiceTag matches real tags of an OutputService
