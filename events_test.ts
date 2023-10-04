@@ -15,6 +15,7 @@ export interface TestOutputServiceC extends FxService<[number,string]> {
 export const TestOutputServiceC = Context.Tag<TestOutputServiceC,TestOutputServiceC>("TestOutputServiceC")
 
 const pureHandler = (a: number, b: string): [[number,string]] => {
+    console.log("a,b", a, b)
     return [[a,b]]}
 
 const prog = handleEventProgram(
@@ -45,4 +46,4 @@ const c = Effect.provideService(
 Deno.test("test service builder", ()=> {
     const r = Effect.runSync(c)
 
-    assertEquals(r, [[0,"nope"]])})
+    assertEquals(r, [[10,"5"]])})

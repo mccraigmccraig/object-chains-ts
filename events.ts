@@ -73,7 +73,6 @@ export type ExtractErrorTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractErrorType<Tuple[Index]>
 } & { length: Tuple['length'] }
 
-
 // do a single effectful step - fetch the FxService named by the tag and 
 // give it data to resolve a value
 // 
@@ -123,7 +122,7 @@ export const handleEventProgram =
             const inputData = (yield* _(inputsEffect)) as ExtractValueTypes<InputStepSpecs>
 
             // call the pure handler
-            const outputData = pureHandler.apply(inputData)
+            const outputData = pureHandler.apply(undefined, inputData)
 
             const outputDataZipFxSvcTags: any[] = outputData.map((od, i) => [od, outputStepSpecs[i]])
 
