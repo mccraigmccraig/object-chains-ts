@@ -103,7 +103,7 @@ export const handleEventProgram =
         (inputStepSpecs: [...InputStepSpecs],
             // the pureHandler is a pure fn which processes simple input data into simple output data
             // cf: re-frame event-handlers
-            pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractValueTypes<OutputStepSpecs>,
+            pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>,
             outputStepSpecs: [...OutputStepSpecs])
         : Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> | UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
             UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> | UnionFromTuple<ExtractErrorTypes<OutputStepSpecs>>,

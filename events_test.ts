@@ -17,8 +17,8 @@ export interface TestInputServiceBI extends FxService<number> {
 export const TestInputServiceB = Context.Tag<TestInputServiceB, TestInputServiceBI>("TestInputServiceB")
 
 export interface TestOutputServiceC { readonly _: unique symbol }
-export interface TestOutputServiceCI extends FxService<[number, number]> {
-    readonly fx: (v?: [number, number]) => Effect.Effect<never, never, [number, number]>
+export interface TestOutputServiceCI extends FxService<string, [number,number]> {
+    readonly fx: (v?: [number, number]) => Effect.Effect<never, never, string>
 }
 export const TestOutputServiceC = Context.Tag<TestOutputServiceC, TestOutputServiceCI>("TestOutputServiceC")
 
@@ -37,7 +37,7 @@ const context = Context.empty().pipe(
         TestOutputServiceC.of({
             fx: (v?: [number, number]) => {
                 console.log("[number,number]", v)
-                return Effect.succeed(v === undefined ? [0, 0] : v)
+                return Effect.succeed(v === undefined ? "nothing to see here" : "sum is: " + v.reduce((a,b)=>a+b))
             }
         })))
 
@@ -68,5 +68,5 @@ Deno.test("test service builder", () => {
     // run the program
     const r = Effect.runSync(runnable)
 
-    assertEquals(r, [[10, 5]])
+    assertEquals(r, ["sum is: 15"])
 })
