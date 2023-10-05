@@ -16,17 +16,17 @@ import { Effect, Context } from "npm:effect@^2.0.0-next.34"
 // which match the data types output from the pure-handler
 
 // utility type to get a Union from a Tuple of types
-export type UnionFromTuple<Tuple extends any[]> = Tuple[number]
+type UnionFromTuple<Tuple extends any[]> = Tuple[number]
 
 // utility types to extract the Service type from a Context.Tag
-export type ExtractTagServiceType<T> = T extends Context.Tag<infer _I, infer S> ? S : never
-export type ExtractTagServiceTypes<Tuple extends [...any[]]> = {
+type ExtractTagServiceType<T> = T extends Context.Tag<infer _I, infer S> ? S : never
+type ExtractTagServiceTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractTagServiceType<Tuple[Index]>
 } & { length: Tuple['length'] }
 
 // utility types to extract the Service Id type from a Context.Tag
-export type ExtractTagIdType<T> = T extends Context.Tag<infer I, infer S> ? I : never
-export type ExtractTagIdTypes<Tuple extends [...any[]]> = {
+type ExtractTagIdType<T> = T extends Context.Tag<infer I, infer S> ? I : never
+type ExtractTagIdTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractTagIdType<Tuple[Index]>
 } & { length: Tuple['length'] }
 
@@ -51,7 +51,7 @@ export type ObjectStepSpec<V, D = undefined, R = never, E = never> = {
 export type StepSpec<V, D = undefined, R = never, E = never> = NoDataStepSpec<V, D, R, E> | ObjectStepSpec<V, D, R, E>
 
 // convert any StepSpec to an ObjectStepSpec
-export function objectStepSpec<V, D = undefined, R = never, E = never>(spec: StepSpec<V, D, R, E>): ObjectStepSpec<V, D, R, E> {
+function objectStepSpec<V, D = undefined, R = never, E = never>(spec: StepSpec<V, D, R, E>): ObjectStepSpec<V, D, R, E> {
     if ("fxServiceTag" in spec) {
         return spec
     } else {
@@ -62,20 +62,20 @@ export function objectStepSpec<V, D = undefined, R = never, E = never>(spec: Ste
 // TODO need the extractions to consider object spec case...
 
 // extract a tuple of value types from a tuple of FxService Context.Tags
-export type ExtractValueType<T> = T extends FxServiceTag<infer V, infer _D, infer _R, infer _E> ? V : never
-export type ExtractValueTypes<Tuple extends [...any[]]> = {
+type ExtractValueType<T> = T extends FxServiceTag<infer V, infer _D, infer _R, infer _E> ? V : never
+type ExtractValueTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractValueType<Tuple[Index]>
 } & { length: Tuple['length'] }
-export type ExtractArgType<T> = T extends FxServiceTag<infer _V, infer D, infer _R, infer _E> ? D : never
-export type ExtractArgTypes<Tuple extends [...any[]]> = {
+type ExtractArgType<T> = T extends FxServiceTag<infer _V, infer D, infer _R, infer _E> ? D : never
+type ExtractArgTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractArgType<Tuple[Index]>
 } & { length: Tuple['length'] }
-export type ExtractDepType<T> = T extends FxServiceTag<infer _V, infer _D, infer R, infer _E> ? R : never
-export type ExtractDepTypes<Tuple extends [...any[]]> = {
+type ExtractDepType<T> = T extends FxServiceTag<infer _V, infer _D, infer R, infer _E> ? R : never
+type ExtractDepTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractDepType<Tuple[Index]>
 } & { length: Tuple['length'] }
-export type ExtractErrorType<T> = T extends FxServiceTag<infer _I, infer _D, infer _R, infer E> ? E : never
-export type ExtractErrorTypes<Tuple extends [...any[]]> = {
+type ExtractErrorType<T> = T extends FxServiceTag<infer _I, infer _D, infer _R, infer E> ? E : never
+type ExtractErrorTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractErrorType<Tuple[Index]>
 } & { length: Tuple['length'] }
 
@@ -83,7 +83,7 @@ export type ExtractErrorTypes<Tuple extends [...any[]]> = {
 // give it data to resolve a value
 // 
 // - adds the service referred to by the FxServiceTag into the Effect context
-export function bindStepEffect<V, D, R, E>
+function bindStepEffect<V, D, R, E>
     ({ fxServiceTag, data }: ObjectStepSpec<V, D, R, E>)
     : Effect.Effect<R | ExtractTagServiceType<FxServiceTag<V, D, R, E>>, E, V> {
 
