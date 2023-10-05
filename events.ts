@@ -7,9 +7,9 @@ import { Effect, Context } from "npm:effect@^2.0.0-next.34"
 // so handleEventProgram([GetUserEvInputService, 
 //                        AuthenticatedUserInputService, 
 //                        UserInputService],
-//                        pureHandlerFn,
-//                        [GetUserLogEntryOutputService, 
-//                         UserResponseOutputService])
+//                       pureHandlerFn,
+//                       [GetUserLogEntryOutputService, 
+//                        UserResponseOutputService])
 // 
 // so we have effectful input-services, a pure handler which takes simple-data params and returns a
 // list of simple-data output descriptions, and effectful output-services which have data params
@@ -152,15 +152,8 @@ export const handleEventProgram =
             ExtractValueTypes<OutputStepSpecs>>
     }
 
-// what next
-// - validate that the OutputServiceTag matches real tags of an OutputService
-// - write the createProgram fn ... it will probably be a do simulation, which 
-// accumulates the inputs, runs the pure-handler and accumulates the outputs
-// then... automatic logging and tracing, error-handling can all be added to the program
-
-// once i have createProgram, then that's the foundation for declaring event handler chains
-// then it will need a top-level dispatchSync equivalent ... which will need to enumerate all
-// programs at compile-time, to get the Service dependencies... 
-// ... will also need to register a dispatchSync service with the context, for dispatch inputs
-// and outputs - is that OK ? 
-// i can't untangle the dependencies in my head... need to try it
+// what next...
+// - allow the ObjectStepSpec to supply static data to input steps
+// - automatic logging and tracing at each step
+// - combining individual event-handler chains into a program
+// - an event-handler Service allowing recursion

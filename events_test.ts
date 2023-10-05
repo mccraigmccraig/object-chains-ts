@@ -61,7 +61,7 @@ const prog = handleEventProgram(
     [TestOutputServiceC])
 
 Deno.test("test service builder", () => {
-    
+
     // provide Service impls
     const runnable = Effect.provide(prog, context)
 
