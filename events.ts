@@ -24,6 +24,12 @@ export type ExtractTagServiceTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractTagServiceType<Tuple[Index]>
 } & { length: Tuple['length'] }
 
+// utility types to extract the Service Id type from a Context.Tag
+export type ExtractTagIdType<T> = T extends Context.Tag<infer I, infer S> ? I : never
+export type ExtractTagIdTypes<Tuple extends [...any[]]> = {
+    [Index in keyof Tuple]: ExtractTagIdType<Tuple[Index]>
+} & { length: Tuple['length'] }
+
 // an FxService is an effectful service with an .fx method
 // which is given an optional argument of type D to return 
 // a value of type V. it depends on services R and can error E
@@ -34,7 +40,7 @@ export interface FxService<V, D = undefined, R = never, E = never> {
         (arg: D): Effect.Effect<R, E, V>
     }
 }
-export type FxServiceTag<V, D = undefined, R = never, E = never> = Context.Tag<FxService<V, D, R, E>, FxService<V, D, R, E>>
+export type FxServiceTag<V, D = undefined, R = never, E = never> = Context.Tag<any, FxService<V, D, R, E>>
 
 // allow steps to be defined with data or with just an FxServiceTag
 export type NoDataStepSpec<V, D = undefined, R = never, E = never> = FxServiceTag<V, D, R, E>
@@ -99,7 +105,7 @@ export const handleEventProgram =
             // cf: re-frame event-handlers
             pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractValueTypes<OutputStepSpecs>,
             outputStepSpecs: [...OutputStepSpecs])
-        : Effect.Effect<UnionFromTuple<ExtractTagServiceTypes<InputStepSpecs>> | UnionFromTuple<ExtractTagServiceTypes<OutputStepSpecs>>,
+        : Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> | UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
             UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> | UnionFromTuple<ExtractErrorTypes<OutputStepSpecs>>,
             ExtractValueTypes<OutputStepSpecs>> => {
 
