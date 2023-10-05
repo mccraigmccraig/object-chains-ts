@@ -147,7 +147,7 @@ export const handleEventProgram =
             return outputs
         })
 
-        return outputsEffect as Effect.Effect<UnionFromTuple<ExtractTagServiceTypes<InputStepSpecs>> | UnionFromTuple<ExtractTagServiceTypes<OutputStepSpecs>>,
+        return outputsEffect as Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> | UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
             UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> | UnionFromTuple<ExtractErrorTypes<OutputStepSpecs>>,
             ExtractValueTypes<OutputStepSpecs>>
     }
