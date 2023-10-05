@@ -19,10 +19,17 @@ export interface TestOutputServiceCI extends FxService<[number,number]> {
     readonly fx: (v?: [number,number]) => Effect.Effect<never, never, [number,number]>}
 export const TestOutputServiceC = Context.Tag<TestOutputServiceC,TestOutputServiceCI>("TestOutputServiceC")
 
+// a pure handler fn - the params are simple data and must match the 
+// value types of the input Services, while the list of return values
+// are also simple data which must match the data param types of
+// the output Services
 const pureHandler = (a: number, b: number): [[number,number]] => {
     console.log("a,b", a, b)
     return [[a,b]]}
 
+// build the handler program, which sequences the input services to 
+// provide the params to the pureHandler, and the output services to 
+// process the list of return values from the pureHandler
 const prog = handleEventProgram(
     [TestInputServiceA, TestInputServiceB],
     pureHandler,
