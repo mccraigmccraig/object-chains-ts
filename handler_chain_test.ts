@@ -1,6 +1,6 @@
 import { assertEquals } from "https://deno.land/std/assert/mod.ts"
 import { Effect, Context } from "npm:effect@^2.0.0-next.44"
-import { FxService, handleEventProgram } from "./events.ts";
+import { FxService, handleEventProgram } from "./handler_chain.ts";
 
 // this is a type-level id for the service - it must be typeswise unique
 export interface TestInputServiceA { readonly _: unique symbol }
