@@ -36,28 +36,18 @@ type ExtractTagIdTypes<Tuple extends [...any[]]> = {
 // cf: re-frame effect/coeffect handlers
 export interface FxService<V, D = undefined, R = never, E = never> {
     readonly fx: {
-        (): Effect.Effect<R, E, V>
         (arg: D): Effect.Effect<R, E, V>
     }
 }
 export type FxServiceTag<V, D = undefined, R = never, E = never> = Context.Tag<any, FxService<V, D, R, E>>
 
 // allow steps to be defined with data or with just an FxServiceTag
-export type NoDataStepSpec<V, D = undefined, R = never, E = never> = FxServiceTag<V, D, R, E>
+export type CompactStepSpec<V, R = never, E = never> = FxServiceTag<V, undefined, R, E>
 export type ObjectStepSpec<V, D = undefined, R = never, E = never> = {
     fxServiceTag: FxServiceTag<V, D, R, E>
-    data?: D
+    data: D
 }
-export type StepSpec<V, D = undefined, R = never, E = never> = NoDataStepSpec<V, D, R, E> | ObjectStepSpec<V, D, R, E>
-
-// convert any StepSpec to an ObjectStepSpec
-function objectStepSpec<V, D = undefined, R = never, E = never>(spec: StepSpec<V, D, R, E>): ObjectStepSpec<V, D, R, E> {
-    if ("fxServiceTag" in spec) {
-        return spec
-    } else {
-        return { fxServiceTag: spec }
-    }
-}
+export type StepSpec<V, D = undefined, R = never, E = never> = CompactStepSpec<V, R, E> | ObjectStepSpec<V, D, R, E>
 
 // TODO need the extractions to consider object spec case...
 
@@ -84,13 +74,19 @@ type ExtractErrorTypes<Tuple extends [...any[]]> = {
 // 
 // - adds the service referred to by the FxServiceTag into the Effect context
 function bindStepEffect<V, D, R, E>
-    ({ fxServiceTag, data }: ObjectStepSpec<V, D, R, E>)
+    (stepSpec: StepSpec<V, D, R, E>)
     : Effect.Effect<R | ExtractTagServiceType<FxServiceTag<V, D, R, E>>, E, V> {
 
     return Effect.gen(function* (_) {
-        const s = yield* _(fxServiceTag)
-        const v = yield* _(data === undefined ? s.fx() : s.fx(data))
-        return v
+        if ((typeof stepSpec == 'object') && ("fxServiceTag" in stepSpec)) {
+            const s = yield* _(stepSpec.fxServiceTag)
+            const v = yield* _(s.fx(stepSpec.data))
+            return v
+        } else {
+            const s = yield* _(stepSpec)
+            const v = yield* _(s.fx(undefined))
+            return v
+        }
     })
 }
 
@@ -113,8 +109,7 @@ export const handleEventProgram =
         // properly without existential types, which ain't a typescript thing (yet)
 
         // first use the inputStepSpecs to resolve the inputs
-        const inputObjectStepSpecs = inputStepSpecs.map(objectStepSpec)
-        const inputEffects = inputObjectStepSpecs.map(bindStepEffect)
+        const inputEffects = inputStepSpecs.map(bindStepEffect)
         const inputsEffect = inputEffects.reduce(
             (accEff, vEff) => Effect.gen(function* (_) {
                 const vals = (yield* _(accEff)) as any[]
