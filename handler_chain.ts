@@ -49,25 +49,39 @@ export type ObjectStepSpec<V, D = undefined, R = never, E = never> = {
 }
 export type StepSpec<V, D = undefined, R = never, E = never> = CompactStepSpec<V, R, E> | ObjectStepSpec<V, D, R, E>
 
-// TODO need the extractions to consider object spec case...
+export const step = <V, D = undefined, R = never, E = never>(fxServiceTag: FxServiceTag<V, D, R, E>, data: D): ObjectStepSpec<V, D, R, E> => {
+    return {
+        "fxServiceTag": fxServiceTag,
+        "data": data
+    }
+}
 
 // extract a tuple of value types from a tuple of FxService Context.Tags
-type ExtractValueType<T> = T extends FxServiceTag<infer V, infer _D, infer _R, infer _E> ? V : never
+export type ExtractValueType<T> = T extends FxServiceTag<infer V, infer _D, infer _R, infer _E> ? V :
+    T extends ObjectStepSpec<infer V, infer _D, infer _R, infer _E> ? V :
+    never
 type ExtractValueTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractValueType<Tuple[Index]>
 } & { length: Tuple['length'] }
-type ExtractArgType<T> = T extends FxServiceTag<infer _V, infer D, infer _R, infer _E> ? D : never
+type ExtractArgType<T> = T extends FxServiceTag<infer _V, infer D, infer _R, infer _E> ? D :
+    T extends ObjectStepSpec<infer _V, infer D, infer _R, infer _E> ? D :
+    never
 type ExtractArgTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractArgType<Tuple[Index]>
 } & { length: Tuple['length'] }
-type ExtractDepType<T> = T extends FxServiceTag<infer _V, infer _D, infer R, infer _E> ? R : never
+type ExtractDepType<T> = T extends FxServiceTag<infer _V, infer _D, infer R, infer _E> ? R :
+    T extends ObjectStepSpec<infer _V, infer _D, infer R, infer _E> ? R :
+    never
 type ExtractDepTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractDepType<Tuple[Index]>
 } & { length: Tuple['length'] }
-type ExtractErrorType<T> = T extends FxServiceTag<infer _I, infer _D, infer _R, infer E> ? E : never
+type ExtractErrorType<T> = T extends FxServiceTag<infer _I, infer _D, infer _R, infer E> ? E :
+    T extends ObjectStepSpec<infer _V, infer _D, infer _R, infer E> ? E :
+    never
 type ExtractErrorTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractErrorType<Tuple[Index]>
 } & { length: Tuple['length'] }
+
 
 // do a single effectful step - fetch the FxService named by the tag and 
 // give it data to resolve a value
