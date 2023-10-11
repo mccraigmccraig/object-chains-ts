@@ -37,6 +37,8 @@ export type ObjectStepSpec<V, D = undefined, R = never, E = never> = {
 }
 export type StepSpec<V, D = undefined, R = never, E = never> = CompactStepSpec<V, R, E> | ObjectStepSpec<V, D, R, E>
 
+// there is something wrong with this fn ... using it to build ObjectStepSpec objects
+// causes type errors, whereas literal ObjectStepSpec objects check fine
 export const step = <V, D = undefined, R = never, E = never>(fxServiceTag: FxServiceTag<V, D, R, E>, data: D): ObjectStepSpec<V, D, R, E> => {
     return {
         "fxServiceTag": fxServiceTag,

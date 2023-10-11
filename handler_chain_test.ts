@@ -6,7 +6,7 @@ import { FxService, handleEventProgram, step, FxServiceTag, ObjectStepSpec, Extr
 export interface TestInputServiceA { readonly _: unique symbol }
 // this is the service interface - it may have the same shape as another service (TestInputServiceBI)
 export interface TestInputServiceAI extends FxService<number, string> {
-    readonly fx: (arg0: string) => Effect.Effect<never, never, number>
+    readonly fx: (data: string) => Effect.Effect<never, never, number>
 }
 export const TestInputServiceA = Context.Tag<TestInputServiceA, TestInputServiceAI>("TestInputServiceA")
 
@@ -18,14 +18,14 @@ export const TestInputServiceB = Context.Tag<TestInputServiceB, TestInputService
 
 export interface TestOutputServiceC { readonly _: unique symbol }
 export interface TestOutputServiceCI extends FxService<string, [number, number]> {
-    readonly fx: (v?: [number, number]) => Effect.Effect<never, never, string>
+    readonly fx: (data: [number, number]) => Effect.Effect<never, never, string>
 }
 export const TestOutputServiceC = Context.Tag<TestOutputServiceC, TestOutputServiceCI>("TestOutputServiceC")
 
 // bundle some service impls into a Context
 const context = Context.empty().pipe(
     Context.add(TestInputServiceA, TestInputServiceA.of({
-        fx: (i: string) => Effect.succeed(Number.parseInt(i) + 10)
+        fx: (data: string) => Effect.succeed(Number.parseInt(data) + 10)
     })),
     Context.add(
         TestInputServiceB,
@@ -35,9 +35,9 @@ const context = Context.empty().pipe(
     Context.add(
         TestOutputServiceC,
         TestOutputServiceC.of({
-            fx: (v?: [number, number]) => {
-                console.log("[number,number]", v)
-                return Effect.succeed(v === undefined ? "nothing to see here" : "sum is: " + v.reduce((a, b) => a + b))
+            fx: (data: [number, number]) => {
+                console.log("[number,number]", data)
+                return Effect.succeed("sum is: " + data.reduce((a, b) => a + b))
             }
         })))
 
