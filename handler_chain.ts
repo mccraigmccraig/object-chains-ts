@@ -18,18 +18,6 @@ import { Effect, Context } from "npm:effect@^2.0.0-next.34"
 // utility type to get a Union from a Tuple of types
 type UnionFromTuple<Tuple extends any[]> = Tuple[number]
 
-// utility types to extract the Service type from a Context.Tag
-type ExtractTagServiceType<T> = T extends Context.Tag<infer _I, infer S> ? S : never
-type ExtractTagServiceTypes<Tuple extends [...any[]]> = {
-    [Index in keyof Tuple]: ExtractTagServiceType<Tuple[Index]>
-} & { length: Tuple['length'] }
-
-// utility types to extract the Service Id type from a Context.Tag
-type ExtractTagIdType<T> = T extends Context.Tag<infer I, infer S> ? I : never
-type ExtractTagIdTypes<Tuple extends [...any[]]> = {
-    [Index in keyof Tuple]: ExtractTagIdType<Tuple[Index]>
-} & { length: Tuple['length'] }
-
 // an FxService is an effectful service with an .fx method
 // which is given an optional argument of type D to return 
 // a value of type V. it depends on services R and can error E
@@ -56,28 +44,39 @@ export const step = <V, D = undefined, R = never, E = never>(fxServiceTag: FxSer
     }
 }
 
-// extract a tuple of value types from a tuple of FxService Context.Tags
-export type ExtractValueType<T> = T extends FxServiceTag<infer V, infer _D, infer _R, infer _E> ? V :
-    T extends ObjectStepSpec<infer V, infer _D, infer _R, infer _E> ? V :
+// extract a Context.Tag from a StepSpec
+export type ExtractContextTag<T> = T extends Context.Tag<infer _I, infer _S> ? T :
+    T extends ObjectStepSpec<infer _V, infer _D, infer _R, infer _E> ? T["fxServiceTag"] :
     never
+
+// utility types to extract the Service type from a StepSpec
+type ExtractTagServiceType<T> = ExtractContextTag<T> extends Context.Tag<infer _I, infer S> ? S : never
+
+// utility types to extract the Service Id type from a StepSpec
+type ExtractTagIdType<T> = ExtractContextTag<T> extends Context.Tag<infer I, infer S> ? I : never
+type ExtractTagIdTypes<Tuple extends [...any[]]> = {
+    [Index in keyof Tuple]: ExtractTagIdType<Tuple[Index]>
+} & { length: Tuple['length'] }
+
+// extract an FxServiceTag from a StepSpec
+export type ExtractFxServiceTag<T> = T extends FxServiceTag<infer _V, infer _D, infer _R, infer _E> ? T :
+    T extends ObjectStepSpec<infer _V, infer _D, infer _R, infer _E> ? T["fxServiceTag"] :
+    never
+
+// extract a tuple of value types from a tuple of StepSpecs
+export type ExtractValueType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer V, infer _D, infer _R, infer _E> ? V : never
 type ExtractValueTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractValueType<Tuple[Index]>
 } & { length: Tuple['length'] }
-type ExtractArgType<T> = T extends FxServiceTag<infer _V, infer D, infer _R, infer _E> ? D :
-    T extends ObjectStepSpec<infer _V, infer D, infer _R, infer _E> ? D :
-    never
+type ExtractArgType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer _V, infer D, infer _R, infer _E> ? D : never
 type ExtractArgTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractArgType<Tuple[Index]>
 } & { length: Tuple['length'] }
-type ExtractDepType<T> = T extends FxServiceTag<infer _V, infer _D, infer R, infer _E> ? R :
-    T extends ObjectStepSpec<infer _V, infer _D, infer R, infer _E> ? R :
-    never
+type ExtractDepType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer _V, infer _D, infer R, infer _E> ? R : never
 type ExtractDepTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractDepType<Tuple[Index]>
 } & { length: Tuple['length'] }
-type ExtractErrorType<T> = T extends FxServiceTag<infer _I, infer _D, infer _R, infer E> ? E :
-    T extends ObjectStepSpec<infer _V, infer _D, infer _R, infer E> ? E :
-    never
+type ExtractErrorType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer _I, infer _D, infer _R, infer E> ? E : never
 type ExtractErrorTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractErrorType<Tuple[Index]>
 } & { length: Tuple['length'] }
@@ -115,8 +114,12 @@ export const handleEventProgram =
             // cf: re-frame event-handlers
             pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>,
             outputStepSpecs: [...OutputStepSpecs])
-        : Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> | UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
-            UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> | UnionFromTuple<ExtractErrorTypes<OutputStepSpecs>>,
+        : Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
+            UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
+
+            UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> |
+            UnionFromTuple<ExtractErrorTypes<OutputStepSpecs>>,
+
             ExtractValueTypes<OutputStepSpecs>> => {
 
         // no type-safety in the function body ... i don't think we can type it 
@@ -156,13 +159,20 @@ export const handleEventProgram =
             return outputs
         })
 
-        return outputsEffect as Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> | UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
-            UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> | UnionFromTuple<ExtractErrorTypes<OutputStepSpecs>>,
+        return outputsEffect as Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
+            UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
+
+            UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> |
+            UnionFromTuple<ExtractErrorTypes<OutputStepSpecs>>,
+
             ExtractValueTypes<OutputStepSpecs>>
     }
 
+
 // what next...
-// - allow the ObjectStepSpec to supply static data to input steps
-// - automatic logging and tracing at each step
 // - combining individual event-handler chains into a program
 // - an event-handler Service allowing recursion
+// - automatic logging and tracing at each step
+
+// combine individual handler programs
+// export const combineEventPrograms = <T>(): any => {}

@@ -1,6 +1,6 @@
 import { assertEquals } from "https://deno.land/std/assert/mod.ts"
 import { Effect, Context } from "npm:effect@^2.0.0-next.44"
-import { FxService, handleEventProgram, step, FxServiceTag, ObjectStepSpec, ExtractValueType} from "./handler_chain.ts";
+import { FxService, handleEventProgram, step, FxServiceTag, ObjectStepSpec, ExtractValueType, ExtractFxServiceTag } from "./handler_chain.ts";
 
 // this is a type-level id for the service - it must be typeswise unique
 export interface TestInputServiceA { readonly _: unique symbol }
@@ -12,12 +12,12 @@ export const TestInputServiceA = Context.Tag<TestInputServiceA, TestInputService
 
 export interface TestInputServiceB { readonly _: unique symbol }
 export interface TestInputServiceBI extends FxService<number> {
-    readonly fx: () => Effect.Effect<never, never, number>
+    readonly fx: (_: undefined) => Effect.Effect<never, never, number>
 }
 export const TestInputServiceB = Context.Tag<TestInputServiceB, TestInputServiceBI>("TestInputServiceB")
 
 export interface TestOutputServiceC { readonly _: unique symbol }
-export interface TestOutputServiceCI extends FxService<string, [number,number]> {
+export interface TestOutputServiceCI extends FxService<string, [number, number]> {
     readonly fx: (v?: [number, number]) => Effect.Effect<never, never, string>
 }
 export const TestOutputServiceC = Context.Tag<TestOutputServiceC, TestOutputServiceCI>("TestOutputServiceC")
@@ -30,14 +30,14 @@ const context = Context.empty().pipe(
     Context.add(
         TestInputServiceB,
         TestInputServiceB.of({
-            fx: () => Effect.succeed(5)
+            fx: (_: undefined) => Effect.succeed(5)
         })),
     Context.add(
         TestOutputServiceC,
         TestOutputServiceC.of({
             fx: (v?: [number, number]) => {
                 console.log("[number,number]", v)
-                return Effect.succeed(v === undefined ? "nothing to see here" : "sum is: " + v.reduce((a,b)=>a+b))
+                return Effect.succeed(v === undefined ? "nothing to see here" : "sum is: " + v.reduce((a, b) => a + b))
             }
         })))
 
@@ -58,14 +58,10 @@ const pureHandler = (a: number, b: number): [[number, number]] => {
 // provide the params to the pureHandler, and the output services to 
 // process the list of return values from the pureHandler
 const prog = handleEventProgram(
-    [step(TestInputServiceA, "10" as string),
-     TestInputServiceB],
+    [{ fxServiceTag: TestInputServiceA, data: "10" },
+        TestInputServiceB],
     pureHandler,
     [TestOutputServiceC])
-
-type t = ExtractValueType<{fxServiceTag: FxServiceTag<number>, data: number}>
-type u = ExtractValueType<ObjectStepSpec<number>>
-
 
 Deno.test("test service builder", () => {
 
