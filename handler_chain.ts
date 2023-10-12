@@ -192,22 +192,4 @@ export const handleEventProgram =
 // combine individual handler programs
 // export const combineEventPrograms = <T>(): any => {}
 
-// a basic event has a unique tag 
-export interface EventI {
-    tag: string
-}
 
-// each event handler program has its own R,E,V ... we don't
-// have existential types so we'll have to build the global effect
-// types with conditionals
-export type EventHandlerProgram = any
-
-export interface EventHandlers {
-    [index: string]: EventHandlerProgram
-}
-
-
-export const handleAllEventsProgram = 
-  <R,E,V>
-  (): Effect.Effect<R,E,V> =>
-  {}
