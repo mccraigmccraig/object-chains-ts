@@ -18,6 +18,25 @@ import { Effect, Context } from "npm:effect@^2.0.0-next.34"
 // utility type to get a Union from a Tuple of types
 type UnionFromTuple<Tuple extends any[]> = Tuple[number]
 
+// attempts at a utility type to explicitly expand a tuple type 
+// for better IntelliSense in the style of:
+// https://stackoverflow.com/questions/57683303/how-can-i-see-the-full-expanded-contract-of-a-typescript-type
+// unfortunately, 
+// - the first does nothing,
+// - the second expands to unknown[],
+// - the third also expands to unknown[]
+// but leaving these attempts here to revisit...
+// 
+// type Expand<Tuple extends [...any[]]> = {
+//     [Index in keyof Tuple]: Tuple[Index]
+// } 
+// type Expand<T> = T extends [...infer Tuple] ? {[Index in keyof Tuple]: Tuple[Index]} : never
+// type Expand<T> = T extends [...infer Tuple] ? [...Tuple] : never
+
+// attempt at a utility type to explicitly expand a tuple type ... used
+// for more readable IntelliSense outputs after complex extractions
+// export type Expand<T> = T extends [...infer O] ? { [K in keyof O]: O[K] } : never;
+
 // an FxService is an effectful service with an .fx method
 // which is given an optional argument of type D to return 
 // a value of type V. it depends on services R and can error E
@@ -103,7 +122,8 @@ function bindStepEffect<V, D, R, E>
 // the resulting program has all the dependent services in the Effect context 
 // type
 export const handleEventProgram =
-    <InputStepSpecs extends any[], OutputStepSpecs extends any[]>
+    <InputStepSpecs extends [...any[]], 
+     OutputStepSpecs extends [...any[]]>
         (inputStepSpecs: [...InputStepSpecs],
             // the pureHandler is a pure fn which processes simple input data into simple output data
             // cf: re-frame event-handlers
@@ -172,3 +192,22 @@ export const handleEventProgram =
 // combine individual handler programs
 // export const combineEventPrograms = <T>(): any => {}
 
+// a basic event has a unique tag 
+export interface EventI {
+    tag: string
+}
+
+// each event handler program has its own R,E,V ... we don't
+// have existential types so we'll have to build the global effect
+// types with conditionals
+export type EventHandlerProgram = any
+
+export interface EventHandlers {
+    [index: string]: EventHandlerProgram
+}
+
+
+export const handleAllEventsProgram = 
+  <R,E,V>
+  (): Effect.Effect<R,E,V> =>
+  {}
