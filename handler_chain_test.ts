@@ -1,22 +1,24 @@
 import { assertEquals } from "https://deno.land/std/assert/mod.ts"
 import { Effect, Context } from "npm:effect@^2.0.0-next.44"
-import { FxService, handleEventProgram, step, FxServiceTag, ObjectStepSpec, ExtractValueType, ExtractFxServiceTag } from "./handler_chain.ts";
+import { FxService, handleEventProgram, step, FxServiceTag, ObjectStepSpec, ExtractValueType, ExtractFxServiceTag } from "./handler_chain.ts"
 
 // this is a type-level id for the service - it must be typeswise unique
-export interface TestInputServiceA { readonly _: unique symbol }
+// giving it a name (vs using the literal type { readonly _: unique symbol } for the tag) 
+// makes for much more readable program signatures
+interface TestInputServiceA { readonly _: unique symbol }
 // this is the service interface - it may have the same shape as another service (TestInputServiceBI)
 export interface TestInputServiceAI extends FxService<number, string> {
     readonly fx: (data: string) => Effect.Effect<never, never, number>
 }
 export const TestInputServiceA = Context.Tag<TestInputServiceA, TestInputServiceAI>("TestInputServiceA")
 
-export interface TestInputServiceB { readonly _: unique symbol }
+interface TestInputServiceB { readonly _: unique symbol }
 export interface TestInputServiceBI extends FxService<number> {
     readonly fx: (_: undefined) => Effect.Effect<never, never, number>
 }
 export const TestInputServiceB = Context.Tag<TestInputServiceB, TestInputServiceBI>("TestInputServiceB")
 
-export interface TestOutputServiceC { readonly _: unique symbol }
+interface TestOutputServiceC { readonly _: unique symbol }
 export interface TestOutputServiceCI extends FxService<string, [number, number]> {
     readonly fx: (data: [number, number]) => Effect.Effect<never, never, string>
 }

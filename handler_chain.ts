@@ -51,9 +51,6 @@ export type ExtractContextTag<T> = T extends Context.Tag<infer _I, infer _S> ? T
     T extends ObjectStepSpec<infer _V, infer _D, infer _R, infer _E> ? T["fxServiceTag"] :
     never
 
-// utility types to extract the Service type from a StepSpec
-type ExtractTagServiceType<T> = ExtractContextTag<T> extends Context.Tag<infer _I, infer S> ? S : never
-
 // utility types to extract the Service Id type from a StepSpec
 type ExtractTagIdType<T> = ExtractContextTag<T> extends Context.Tag<infer I, infer S> ? I : never
 type ExtractTagIdTypes<Tuple extends [...any[]]> = {
@@ -74,10 +71,6 @@ type ExtractArgType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer _V, i
 type ExtractArgTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractArgType<Tuple[Index]>
 } & { length: Tuple['length'] }
-type ExtractDepType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer _V, infer _D, infer R, infer _E> ? R : never
-type ExtractDepTypes<Tuple extends [...any[]]> = {
-    [Index in keyof Tuple]: ExtractDepType<Tuple[Index]>
-} & { length: Tuple['length'] }
 type ExtractErrorType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer _I, infer _D, infer _R, infer E> ? E : never
 type ExtractErrorTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractErrorType<Tuple[Index]>
@@ -90,7 +83,7 @@ type ExtractErrorTypes<Tuple extends [...any[]]> = {
 // - adds the service referred to by the FxServiceTag into the Effect context
 function bindStepEffect<V, D, R, E>
     (stepSpec: StepSpec<V, D, R, E>)
-    : Effect.Effect<R | ExtractTagServiceType<FxServiceTag<V, D, R, E>>, E, V> {
+    : Effect.Effect<R | ExtractTagIdType<StepSpec<V, D, R, E>>, E, V> {
 
     return Effect.gen(function* (_) {
         if ((typeof stepSpec == 'object') && ("fxServiceTag" in stepSpec)) {
@@ -178,3 +171,4 @@ export const handleEventProgram =
 
 // combine individual handler programs
 // export const combineEventPrograms = <T>(): any => {}
+
