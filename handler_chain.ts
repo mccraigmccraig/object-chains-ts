@@ -1,6 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect, Context } from "npm:effect@^2.0.0-next.34"
-import { never } from "../../../../../Library/Caches/deno/npm/registry.npmjs.org/@effect/io/0.40.3/Fiber.d.ts";
 
 // the program can be constructed from lists of input tags, then the pure handler and
 // a list of output tags
