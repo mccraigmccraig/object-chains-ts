@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect, Context } from "npm:effect@^2.0.0-next.34"
+import { never } from "../../../../../Library/Caches/deno/npm/registry.npmjs.org/@effect/io/0.40.3/Fiber.d.ts";
 
 // the program can be constructed from lists of input tags, then the pure handler and
 // a list of output tags
@@ -117,13 +118,15 @@ function bindStepEffect<V, D, R, E>
     })
 }
 
-// createProgram builds a program which uses the InputServices to gather the
+
+// makeEventHandlerProgram creates a program which uses the InputServices to gather the
 // inputs to the handler and the OutputServices to process the outputs from the handler.
 // the resulting program has all the dependent services in the Effect context 
 // type
-export const handleEventProgram =
-    <InputStepSpecs extends [...any[]], 
-     OutputStepSpecs extends [...any[]]>
+export const makeEventHandlerProgram =
+    <EV extends EventI,
+        InputStepSpecs extends [...any[]],
+        OutputStepSpecs extends [...any[]]>
         (inputStepSpecs: [...InputStepSpecs],
             // the pureHandler is a pure fn which processes simple input data into simple output data
             // cf: re-frame event-handlers
@@ -183,6 +186,45 @@ export const handleEventProgram =
             ExtractValueTypes<OutputStepSpecs>>
     }
 
+// a data structure with the specification and program for 
+// handling events of a type identified by the Event tag
+export type EventHandlerProgram
+    <EV extends EventI,
+        InputStepSpecs extends [...any[]],
+        OutputStepSpecs extends [...any[]]> = {
+            eventTag: EV["tag"]
+            inputSteps: [...InputStepSpecs]
+            pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>
+            outputSteps: [...OutputStepSpecs]
+            program: Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
+                UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
+
+                UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> |
+                UnionFromTuple<ExtractErrorTypes<OutputStepSpecs>>,
+
+                ExtractValueTypes<OutputStepSpecs>>
+        }
+
+// not quite right here ... want to be able to constraing the eventTag
+// property, but without having to pass all the types to the fn...
+// maybe use a Tag parameter ?
+export const buildEventHandlerProgram = <EV extends EventI,
+    InputStepSpecs extends [...any[]],
+    OutputStepSpecs extends [...any[]]>
+    (eventTag: EV["tag"],
+        inputSteps: [...InputStepSpecs],
+        pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>,
+        outputSteps: [...OutputStepSpecs])
+    : EventHandlerProgram<EV, InputStepSpecs, OutputStepSpecs> => {
+
+    return {
+        eventTag,
+        inputSteps,
+        pureHandler,
+        outputSteps,
+        "program": makeEventHandlerProgram<EV, InputStepSpecs, OutputStepSpecs>(inputSteps, pureHandler, outputSteps)
+    }
+}
 
 // what next...
 // - combining individual event-handler chains into a program
@@ -192,4 +234,39 @@ export const handleEventProgram =
 // combine individual handler programs
 // export const combineEventPrograms = <T>(): any => {}
 
+
+// a basic event has a unique tag 
+export interface EventI {
+    tag: string
+}
+
+// GetEvent is a simple FxService to retrieve the Event
+export type GetCommand<EV extends EventI> = FxService<EV, undefined, never, never>
+
+// e.g.
+export type User = {
+    id: string
+    name: string
+}
+
+// an Event specifying an UpdateUserCommand
+export interface UpdateUserCommand extends EventI {
+    tag: "UpdateUserEvent"
+    user: User
+}
+
+export type GetUpdateUserCommandI = GetCommand<UpdateUserCommand>
+export type GetUpdateUserCommand = { readonly _: unique symbol }
+export const GetUpdateUserCommand = Context.Tag<GetUpdateUserCommand, GetUpdateUserCommandI>("GetUpdateUserCommand")
+
+// each event handler program has its own R,E,V ... we don't
+// have existential types so we'll have to build the global effect
+// types with conditionals
+//export type EventHandlerProgram<R, E, V> = Effect.Effect<R, E, V>
+
+// a mapping between EventI tags and handler programs
+// can we type the output of the global handler based on the tag of the input Event ?
+export interface EventHandlers {
+    [index: string]: any extends EventHandlerProgram<infer R, infer E, infer V> ? EventHandlerProgram<R, E, V> : never
+}
 
