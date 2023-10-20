@@ -62,8 +62,8 @@ const context = Context.empty().pipe(
 // value types of the input Services, while the list of return values
 // are also simple data which must match the data param types of
 // the output Services
-const pureHandler = (a: number, b: number): [[number, number]] => {
-    console.log("a,b", a, b)
+const pureHandler = (ev: GetUserEvent, a: number, b: number): [[number, number]] => {
+    console.log("event,a,b", ev, a, b)
     return [[a, b]]
 }
 

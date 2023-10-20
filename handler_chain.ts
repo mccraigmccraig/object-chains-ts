@@ -167,7 +167,7 @@ export const makeEventHandlerProgram =
         (inputStepSpecs: [...InputStepSpecs],
             // the pureHandler is a pure fn which processes simple input data into simple output data
             // cf: re-frame event-handlers
-            pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>,
+            pureHandler: (ev: EV, ...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>,
             outputStepSpecs: [...OutputStepSpecs])
         : (ev: EV) => Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
             UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
@@ -198,8 +198,8 @@ export const makeEventHandlerProgram =
              return Effect.gen(function* (_) {
                 const inputData = (yield* _(inputsEffect)) as ExtractValueTypes<InputStepSpecs>
 
-                // call the pure handler
-                const outputData = pureHandler.apply(undefined, inputData)
+                // @ts-ignore call the pure handler
+                const outputData = pureHandler.call(undefined, ev, ...inputData)
 
                 const outputDataZipFxSvcTags: any[] = outputData.map((od, i) => [od, outputStepSpecs[i]])
 
@@ -236,7 +236,7 @@ export type EventHandlerProgram
         OutputStepSpecs extends [...any[]]> = {
             eventTag: EventTag<EV>
             inputSteps: [...InputStepSpecs]
-            pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>
+            pureHandler: (ev: EV, ...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>
             outputSteps: [...OutputStepSpecs]
             program: (ev: EV) => Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
                 UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
@@ -254,7 +254,7 @@ export const buildEventHandlerProgram =
         OutputStepSpecs extends [...any[]]>
         (eventTag: EventTag<EV>,
             inputSteps: [...InputStepSpecs],
-            pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>,
+            pureHandler: (ev: EV, ...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>,
             outputSteps: [...OutputStepSpecs])
         : EventHandlerProgram<EV, InputStepSpecs, OutputStepSpecs> => {
 
