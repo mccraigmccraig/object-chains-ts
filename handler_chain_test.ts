@@ -1,6 +1,6 @@
-import { assertEquals } from "https://deno.land/std/assert/mod.ts"
-import { Effect, Context } from "npm:effect@^2.0.0-next.44"
-import { EventI, FxService, buildEventHandlerProgram, step, FxServiceTag, ObjectStepSpec, ExtractValueType, ExtractFxServiceTag } from "./handler_chain.ts"
+import { assertEquals } from "assert"
+import { Effect, Context } from "effect"
+import { EventI, FxService, buildEventHandlerProgram, eventTag, step, FxServiceTag, ObjectStepSpec, ExtractValueType, ExtractFxServiceTag } from "./handler_chain.ts"
 
 // this is a type-level id for the service - it must be typeswise unique
 // giving it a name (vs using the literal type { readonly _: unique symbol } for the tag) 
@@ -54,20 +54,22 @@ const pureHandler = (a: number, b: number): [[number, number]] => {
     return [[a, b]]
 }
 
-export interface GetUserCommand extends EventI {
-    tag: "GetUserCommand"
+export interface GetUserEvent extends EventI {
+    tag: "GetUserEvent"
     id: string
 }
+export const GetUserEventTag = eventTag<GetUserEvent>("GetUserEvent")
+
 
 // build the handler program, which sequences the input services to 
 // provide the params to the pureHandler, and the output services to 
 // process the list of return values from the pureHandler
 const prog = buildEventHandlerProgram(
-    "GetUserCommand",
+    GetUserEventTag,
     [{ fxServiceTag: TestInputServiceA, data: "10" },
         TestInputServiceB],
     pureHandler,
-    [TestOutputServiceC])
+    [TestOutputServiceC])    
 
 Deno.test("test service builder", () => {
 
@@ -79,4 +81,3 @@ Deno.test("test service builder", () => {
 
     assertEquals(r, ["sum is: 25"])
 })
-

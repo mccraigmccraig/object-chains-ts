@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import { Effect, Context } from "npm:effect@^2.0.0-next.34"
+import { Effect, Context } from "effect"
 
 // the program can be constructed from lists of input tags, then the pure handler and
 // a list of output tags
@@ -14,6 +14,34 @@ import { Effect, Context } from "npm:effect@^2.0.0-next.34"
 // so we have effectful input-services, a pure handler which takes simple-data params and returns a
 // list of simple-data output descriptions, and effectful output-services which have data params
 // which match the data types output from the pure-handler
+
+////////////////////////////////////////////
+////////////////// Events //////////////////
+////////////////////////////////////////////
+
+// an Event has a tag to identify a handler
+export interface EventI {
+    tag: string
+}
+
+// a simple tag type for events
+export interface EventTag<EV extends EventI> {
+    readonly tag: EV['tag'] // a string name for the type
+}
+
+// build a tag value for an EventType
+// type forces the tag param to match the Event tag string
+// const aTag = eventTag<AnEvent>("AnEvent")
+export const eventTag = <EV extends EventI>(tag: EV['tag']): EventTag<EV> => {
+    return {
+        tag
+    }
+}
+
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+
 
 // utility type to get a Union from a Tuple of types
 type UnionFromTuple<Tuple extends any[]> = Tuple[number]
@@ -191,7 +219,7 @@ export type EventHandlerProgram
     <EV extends EventI,
         InputStepSpecs extends [...any[]],
         OutputStepSpecs extends [...any[]]> = {
-            eventTag: EV["tag"]
+            eventTag: EventTag<EV>
             inputSteps: [...InputStepSpecs]
             pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>
             outputSteps: [...OutputStepSpecs]
@@ -204,26 +232,41 @@ export type EventHandlerProgram
                 ExtractValueTypes<OutputStepSpecs>>
         }
 
-// not quite right here ... want to be able to constraing the eventTag
-// property, but without having to pass all the types to the fn...
-// maybe use a Tag parameter ?
-export const buildEventHandlerProgram = <EV extends EventI,
-    InputStepSpecs extends [...any[]],
-    OutputStepSpecs extends [...any[]]>
-    (eventTag: EV["tag"],
-        inputSteps: [...InputStepSpecs],
-        pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>,
-        outputSteps: [...OutputStepSpecs])
-    : EventHandlerProgram<EV, InputStepSpecs, OutputStepSpecs> => {
 
-    return {
-        eventTag,
-        inputSteps,
-        pureHandler,
-        outputSteps,
-        "program": makeEventHandlerProgram<EV, InputStepSpecs, OutputStepSpecs>(inputSteps, pureHandler, outputSteps)
+export const buildEventHandlerProgram =
+    <EV extends EventI,
+        InputStepSpecs extends [...any[]],
+        OutputStepSpecs extends [...any[]]>
+        (eventTag: EventTag<EV>,
+            inputSteps: [...InputStepSpecs],
+            pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>,
+            outputSteps: [...OutputStepSpecs])
+        : EventHandlerProgram<EV, InputStepSpecs, OutputStepSpecs> => {
+
+        return {
+            eventTag,
+            inputSteps,
+            pureHandler,
+            outputSteps,
+            program: makeEventHandlerProgram<EV, InputStepSpecs, OutputStepSpecs>(inputSteps, pureHandler, outputSteps)
+        }
     }
-}
+
+// takes a list of EventHandlerPrograms and builds a new program which handles any of the events
+// handled by the individual programs
+//
+// the returned program will have type:
+// Effect<union-of-requirements-of-programs,
+//        union-of-errors-of-programs,
+//        union-of-output-types-of-programs>
+export const makeMultiEventHandlerProgram =
+    <EventHandlerPrograms extends [...any[]]>
+        (eventHandlerPrograms: [...EventHandlerPrograms]):
+        any => {
+
+    }
+    
+
 
 // what next...
 // - combining individual event-handler chains into a program
@@ -234,13 +277,7 @@ export const buildEventHandlerProgram = <EV extends EventI,
 // export const combineEventPrograms = <T>(): any => {}
 
 
-// a basic event has a unique tag 
-export interface EventI {
-    tag: string
-}
 
-// GetEvent is a simple FxService to retrieve the Event
-export type GetCommand<EV extends EventI> = FxService<EV, undefined, never, never>
 
 // e.g.
 export type User = {
@@ -248,15 +285,15 @@ export type User = {
     name: string
 }
 
-// an Event specifying an UpdateUserCommand
-export interface UpdateUserCommand extends EventI {
+// an Event specifying an UpdateUserEvent
+export interface UpdateUserEvent extends EventI {
     tag: "UpdateUserEvent"
     user: User
 }
 
-export type GetUpdateUserCommandI = GetCommand<UpdateUserCommand>
-export type GetUpdateUserCommand = { readonly _: unique symbol }
-export const GetUpdateUserCommand = Context.Tag<GetUpdateUserCommand, GetUpdateUserCommandI>("GetUpdateUserCommand")
+export const UpdateUserEventTag = eventTag<UpdateUserEvent>("UpdateUserEvent")
+export const s = UpdateUserEventTag.tag
+
 
 // each event handler program has its own R,E,V ... we don't
 // have existential types so we'll have to build the global effect
