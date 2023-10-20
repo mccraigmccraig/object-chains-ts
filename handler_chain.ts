@@ -69,24 +69,24 @@ type UnionFromTuple<Tuple extends any[]> = Tuple[number]
 // which is given an optional argument of type D to return 
 // a value of type V. it depends on services R and can error E
 // cf: re-frame effect/coeffect handlers
-export interface FxService<V, D = undefined, R = never, E = never> {
+export interface FxService<EV extends EventI, V, D = undefined, R = never, E = never> {
     readonly fx: {
-        (arg: D): Effect.Effect<R, E, V>
+        (ev: EV, arg: D): Effect.Effect<R, E, V>
     }
 }
-export type FxServiceTag<V, D = undefined, R = never, E = never> = Context.Tag<any, FxService<V, D, R, E>>
+export type FxServiceTag<EV extends EventI, V, D = undefined, R = never, E = never> = Context.Tag<any, FxService<EV, V, D, R, E>>
 
 // allow steps to be defined with data or with just an FxServiceTag
-export type CompactStepSpec<V, R = never, E = never> = FxServiceTag<V, undefined, R, E>
-export type ObjectStepSpec<V, D = undefined, R = never, E = never> = {
-    fxServiceTag: FxServiceTag<V, D, R, E>
+export type CompactStepSpec<EV extends EventI,V, R = never, E = never> = FxServiceTag<EV, V, undefined, R, E>
+export type ObjectStepSpec<EV extends EventI,V, D = undefined, R = never, E = never> = {
+    fxServiceTag: FxServiceTag<EV, V, D, R, E>
     data: D
 }
-export type StepSpec<V, D = undefined, R = never, E = never> = CompactStepSpec<V, R, E> | ObjectStepSpec<V, D, R, E>
+export type StepSpec<EV extends EventI,V, D = undefined, R = never, E = never> = CompactStepSpec<EV, V, R, E> | ObjectStepSpec<EV, V, D, R, E>
 
 // there is something wrong with this fn ... using it to build ObjectStepSpec objects
 // causes type errors, whereas literal ObjectStepSpec objects check fine
-export const step = <V, D = undefined, R = never, E = never>(fxServiceTag: FxServiceTag<V, D, R, E>, data: D): ObjectStepSpec<V, D, R, E> => {
+export const step = <EV extends EventI, V, D = undefined, R = never, E = never>(fxServiceTag: FxServiceTag<EV, V, D, R, E>, data: D): ObjectStepSpec<EV, V, D, R, E> => {
     return {
         "fxServiceTag": fxServiceTag,
         "data": data
@@ -95,7 +95,7 @@ export const step = <V, D = undefined, R = never, E = never>(fxServiceTag: FxSer
 
 // extract a Context.Tag from a StepSpec
 export type ExtractContextTag<T> = T extends Context.Tag<infer _I, infer _S> ? T :
-    T extends ObjectStepSpec<infer _V, infer _D, infer _R, infer _E> ? T["fxServiceTag"] :
+    T extends ObjectStepSpec<infer _EV, infer _V, infer _D, infer _R, infer _E> ? T["fxServiceTag"] :
     never
 
 // utility types to extract the Service Id type from a StepSpec
@@ -105,20 +105,20 @@ type ExtractTagIdTypes<Tuple extends [...any[]]> = {
 } & { length: Tuple['length'] }
 
 // extract an FxServiceTag from a StepSpec
-export type ExtractFxServiceTag<T> = T extends FxServiceTag<infer _V, infer _D, infer _R, infer _E> ? T :
-    T extends ObjectStepSpec<infer _V, infer _D, infer _R, infer _E> ? T["fxServiceTag"] :
+export type ExtractFxServiceTag<T> = T extends FxServiceTag<infer EV, infer _V, infer _D, infer _R, infer _E> ? T :
+    T extends ObjectStepSpec<infer EV, infer _V, infer _D, infer _R, infer _E> ? T["fxServiceTag"] :
     never
 
 // extract a tuple of value types from a tuple of StepSpecs
-export type ExtractValueType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer V, infer _D, infer _R, infer _E> ? V : never
+export type ExtractValueType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer EV, infer V, infer _D, infer _R, infer _E> ? V : never
 type ExtractValueTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractValueType<Tuple[Index]>
 } & { length: Tuple['length'] }
-type ExtractArgType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer _V, infer D, infer _R, infer _E> ? D : never
+type ExtractArgType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer EV, infer _V, infer D, infer _R, infer _E> ? D : never
 type ExtractArgTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractArgType<Tuple[Index]>
 } & { length: Tuple['length'] }
-type ExtractErrorType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer _I, infer _D, infer _R, infer E> ? E : never
+type ExtractErrorType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer EV, infer _I, infer _D, infer _R, infer E> ? E : never
 type ExtractErrorTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractErrorType<Tuple[Index]>
 } & { length: Tuple['length'] }
@@ -129,17 +129,17 @@ type ExtractErrorTypes<Tuple extends [...any[]]> = {
 // 
 // - adds the service referred to by the FxServiceTag into the Effect context
 function bindStepEffect<EV extends EventI, V, D, R, E>
-    (ev: EV, stepSpec: StepSpec<V, D, R, E>)
-    : Effect.Effect<R | ExtractTagIdType<StepSpec<V, D, R, E>>, E, V> {
+    (ev: EV, stepSpec: StepSpec<EV, V, D, R, E>)
+    : Effect.Effect<R | ExtractTagIdType<StepSpec<EV, V, D, R, E>>, E, V> {
 
     return Effect.gen(function* (_) {
         if ((typeof stepSpec == 'object') && ("fxServiceTag" in stepSpec)) {
             const s = yield* _(stepSpec.fxServiceTag)
-            const v = yield* _(s.fx(stepSpec.data))
+            const v = yield* _(s.fx(ev, stepSpec.data))
             return v
         } else {
             const s = yield* _(stepSpec)
-            const v = yield* _(s.fx(undefined))
+            const v = yield* _(s.fx(ev, undefined))
             return v
         }
     })
@@ -148,9 +148,9 @@ function bindStepEffect<EV extends EventI, V, D, R, E>
 // given an EV returns a function which binds a step
 function bindStepEffectFn<EV extends EventI, V, D, R, E>
     (ev: EV)
-    : (stepSpec: StepSpec<V, D, R, E>) => Effect.Effect<R | ExtractTagIdType<StepSpec<V, D, R, E>>, E, V> {
+    : (stepSpec: StepSpec<EV, V, D, R, E>) => Effect.Effect<R | ExtractTagIdType<StepSpec<EV, V, D, R, E>>, E, V> {
 
-    return (stepSpec: StepSpec<V, D, R, E>): Effect.Effect<R | ExtractTagIdType<StepSpec<V, D, R, E>>, E, V> => {
+    return (stepSpec: StepSpec<EV, V, D, R, E>): Effect.Effect<R | ExtractTagIdType<StepSpec<EV, V, D, R, E>>, E, V> => {
 
         return bindStepEffect(ev, stepSpec);
     }

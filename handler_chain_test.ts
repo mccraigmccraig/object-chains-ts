@@ -2,42 +2,55 @@ import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
 import { EventI, FxService, buildEventHandlerProgram, eventTag, step, FxServiceTag, ObjectStepSpec, ExtractValueType, ExtractFxServiceTag } from "./handler_chain.ts"
 
+export interface GetUserEvent extends EventI {
+    tag: "GetUserEvent"
+    id: string
+}
+export const GetUserEventTag = eventTag<GetUserEvent>("GetUserEvent")
+
+
 // this is a type-level id for the service - it must be typeswise unique
 // giving it a name (vs using the literal type { readonly _: unique symbol } for the tag) 
 // makes for much more readable program signatures
 interface TestInputServiceA { readonly _: unique symbol }
 // this is the service interface - it may have the same shape as another service (TestInputServiceBI)
-export interface TestInputServiceAI extends FxService<number, string> {
-    readonly fx: (data: string) => Effect.Effect<never, never, number>
+
+// TODO
+// is this problematic - if we have the Event on the fx signature, we need to 
+// specialise the service to a specific event type to get a tag ... but this might be fine, 
+// if we have Event types with loose additional properties
+
+export interface TestInputServiceAI extends FxService<GetUserEvent, number, string> {
+    readonly fx: (ev: GetUserEvent, data: string) => Effect.Effect<never, never, number>
 }
 export const TestInputServiceA = Context.Tag<TestInputServiceA, TestInputServiceAI>("TestInputServiceA")
 
 interface TestInputServiceB { readonly _: unique symbol }
-export interface TestInputServiceBI extends FxService<number> {
-    readonly fx: (_: undefined) => Effect.Effect<never, never, number>
+export interface TestInputServiceBI extends FxService<GetUserEvent,number> {
+    readonly fx: (ev: GetUserEvent, _: undefined) => Effect.Effect<never, never, number>
 }
 export const TestInputServiceB = Context.Tag<TestInputServiceB, TestInputServiceBI>("TestInputServiceB")
 
 interface TestOutputServiceC { readonly _: unique symbol }
-export interface TestOutputServiceCI extends FxService<string, [number, number]> {
-    readonly fx: (data: [number, number]) => Effect.Effect<never, never, string>
+export interface TestOutputServiceCI extends FxService<GetUserEvent, string, [number, number]> {
+    readonly fx: (ev: GetUserEvent, data: [number, number]) => Effect.Effect<never, never, string>
 }
 export const TestOutputServiceC = Context.Tag<TestOutputServiceC, TestOutputServiceCI>("TestOutputServiceC")
 
 // bundle some service impls into a Context
 const context = Context.empty().pipe(
     Context.add(TestInputServiceA, TestInputServiceA.of({
-        fx: (data: string) => Effect.succeed(Number.parseInt(data) + 10)
+        fx: (_ev: GetUserEvent, data: string) => Effect.succeed(Number.parseInt(data) + 10)
     })),
     Context.add(
         TestInputServiceB,
         TestInputServiceB.of({
-            fx: (_: undefined) => Effect.succeed(5)
+            fx: (_ev: GetUserEvent, _: undefined) => Effect.succeed(5)
         })),
     Context.add(
         TestOutputServiceC,
         TestOutputServiceC.of({
-            fx: (data: [number, number]) => {
+            fx: (_ev: GetUserEvent, data: [number, number]) => {
                 console.log("[number,number]", data)
                 return Effect.succeed("sum is: " + data.reduce((a, b) => a + b))
             }
@@ -53,12 +66,6 @@ const pureHandler = (a: number, b: number): [[number, number]] => {
     console.log("a,b", a, b)
     return [[a, b]]
 }
-
-export interface GetUserEvent extends EventI {
-    tag: "GetUserEvent"
-    id: string
-}
-export const GetUserEventTag = eventTag<GetUserEvent>("GetUserEvent")
 
 
 // build the handler program, which sequences the input services to 
