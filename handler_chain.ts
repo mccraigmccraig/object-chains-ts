@@ -128,8 +128,8 @@ type ExtractErrorTypes<Tuple extends [...any[]]> = {
 // give it data to resolve a value
 // 
 // - adds the service referred to by the FxServiceTag into the Effect context
-function bindStepEffect<V, D, R, E>
-    (stepSpec: StepSpec<V, D, R, E>)
+function bindStepEffect<EV extends EventI, V, D, R, E>
+    (ev: EV, stepSpec: StepSpec<V, D, R, E>)
     : Effect.Effect<R | ExtractTagIdType<StepSpec<V, D, R, E>>, E, V> {
 
     return Effect.gen(function* (_) {
@@ -143,6 +143,17 @@ function bindStepEffect<V, D, R, E>
             return v
         }
     })
+}
+
+// given an EV returns a function which binds a step
+function bindStepEffectFn<EV extends EventI, V, D, R, E>
+    (ev: EV)
+    : (stepSpec: StepSpec<V, D, R, E>) => Effect.Effect<R | ExtractTagIdType<StepSpec<V, D, R, E>>, E, V> {
+
+    return (stepSpec: StepSpec<V, D, R, E>): Effect.Effect<R | ExtractTagIdType<StepSpec<V, D, R, E>>, E, V> => {
+
+        return bindStepEffect(ev, stepSpec);
+    }
 }
 
 // makeEventHandlerProgram creates a program which uses the InputServices to gather the
@@ -169,10 +180,12 @@ export const makeEventHandlerProgram =
         // no type-safety in the function body ... i don't think we can type it 
         // properly without existential types, which ain't a typescript thing (yet)
 
-        const outputsEffect = (_ev: EV) => {
+        const outputsEffect = (ev: EV) => {
+            // this fn feeds EV to each step
+            const bindFn = bindStepEffectFn(ev)
 
             // first use the inputStepSpecs to resolve the inputs
-            const inputEffects = inputStepSpecs.map(bindStepEffect)
+            const inputEffects = inputStepSpecs.map(bindFn)
             const inputsEffect = inputEffects.reduce(
                 (accEff, vEff) => Effect.gen(function* (_) {
                     const vals = (yield* _(accEff)) as any[]
@@ -182,7 +195,7 @@ export const makeEventHandlerProgram =
                 }),
                 Effect.succeed([]))
 
-            return Effect.gen(function* (_) {
+             return Effect.gen(function* (_) {
                 const inputData = (yield* _(inputsEffect)) as ExtractValueTypes<InputStepSpecs>
 
                 // call the pure handler
@@ -195,7 +208,7 @@ export const makeEventHandlerProgram =
                     (accEff, [od, fxSvcTag]) => Effect.gen(function* (_) {
                         const vals = (yield* _(accEff)) as any[]
                         const oospec = { fxServiceTag: fxSvcTag, data: od }
-                        const ov = yield* _(bindStepEffect(oospec))
+                        const ov = yield* _(bindFn(oospec))
                         vals.push(ov)
                         return vals
                     }),
