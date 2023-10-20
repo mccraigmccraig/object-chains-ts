@@ -145,7 +145,6 @@ function bindStepEffect<V, D, R, E>
     })
 }
 
-
 // makeEventHandlerProgram creates a program which uses the InputServices to gather the
 // inputs to the handler and the OutputServices to process the outputs from the handler.
 // the resulting program has all the dependent services in the Effect context 
@@ -159,7 +158,7 @@ export const makeEventHandlerProgram =
             // cf: re-frame event-handlers
             pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>,
             outputStepSpecs: [...OutputStepSpecs])
-        : Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
+        : (ev: EV) => Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
             UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
 
             UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> |
@@ -170,41 +169,44 @@ export const makeEventHandlerProgram =
         // no type-safety in the function body ... i don't think we can type it 
         // properly without existential types, which ain't a typescript thing (yet)
 
-        // first use the inputStepSpecs to resolve the inputs
-        const inputEffects = inputStepSpecs.map(bindStepEffect)
-        const inputsEffect = inputEffects.reduce(
-            (accEff, vEff) => Effect.gen(function* (_) {
-                const vals = (yield* _(accEff)) as any[]
-                const v = (yield* _(vEff))
-                vals.push(v)
-                return vals
-            }),
-            Effect.succeed([]))
+        const outputsEffect = (_ev: EV) => {
 
-        const outputsEffect = Effect.gen(function* (_) {
-            const inputData = (yield* _(inputsEffect)) as ExtractValueTypes<InputStepSpecs>
-
-            // call the pure handler
-            const outputData = pureHandler.apply(undefined, inputData)
-
-            const outputDataZipFxSvcTags: any[] = outputData.map((od, i) => [od, outputStepSpecs[i]])
-
-            // now give the outputData to the outputEffects to resolve the outputs
-            const outputsEffect = outputDataZipFxSvcTags.reduce(
-                (accEff, [od, fxSvcTag]) => Effect.gen(function* (_) {
+            // first use the inputStepSpecs to resolve the inputs
+            const inputEffects = inputStepSpecs.map(bindStepEffect)
+            const inputsEffect = inputEffects.reduce(
+                (accEff, vEff) => Effect.gen(function* (_) {
                     const vals = (yield* _(accEff)) as any[]
-                    const oospec = { fxServiceTag: fxSvcTag, data: od }
-                    const ov = yield* _(bindStepEffect(oospec))
-                    vals.push(ov)
+                    const v = (yield* _(vEff))
+                    vals.push(v)
                     return vals
                 }),
                 Effect.succeed([]))
 
-            const outputs = yield* _(outputsEffect)
-            return outputs
-        })
+            return Effect.gen(function* (_) {
+                const inputData = (yield* _(inputsEffect)) as ExtractValueTypes<InputStepSpecs>
 
-        return outputsEffect as Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
+                // call the pure handler
+                const outputData = pureHandler.apply(undefined, inputData)
+
+                const outputDataZipFxSvcTags: any[] = outputData.map((od, i) => [od, outputStepSpecs[i]])
+
+                // now give the outputData to the outputEffects to resolve the outputs
+                const outputsEffect = outputDataZipFxSvcTags.reduce(
+                    (accEff, [od, fxSvcTag]) => Effect.gen(function* (_) {
+                        const vals = (yield* _(accEff)) as any[]
+                        const oospec = { fxServiceTag: fxSvcTag, data: od }
+                        const ov = yield* _(bindStepEffect(oospec))
+                        vals.push(ov)
+                        return vals
+                    }),
+                    Effect.succeed([]))
+
+                const outputs = yield* _(outputsEffect)
+                return outputs
+            })
+        }
+
+        return outputsEffect as (ev: EV) => Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
             UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
 
             UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> |
@@ -223,7 +225,7 @@ export type EventHandlerProgram
             inputSteps: [...InputStepSpecs]
             pureHandler: (...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>
             outputSteps: [...OutputStepSpecs]
-            program: Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
+            program: (ev: EV) => Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
                 UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
 
                 UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> |
@@ -261,7 +263,7 @@ export const buildEventHandlerProgram =
 //        union-of-output-types-of-programs>
 export const makeMultiEventHandlerProgram =
     <EventHandlerPrograms extends [...any[]]>
-        (eventHandlerPrograms: [...EventHandlerPrograms]):
+        (_eventHandlerPrograms: [...EventHandlerPrograms]):
         any => {
 
     }

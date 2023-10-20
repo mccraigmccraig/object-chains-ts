@@ -73,8 +73,13 @@ const prog = buildEventHandlerProgram(
 
 Deno.test("test service builder", () => {
 
+    const ev: GetUserEvent = {
+        tag: "GetUserEvent",
+        id: "1234"
+    }
+
     // provide Service impls
-    const runnable = Effect.provide(prog.program, context)
+    const runnable = Effect.provide(prog.program(ev), context)
 
     // run the program
     const r = Effect.runSync(runnable)
