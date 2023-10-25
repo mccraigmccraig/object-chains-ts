@@ -77,12 +77,12 @@ export interface FxService<EV extends EventI, V, D = undefined, R = never, E = n
 export type FxServiceTag<EV extends EventI, V, D = undefined, R = never, E = never> = Context.Tag<any, FxService<EV, V, D, R, E>>
 
 // allow steps to be defined with data or with just an FxServiceTag
-export type CompactStepSpec<EV extends EventI,V, R = never, E = never> = FxServiceTag<EV, V, undefined, R, E>
-export type ObjectStepSpec<EV extends EventI,V, D = undefined, R = never, E = never> = {
+export type CompactStepSpec<EV extends EventI, V, R = never, E = never> = FxServiceTag<EV, V, undefined, R, E>
+export type ObjectStepSpec<EV extends EventI, V, D = undefined, R = never, E = never> = {
     fxServiceTag: FxServiceTag<EV, V, D, R, E>
     data: D
 }
-export type StepSpec<EV extends EventI,V, D = undefined, R = never, E = never> = CompactStepSpec<EV, V, R, E> | ObjectStepSpec<EV, V, D, R, E>
+export type StepSpec<EV extends EventI, V, D = undefined, R = never, E = never> = CompactStepSpec<EV, V, R, E> | ObjectStepSpec<EV, V, D, R, E>
 
 // there is something wrong with this fn ... using it to build ObjectStepSpec objects
 // causes type errors, whereas literal ObjectStepSpec objects check fine
@@ -105,20 +105,20 @@ type ExtractTagIdTypes<Tuple extends [...any[]]> = {
 } & { length: Tuple['length'] }
 
 // extract an FxServiceTag from a StepSpec
-export type ExtractFxServiceTag<T> = T extends FxServiceTag<infer EV, infer _V, infer _D, infer _R, infer _E> ? T :
+export type ExtractFxServiceTag<T> = T extends FxServiceTag<infer _EV, infer _V, infer _D, infer _R, infer _E> ? T :
     T extends ObjectStepSpec<infer EV, infer _V, infer _D, infer _R, infer _E> ? T["fxServiceTag"] :
     never
 
 // extract a tuple of value types from a tuple of StepSpecs
-export type ExtractValueType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer EV, infer V, infer _D, infer _R, infer _E> ? V : never
+export type ExtractValueType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer _EV, infer V, infer _D, infer _R, infer _E> ? V : never
 type ExtractValueTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractValueType<Tuple[Index]>
 } & { length: Tuple['length'] }
-type ExtractArgType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer EV, infer _V, infer D, infer _R, infer _E> ? D : never
+type ExtractArgType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer _EV, infer _V, infer D, infer _R, infer _E> ? D : never
 type ExtractArgTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractArgType<Tuple[Index]>
 } & { length: Tuple['length'] }
-type ExtractErrorType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer EV, infer _I, infer _D, infer _R, infer E> ? E : never
+type ExtractErrorType<T> = ExtractFxServiceTag<T> extends FxServiceTag<infer _EV, infer _I, infer _D, infer _R, infer E> ? E : never
 type ExtractErrorTypes<Tuple extends [...any[]]> = {
     [Index in keyof Tuple]: ExtractErrorType<Tuple[Index]>
 } & { length: Tuple['length'] }
@@ -195,7 +195,7 @@ export const makeEventHandlerProgram =
                 }),
                 Effect.succeed([]))
 
-             return Effect.gen(function* (_) {
+            return Effect.gen(function* (_) {
                 const inputData = (yield* _(inputsEffect)) as ExtractValueTypes<InputStepSpecs>
 
                 // @ts-ignore call the pure handler
@@ -228,24 +228,33 @@ export const makeEventHandlerProgram =
             ExtractValueTypes<OutputStepSpecs>>
     }
 
+
+// maybe want a way to get the tags from the EventHandlerPrograms without
+// going through generic inference
+export type EventHandlerProgramBase<T> = {
+    eventTagStr: T
+    program: (ev: any) => any // 🤮
+}
+
 // a data structure with the specification and program for 
 // handling events of a type identified by the Event tag
-export type EventHandlerProgram
+export type  EventHandlerProgram
     <EV extends EventI,
         InputStepSpecs extends [...any[]],
-        OutputStepSpecs extends [...any[]]> = {
-            eventTag: EventTag<EV>
-            inputSteps: [...InputStepSpecs]
-            pureHandler: (ev: EV, ...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>
-            outputSteps: [...OutputStepSpecs]
-            program: (ev: EV) => Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
-                UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
+        OutputStepSpecs extends [...any[]]> =  {
+    eventTagStr: EventTag<EV>['tag']
+    eventTag: EventTag<EV>
+    inputSteps: [...InputStepSpecs]
+    pureHandler: (ev: EV, ...vals: ExtractValueTypes<InputStepSpecs>) => ExtractArgTypes<OutputStepSpecs>
+    outputSteps: [...OutputStepSpecs]
+    program: (ev: EV) => Effect.Effect<UnionFromTuple<ExtractTagIdTypes<InputStepSpecs>> |
+        UnionFromTuple<ExtractTagIdTypes<OutputStepSpecs>>,
 
-                UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> |
-                UnionFromTuple<ExtractErrorTypes<OutputStepSpecs>>,
+        UnionFromTuple<ExtractErrorTypes<InputStepSpecs>> |
+        UnionFromTuple<ExtractErrorTypes<OutputStepSpecs>>,
 
-                ExtractValueTypes<OutputStepSpecs>>
-        }
+        ExtractValueTypes<OutputStepSpecs>>
+}
 
 
 export const buildEventHandlerProgram =
@@ -259,6 +268,7 @@ export const buildEventHandlerProgram =
         : EventHandlerProgram<EV, InputStepSpecs, OutputStepSpecs> => {
 
         return {
+            eventTagStr: eventTag.tag,
             eventTag,
             inputSteps,
             pureHandler,
@@ -269,18 +279,83 @@ export const buildEventHandlerProgram =
 
 // takes a list of EventHandlerPrograms and builds a new program which handles any of the events
 // handled by the individual programs
+// {
+//   // get output types for any tag
+//   eventPrograms: {eventTag: program}
+//   program: (ev) => Effect...  
+// }
+//  the event type input to the program will be the union of all the handled event types,
+// while the Effect types will be chosen based on the type of the event - basically the type 
+// of the individual handler program for that event
+// 
+// maybe want a MultiEventHandlerProgram type capturing the above ... and
+// which would be composable
 //
 // the returned program will have type:
 // Effect<union-of-requirements-of-programs,
 //        union-of-errors-of-programs,
 //        union-of-output-types-of-programs>
-export const makeMultiEventHandlerProgram =
-    <EventHandlerPrograms extends [...any[]]>
-        (_eventHandlerPrograms: [...EventHandlerPrograms]):
-        any => {
 
+export type ExtractProgramEventType<T> = T extends EventHandlerProgram<infer EV, infer _ISS, infer _OSS> ? EV : never
+export type ExtractProgramEventTypes<Tuple extends [...EventHandlerProgramBase<string>[]]> = {
+    [Index in keyof Tuple]: ExtractProgramEventType<Tuple[Index]>
+} & { length: Tuple['length'] }
+
+export type ExtractProgramEventTag<T> = T extends EventHandlerProgram<infer _EV, infer _ISS, infer _OSS> ? T['eventTag'] : never
+export type ExtractProgramEventTags<Tuple extends [...EventHandlerProgramBase<string>[]]> = {
+    [Index in keyof Tuple]: ExtractProgramEventTag<Tuple[Index]>
+} & { length: Tuple['length'] }
+
+export type ExtractProgramOutputEffect<T> = T extends EventHandlerProgram<infer _EV, infer _ISS, infer _OSS> ? ReturnType<T['program']> : never
+
+
+
+// this indexes a tuple by the element's eventTagStr property
+// https://stackoverflow.com/questions/54599480/typescript-tuple-type-to-object-type  
+export type IndexEventHandlerProgramTuple<T extends Array<EventHandlerProgramBase<string>>> = {
+    [K in T[number]['eventTagStr']]: Extract<T[number], { eventTagStr: K }>
+}
+// showing that this does index ta tuple of EventHandlerPrograms
+export type X = IndexEventHandlerProgramTuple<[{ eventTagStr: "foo", id: 10, program: (ev: any) => null },
+    { eventTagStr: "bar", id: 200, program: (ev: any) => null }]>
+
+// a bit tricky ... given a union of EventI, and a list of EventHandlerPrograms, get the 
+// return type for the handler function, which is the return type of the program
+// whose tag matches the event
+
+// use a conditional type to distribute the result type over a union of EventIs
+export type DistributeEventResultTypes<EVU extends any, PROGS extends [...EventHandlerProgramBase<string>[]]> =
+    EVU extends EventI ?
+    IndexEventHandlerProgramTuple<PROGS>[EVU['tag']] extends EventHandlerProgram<infer _EV, infer _ISS, infer _OSS> ?
+    ReturnType<IndexEventHandlerProgramTuple<PROGS>[EVU['tag']]['program']> :
+    never : never
+
+// return a function of the union 
+// of all the Event types handled by the supplied EventHandlerPrograms,
+// which uses a supplied EventHandlerProgram to handle the Event,
+// returning the same results as the supplied EventHandlerProgram
+export const makeMultiEventHandlerProgram =
+    <EventHandlerPrograms extends [...EventHandlerProgramBase<string>[]],
+        EVU extends UnionFromTuple<ExtractProgramEventTypes<EventHandlerPrograms>>>
+        (eventHandlerPrograms: [...EventHandlerPrograms]):
+        (ev: EVU) => DistributeEventResultTypes<EVU, EventHandlerPrograms> => {
+
+        const progsByEventTag = eventHandlerPrograms.reduce(
+            (m, p) => { m[p.eventTagStr] = p; return m },
+            {} as { [index: string]: EventHandlerProgramBase<string> })
+
+        return (ev: EVU) => {
+            const prog = progsByEventTag[ev.tag]
+            if (prog != undefined) {
+                // so prog.program should be the resolved EventHandlerProgram - but 
+                // the type is dependent on the actual type of the ev
+                console.log("multiProg: ", ev)
+                return prog.program(ev) as DistributeEventResultTypes<EVU, EventHandlerPrograms>
+            } else
+                throw "NoProgram for Event tag: " + ev.tag
+        }
     }
-    
+
 
 
 // what next...
