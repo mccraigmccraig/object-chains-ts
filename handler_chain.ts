@@ -359,7 +359,9 @@ export const makeMultiEventHandlerProgram =
 
 
 // what next...
-// - combining individual event-handler chains into a program
+// - improving the steps pipeline to support an object of step-values
+//     each step defining a [key, service, param-fn(v: obj-so-far)=>service-param],
+//     and the first step getting something like {event: <event>}
 // - an event-handler Service allowing recursion
 // - automatic logging and tracing at each step
 
