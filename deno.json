@@ -2,5 +2,13 @@
     "imports": {
         "assert": "https://deno.land/std@0.203.0/assert/mod.ts",
         "effect": "npm:effect@^2.0.0-next.50"
+    },
+    "compilerOptions": {
+        "noErrorTruncation": true,
+        "noUncheckedIndexedAccess": true,
+        "noUnusedLocals": true,
+        "noImplicitReturns": true,
+        "noImplicitOverride": true,
+        "noFallthroughCasesInSwitch": true
     }
 }
