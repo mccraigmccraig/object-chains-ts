@@ -130,6 +130,7 @@ const getUserStepSpec =
 {
     k: "user" as const,
     svc: GetUserService,
+    // note that this fn depends on the output of a getOrgStep
     f: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } }
 }
 export const specs = [
@@ -137,6 +138,7 @@ export const specs = [
     getUserStepSpec
 ] as const
 
-// and finally, to the object pipeline program...
+// and finally, to the object pipeline program... 
+// each step's f is checked against the accumulated object from the previous steps
 
 export const prog = buildObjectPipelineProg<{ data: { org_nick: string, user_id: string } }>()(specs)
