@@ -79,8 +79,8 @@ export type FxServiceTag<EV extends EventI, V, D = undefined, R = never, E = nev
 // allow steps to be defined with data or with just an FxServiceTag
 export type CompactStepSpec<EV extends EventI, V, R = never, E = never> = FxServiceTag<EV, V, undefined, R, E>
 export type ObjectStepSpec<EV extends EventI, V, D = undefined, R = never, E = never> = {
-    fxServiceTag: FxServiceTag<EV, V, D, R, E>
-    data: D
+    readonly fxServiceTag: FxServiceTag<EV, V, D, R, E>
+    readonly data: D
 }
 export type StepSpec<EV extends EventI, V, D = undefined, R = never, E = never> = CompactStepSpec<EV, V, R, E> | ObjectStepSpec<EV, V, D, R, E>
 
@@ -232,8 +232,8 @@ export const makeEventHandlerProgram =
 // maybe want a way to get the tags from the EventHandlerPrograms without
 // going through generic inference
 export type EventHandlerProgramBase<T> = {
-    eventTagStr: T
-    program: (ev: any) => any // 🤮
+    readonly eventTagStr: T
+    readonly program: (ev: any) => any // 🤮
 }
 
 // a data structure with the specification and program for 
@@ -373,14 +373,14 @@ export const makeMultiEventHandlerProgram =
 
 // e.g.
 export type User = {
-    id: string
-    name: string
+    readonly id: string
+    readonly name: string
 }
 
 // an Event specifying an UpdateUserEvent
 export interface UpdateUserEvent extends EventI {
-    tag: "UpdateUserEvent"
-    user: User
+    readonly tag: "UpdateUserEvent"
+    readonly user: User
 }
 
 export const UpdateUserEventTag = eventTag<UpdateUserEvent>("UpdateUserEvent")

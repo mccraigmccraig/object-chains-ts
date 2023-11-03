@@ -3,8 +3,8 @@ import { Effect, Context } from "effect"
 import { EventI, FxService, buildEventHandlerProgram, makeMultiEventHandlerProgram, eventTag, EventHandlerProgram,step, FxServiceTag, ObjectStepSpec, ExtractValueType, ExtractFxServiceTag } from "./handler_chain.ts"
 
 export interface GetUserEvent extends EventI {
-    tag: "GetUserEvent"
-    id: string
+    readonly tag: "GetUserEvent"
+    readonly id: string
 }
 export const GetUserEventTag = eventTag<GetUserEvent>("GetUserEvent")
 
