@@ -49,7 +49,7 @@ export type ObjectPipeline<Specs extends readonly [...any[]],
     StepAcc extends [...any[]] = []> =
 
     // case: final spec - deliver final pipeline tuple type from StepAcc
-    Specs extends [StepSpec<infer R, infer E, infer D, infer V, infer K, infer A>]
+    Specs extends [StepSpec<infer R, infer E, infer D, infer V, infer K, infer _A>]
     ? readonly [...StepAcc, StepSpec<R, E, D, V, K, ObjAcc>]
 
     // case: there are more specs - add to StepAcc and ObjAcc and recurse
@@ -70,24 +70,13 @@ export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
 // get the final Object type from a list of StepSpecs
 export type FinalObjectType<Specs extends readonly [...any[]], Init> =
-    ObjectPipeline<Specs, Init> extends [...infer _Prev, infer Last]
+    ObjectPipeline<Specs, Init> extends readonly [...infer _Prev, infer Last]
     ? Last extends StepSpec<infer _LR, infer _LE, infer _LD, infer LV, infer LK, infer LA>
     ? Expand<LA & { [K in LK]: LV }>
-    : ["FinalObjectTypeFail", "B", ObjectPipeline<Specs,Init>] // Last
-    : ["FinalObjectTypeFail", "A", ObjectPipeline<Specs,Init>] // ObjectPipeline
+    : ["FinalObjectTypeFail", "B", ObjectPipeline<Specs, Init>] // Last
+    : ["FinalObjectTypeFail", "A", ObjectPipeline<Specs, Init>] // ObjectPipeline
 
 //////////////////////////////////////////////////////////////////////////////
-
-export type User = {
-    id: string
-    name: string
-}
-interface GetUserService { readonly _: unique symbol }
-// the service interface
-export interface GetUserServiceI extends FxService<never, never, string, User> {
-    readonly fx: (id: string) => Effect.Effect<never, never, User>
-}
-export const GetUserService = Context.Tag<GetUserService, GetUserServiceI>("GetUserService")
 
 export type Org = {
     id: string
@@ -95,48 +84,56 @@ export type Org = {
 }
 interface GetOrgService { readonly _: unique symbol }
 export interface GetOrgServiceI extends FxService<never, never, string, Org> {
-    readonly fx: (id: string) => Effect.Effect<never, never, Org>
+    readonly fx: (nick: string) => Effect.Effect<never, never, Org>
 }
 export const GetOrgService = Context.Tag<GetOrgService, GetOrgServiceI>("GetOrgService")
 
-// allow extra keys for the param fns 
-export type Extra<T> = T extends Record<string, unknown> ? T & Record<string, unknown> : never;
+export type User = {
+    id: string
+    name: string
+}
+interface GetUserService { readonly _: unique symbol }
+// the service interface
+export interface GetUserServiceI extends FxService<never, never, { org_id: string, user_id: string }, User> {
+    readonly fx: (d: { org_id: string, user_id: string }) => Effect.Effect<never, never, User>
+}
+export const GetUserService = Context.Tag<GetUserService, GetUserServiceI>("GetUserService")
 
 // as const is required to prevent the k from being widened to a string type
 // and to ensure the specs array is interpreted as a tuple
-const getOrgStepSpecObj =
+const getOrgStepSpec =
 {
     k: "org" as const,
     svc: GetOrgService,
-    f: (d: { data: {org_id: string} }) => d.data.org_id
+    f: (d: { data: { org_nick: string } }) => d.data.org_nick
 }
-const getUserStepSpecObj =
+const getUserStepSpec =
 {
     k: "user" as const,
     svc: GetUserService,
-    f: (d: { data: {user_id: string} }) => d.data.user_id
+    f: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } }
 }
 export const specs = [
-    getOrgStepSpecObj,
-    getUserStepSpecObj
+    getOrgStepSpec,
+    getUserStepSpec
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////
 
 // getting closer...
 
-// also constraints are not yet being applied so that the f inputs match 
-// the ObjAcc
-
 export declare function buildProg
-    <StepSpecs extends readonly [...any[]],
-        Init = { data: {org_id: string, user_id: string}  },
-    _Unused = ObjectPipeline<StepSpecs, Init>>
-    (stepSpecs: readonly [...StepSpecs],
-    otherStepSpecs: ObjectPipeline<StepSpecs, Init>)
+
+    <StepSpecs extends readonly [...any[]], Init={ data: { org_nick: string, user_id: string } }>
+
+    // this trick allows the param to be typed as
+    //   readonly[...StepSpecs]
+    // while also applying the ObjectPipeline type checks
+    (stepSpecs: ObjectPipeline<StepSpecs, Init> extends readonly [...StepSpecs] ? readonly [...StepSpecs] : ObjectPipeline<StepSpecs, Init>)
+
     : (arg: Init) => Effect.Effect<never, never, FinalObjectType<StepSpecs, Init>>
 
-export const prog = buildProg(specs, specs)
+export const prog = buildProg(specs)
 
 
 
@@ -190,4 +187,4 @@ export function pipe<FirstFn extends AnyFunc, F extends AnyFunc[]>(
 }
 
 
-export const x = pipe(0, (n: number)=>n+1, (p: number)=>p.toString())
+export const x = pipe(0, (n: number) => n + 1, (p: number) => p.toString())
