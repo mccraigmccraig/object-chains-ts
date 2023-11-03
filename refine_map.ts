@@ -122,69 +122,17 @@ export const specs = [
 
 // getting closer...
 
-export declare function buildProg
+// since we want to pass an initial Data type param, but to infer 
+// StepSpecs - and typescript inference is all-or-nothing, we must curry
+// https://effectivetypescript.com/2020/12/04/gentips-1-curry/
+export declare function buildObjectPipelineProg<Init>():
+    <StepSpecs extends readonly [...any[]]>
 
-    <StepSpecs extends readonly [...any[]], Init={ data: { org_nick: string, user_id: string } }>
-
-    // this trick allows the param to be typed as
+    // and this trick allows the StepSpecs param to be typed as
     //   readonly[...StepSpecs]
     // while also applying the ObjectPipeline type checks
-    (stepSpecs: ObjectPipeline<StepSpecs, Init> extends readonly [...StepSpecs] ? readonly [...StepSpecs] : ObjectPipeline<StepSpecs, Init>)
+    (_stepSpecs: ObjectPipeline<StepSpecs, Init> extends readonly [...StepSpecs] ? readonly [...StepSpecs] : ObjectPipeline<StepSpecs, Init>)
 
-    : (arg: Init) => Effect.Effect<never, never, FinalObjectType<StepSpecs, Init>>
+    => (arg: Init) => Effect.Effect<never, never, FinalObjectType<StepSpecs, Init>>   
 
-export const prog = buildProg(specs)
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-
-// an Event has a tag to identify a handler
-export interface EventI {
-    readonly tag: string
-}
-
-// a simple tag type for events
-export interface EventTag<EV extends EventI> {
-    readonly tag: EV['tag'] // a string name for the type
-}
-
-// returns a function of EV returning an Effect which applys the steps specified
-// in StepSpecs to build an Object with all the {K: V} from each step's service
-export declare function buildObjectProg<EV extends EventI,
-    StepSpecs extends readonly [...any[]],
-    Init = { ev: EV }>
-    (stepSpecs: readonly [...StepSpecs])
-    : (arg: Init) => Effect.Effect<never, never, FinalObjectType<StepSpecs, Init>>
-
-export const objProg = buildObjectProg(specs)
-
-////////////////////////////////////////////
-
-type AnyFunc = (...arg: any) => any;
-
-type PipeArgs<F extends AnyFunc[], Acc extends AnyFunc[] = []> =
-    F extends [(...args: infer A) => infer B] ? [...Acc, (...args: A) => B]
-    : F extends [(...args: infer A) => any, ...infer Tail]
-    ? Tail extends [(arg: infer B) => any, ...any[]]
-    ? PipeArgs<Tail, [...Acc, (...args: A) => B]>
-    : Acc
-    : Acc;
-
-type LastFnReturnType<F extends Array<AnyFunc>, Else = never> = F extends [
-    ...any[],
-    (...arg: any) => infer R
-] ? R : Else;
-
-export function pipe<FirstFn extends AnyFunc, F extends AnyFunc[]>(
-    arg: Parameters<FirstFn>[0],
-    firstFn: FirstFn,
-    ...fns: PipeArgs<F> extends F ? F : PipeArgs<F>
-): LastFnReturnType<F, ReturnType<FirstFn>> {
-    return (fns as AnyFunc[]).reduce((acc, fn) => fn(acc), firstFn(arg));
-}
-
-
-export const x = pipe(0, (n: number) => n + 1, (p: number) => p.toString())
+export const prog = buildObjectPipelineProg<{ data: { org_nick: string, user_id: string } }>()(specs)
