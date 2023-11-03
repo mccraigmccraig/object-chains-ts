@@ -76,7 +76,24 @@ export type FinalObjectType<Specs extends readonly [...any[]], Init> =
     : ["FinalObjectTypeFail", "B", ObjectPipeline<Specs, Init>] // Last
     : ["FinalObjectTypeFail", "A", ObjectPipeline<Specs, Init>] // ObjectPipeline
 
+// since we want to pass an initial Data type param, but to infer 
+// StepSpecs - and typescript inference is all-or-nothing, we must curry
+// https://effectivetypescript.com/2020/12/04/gentips-1-curry/
+export declare function buildObjectPipelineProg<Init>():
+    <StepSpecs extends readonly [...any[]]>
+
+    // and this trick allows the StepSpecs param to be typed as
+    //   readonly[...StepSpecs]
+    // while also applying the ObjectPipeline type checks
+    (_stepSpecs: ObjectPipeline<StepSpecs, Init> extends readonly [...StepSpecs] ? readonly [...StepSpecs] : ObjectPipeline<StepSpecs, Init>)
+
+    => (arg: Init) => Effect.Effect<never, never, FinalObjectType<StepSpecs, Init>>   
+
 //////////////////////////////////////////////////////////////////////////////
+
+// now to demonstrate...
+
+// first some services...
 
 export type Org = {
     id: string
@@ -99,6 +116,8 @@ export interface GetUserServiceI extends FxService<never, never, { org_id: strin
 }
 export const GetUserService = Context.Tag<GetUserService, GetUserServiceI>("GetUserService")
 
+// then some computation steps...
+
 // as const is required to prevent the k from being widened to a string type
 // and to ensure the specs array is interpreted as a tuple
 const getOrgStepSpec =
@@ -118,21 +137,6 @@ export const specs = [
     getUserStepSpec
 ] as const
 
-//////////////////////////////////////////////////////////////////////////////////
-
-// getting closer...
-
-// since we want to pass an initial Data type param, but to infer 
-// StepSpecs - and typescript inference is all-or-nothing, we must curry
-// https://effectivetypescript.com/2020/12/04/gentips-1-curry/
-export declare function buildObjectPipelineProg<Init>():
-    <StepSpecs extends readonly [...any[]]>
-
-    // and this trick allows the StepSpecs param to be typed as
-    //   readonly[...StepSpecs]
-    // while also applying the ObjectPipeline type checks
-    (_stepSpecs: ObjectPipeline<StepSpecs, Init> extends readonly [...StepSpecs] ? readonly [...StepSpecs] : ObjectPipeline<StepSpecs, Init>)
-
-    => (arg: Init) => Effect.Effect<never, never, FinalObjectType<StepSpecs, Init>>   
+// and finally, to the object pipeline program...
 
 export const prog = buildObjectPipelineProg<{ data: { org_nick: string, user_id: string } }>()(specs)
