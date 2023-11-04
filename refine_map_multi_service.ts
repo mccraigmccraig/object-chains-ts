@@ -100,13 +100,13 @@ export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 // get the final Object type from a list of StepSpecs
 export type FinalObjectType<Specs extends readonly [...any[]], ObjAcc> =
     ObjectPipeline<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
-    ? Last extends StepSpec<infer LK, infer LA, infer LD, infer _LI, infer _LS, infer _LFK>
-    ? ExtractFxServiceFn<Last> extends FxServiceFn<LD, infer _LR, infer _LE, infer LV>
+    ? Last extends StepSpec<infer LK, infer LA, infer LD, infer _LI, infer LS, infer LFK>
+    ? LS[LFK] extends FxServiceFn<LD, infer _LR, infer _LE, infer LV>
     // final Object type adds the final step output to the final step input type
     ? Expand<LA & { [K in LK]: LV }>
-    : ["FinalObjectTypeFail", "C", ObjectPipeline<Specs, ObjAcc>] // ExtractFxServiceFn<Last> extends FxServiceFn
-    : ["FinalObjectTypeFail", "B", ObjectPipeline<Specs, ObjAcc>] // Last
-    : ["FinalObjectTypeFail", "A", ObjectPipeline<Specs, ObjAcc>] // ObjectPipeline
+    : ["FinalObjectTypeFail", "C-LS[LFK] extends FxServiceFn", ObjectPipeline<Specs, ObjAcc>]
+    : ["FinalObjectTypeFail", "B-Last extends StepSpec", ObjectPipeline<Specs, ObjAcc>]
+    : ["FinalObjectTypeFail", "A-ObjectPipeline<Specs, ObjAcc> extends", ObjectPipeline<Specs, ObjAcc>]
 
 // since we want to pass an initial Data type param, but to infer 
 // StepSpecs - and typescript inference is all-or-nothing, we must curry
