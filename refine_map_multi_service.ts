@@ -38,20 +38,16 @@ export type ExtractTagService<T> = T extends FxServiceTag<infer _I, infer S> ? S
 // the service function F on service interface S,
 // and the output of the service function will then be added to the Object-so-far
 // at {K: V}
-export type StepSpec<K extends string, A, D, I, S,
-    FK extends keyof ExtractTagService<FxServiceTag<I, S>>,
-    // hmm... maybe i want the service fn type here, even though it's derived... then i can provide
-    // a calculated fn from pipeline and if it doesn't meet the constraint, desirable boom!
-    F extends ExtractTagService<FxServiceTag<I, S>>[FK] = ExtractTagService<FxServiceTag<I, S>>[FK],
-> = {
-    // the key at which the service output will be added to the pipeline accumulator object A
-    readonly k: K
-    // a pure function which maps the accumulator to the service input D
-    readonly f: (arg: A) => D
-    // a service interface and the key of a service fn
-    readonly svc: FxServiceTag<I, S>
-    readonly svcFn: FK
-}
+export type StepSpec<K extends string, A, D, I, S, FK extends keyof S> =
+    {
+        // the key at which the service output will be added to the pipeline accumulator object A
+        readonly k: K
+        // a pure function which maps the accumulator to the service input D
+        readonly f: (arg: A) => D
+        // a service interface and the key of a service fn
+        readonly svc: FxServiceTag<I, S>
+        readonly svcFn: FK
+    }
 
 // extract the FxServiceTag from a StepSpec
 export type ExtractFxServiceTag<T> = T extends StepSpec<infer _K, infer _A, infer _D, infer _I, infer _S, infer _FK>
@@ -59,8 +55,8 @@ export type ExtractFxServiceTag<T> = T extends StepSpec<infer _K, infer _A, infe
     : never
 
 // extract the service Fn from a StepSpec
-export type ExtractFxServiceFn<T> = T extends StepSpec<infer _K, infer _A, infer _D, infer _I, infer _S, infer FK>
-    ? ExtractTagService<T["svc"]>[FK]
+export type ExtractFxServiceFn<T> = T extends StepSpec<infer _K, infer _A, infer _D, infer _I, infer S, infer FK>
+    ? S[FK] // ExtractTagService<T["svc"]>[FK]
     : never
 
 // recursively infer a tuple-type for an Effectful Object builder pipeline
@@ -70,28 +66,31 @@ export type ObjectPipeline<Specs extends readonly [...any[]],
     StepAcc extends [...any[]] = []> =
 
     // case: final spec - deliver final pipeline tuple type from StepAcc
-    Specs extends readonly [infer Head]
+    Specs extends [infer Head]
     ? Head extends StepSpec<infer K, infer _A, infer D, infer I, infer S, infer FK>
-    ? ExtractFxServiceFn<Head> extends FxServiceFn<D, infer _R, infer _E, infer _V>
-    // the final pipeline
-    ? readonly [...StepAcc, StepSpec<K, ObjAcc, D, I, S, FK, ExtractFxServiceFn<Head>>]
+    ? S[FK] extends FxServiceFn<D, infer _R, infer _E, infer _V>
+    // return the final inferred pipeline
+    ? readonly [...StepAcc, StepSpec<K, ObjAcc, D, I, S, FK>]
+    : ["ObjectPipelineFail", "B-final: Head extends StepSpec", Specs]
+    : ["ObjectPipelineFail", "A-final: Specs extends [infer Head]", Specs] 
 
-    // case: there are more specs - add to StepAcc and ObjAcc and recurse
-    : Specs extends readonly [infer Head, ...infer Tail]
+    // case: there are more specs - add to ObjAcc and StepAcc and recurse
+    : Specs extends [infer Head, ...infer Tail]
     ? Head extends StepSpec<infer HK, infer _HA, infer HD, infer HI, infer HS, infer HFK>
-    ? ExtractFxServiceFn<Head> extends FxServiceFn<HD, infer _HR, infer _HE, infer HV>
-    ? Tail extends readonly [infer Next, ...any]
-    ? Next extends StepSpec<infer _NK, infer _NA, infer _ND, infer _NI, infer _NS, infer _NFK>
+    ? HS[HFK] extends FxServiceFn<HD, infer _HR, infer _HE, infer HV>
+    ? Tail extends [infer Next, ...any]
+    ? Next extends StepSpec<infer _NK, infer _NA, infer ND, infer _NI, infer NS, infer NFK>
+    ? NS[NFK] extends FxServiceFn<ND, infer _NR, infer _NE, infer _NV>
+    // recurse
     ? ObjectPipeline<Tail,
         ObjAcc & { [K in HK]: HV },
         [...StepAcc, StepSpec<HK, ObjAcc, HD, HI, HS, HFK>]>
-    : ["ObjectPipelineFail", "G", Specs] // Next extends StepSpec
-    : ["ObjectPipelineFail", "F", Specs] // Tail extends [infer Next, ...any]
-    : ["ObjectPipelineFail", "E", Specs] // ExtractFxServiceFn<Head> extends FxServiceFn
-    : ["ObjectPipelineFail", "D", Specs] // Head extends StepSpec
-    : ["ObjectPipelineFail", "C", Specs] // ExtractFxServiceFn<Head> extends FxServiceFn
-    : ["ObjectPipelineFail", "B", Specs] // Head extends StepSpec
-    : ["ObjectPipelineFail", "A", Specs] // Specs extends [infer Head]
+    : ["ObjectPipelineFail", "H-recurse: NS[NFK] extends FxServiceFn ", Specs]   
+    : ["ObjectPipelineFail", "G-recurse: Next extends StepSpec", Specs] 
+    : ["ObjectPipelineFail", "F-recurse: Tail extends [infer Next, ...any]", Specs] 
+    : ["ObjectPipelineFail", "E-recurse: HS[HFK] extends FxServiceFn", Specs] 
+    : ["ObjectPipelineFail", "D-recurse: Head extends StepSpec", Specs] 
+    : ["ObjectPipelineFail", "C-recurse: Specs extends [infer Head, ...infer Tail]", Specs]
 
 // builds a new Object type from an intersected ObjAcc type,
 // which makes the intellisense much simpler
@@ -103,6 +102,7 @@ export type FinalObjectType<Specs extends readonly [...any[]], ObjAcc> =
     ObjectPipeline<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
     ? Last extends StepSpec<infer LK, infer LA, infer LD, infer _LI, infer _LS, infer _LFK>
     ? ExtractFxServiceFn<Last> extends FxServiceFn<LD, infer _LR, infer _LE, infer LV>
+    // final Object type adds the final step output to the final step input type
     ? Expand<LA & { [K in LK]: LV }>
     : ["FinalObjectTypeFail", "C", ObjectPipeline<Specs, ObjAcc>] // ExtractFxServiceFn<Last> extends FxServiceFn
     : ["FinalObjectTypeFail", "B", ObjectPipeline<Specs, ObjAcc>] // Last
@@ -152,7 +152,7 @@ export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
 
 // as const is required to prevent the k from being widened to a string type
 // and to ensure the specs array is interpreted as a tuple
-const getOrgStepSpec: StepSpec<"org", {data: {org_nick: string}}, string, OrgService, OrgServiceI, "get"> =
+const getOrgStepSpec: StepSpec<"org", { data: { org_nick: string } }, string, OrgService, OrgServiceI, "get"> =
 {
     k: "org" as const,
     f: (d: { data: { org_nick: string } }) => d.data.org_nick,
