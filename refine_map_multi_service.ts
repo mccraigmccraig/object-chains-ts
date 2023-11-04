@@ -152,14 +152,14 @@ export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
 
 // as const is required to prevent the k from being widened to a string type
 // and to ensure the specs array is interpreted as a tuple
-const getOrgStepSpec: StepSpec<"org", { data: { org_nick: string } }, string, OrgService, OrgServiceI, "get"> =
+const getOrgStepSpec =
 {
     k: "org" as const,
     f: (d: { data: { org_nick: string } }) => d.data.org_nick,
     svc: OrgService,
     svcFn: "get" as const
 }
-const getUserStepSpec: StepSpec<"user", { data: { user_id: string }, org: Org }, { org_id: string, user_id: string }, UserService, UserServiceI, "get"> =
+const getUserStepSpec =
 {
     k: "user" as const,
     // note that this fn depends on the output of a getOrgStep
