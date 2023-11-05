@@ -25,7 +25,9 @@ export type FxServiceTag<I, S> = Context.Tag<I, S>
 // f transforms the Object-so-far:A into the argument D of 
 // the service function F on service interface S,
 // and the output of the service function will then be added to the Object-so-far
-// at {K: V}
+// at {K: V}... the service function F and its output V must be 
+// inferred, since there any many service functions per service interface S, 
+// so the type can't be parameterised
 export type StepSpec<K extends string, A, D, I, S, FK extends keyof S> =
     {
         // the key at which the service output will be added to the pipeline accumulator object A
