@@ -1,17 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect, Context } from "effect"
 
-// the weakness of the previous refine_map approach is that each 
-// service has but a single fx function, which will lead to 
-// a proliferation of services and feels unnatural
-
-// if instead a service could have a number of effectful functions,
-// each taking a single arg (for simplicity, at least in the first impl)
-// and return an Effect ... could we specify the function with an
-// as-const string in the StepSpec, then infer everything else we 
-// need - R,E,D,V ?
-
-// reference:
+// inspiration:
 // https://dev.to/ecyrbe/how-to-use-advanced-typescript-to-define-a-pipe-function-381h
 
 // each Effectful step defines:
@@ -113,7 +103,7 @@ export declare function buildObjectPipelineProg<Init>():
 
 // now to demonstrate...
 
-// first some services...
+// first some services for an Org and User...
 
 export type Org = {
     id: string
@@ -121,7 +111,8 @@ export type Org = {
 }
 interface OrgService { readonly _: unique symbol }
 export interface OrgServiceI {
-    readonly get: (nick: string) => Effect.Effect<never, never, Org>
+    readonly getById: (id: string) => Effect.Effect<never, never, Org>
+    readonly getByNick: (nick: string) => Effect.Effect<never, never, Org>
 }
 export const OrgService = Context.Tag<OrgService, OrgServiceI>("OrgService")
 
@@ -132,7 +123,7 @@ export type User = {
 interface UserService { readonly _: unique symbol }
 // the service interface
 export interface UserServiceI {
-    readonly get: (d: { org_id: string, user_id: string }) => Effect.Effect<never, never, User>
+    readonly getByIds: (d: { org_id: string, user_id: string }) => Effect.Effect<never, never, User>
 }
 export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
 
@@ -145,23 +136,24 @@ const getOrgStepSpec =
     k: "org" as const,
     f: (d: { data: { org_nick: string } }) => d.data.org_nick,
     svc: OrgService,
-    svcFn: "get" as const
+    svcFn: "getByNick" as const
 }
 const getUserStepSpec =
 {
     k: "user" as const,
-    // note that this fn depends on the output of a getOrgStep
+    // note that this fn depends on the output of an OrgServiceI.getBy* step
     f: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
     svc: UserService,
-    svcFn: "get" as const
+    svcFn: "getByIds" as const
 }
 export const specs = [
     getOrgStepSpec,
     getUserStepSpec
 ] as const
 
-// and finally, to the object pipeline program... 
-// each step's f is checked against the accumulated object from the previous steps
+// and finally, to the object pipeline program... defines the type of the required
+// input to the chain, and the computation steps to build the object. 
+// each step's f and serviceFn is checked against the accumulated object from the previous steps
 
 export const prog = buildObjectPipelineProg<{ data: { org_nick: string, user_id: string } }>()(specs)
 
