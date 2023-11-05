@@ -4,15 +4,20 @@ import { Effect, Context } from "effect"
 // inspiration:
 // https://dev.to/ecyrbe/how-to-use-advanced-typescript-to-define-a-pipe-function-381h
 
-// each Effectful step defines:
-// - a key
-// - a tag for an FxService interface
-// - a key for an FxServiceFn on the FxService
-// - a fn which takes the output map of the previous step and
+// each FxStepSpec step defines:
+// - a key, k:
+// - a tag, svc:, for an FxService interface
+// - a key, svcFn:, for an FxServiceFn on the FxService
+// - a fn, f:,  which takes the output map of the previous step and
 //   returns the input type of the FxServiceFn
 // 
-// - and the output of the step is a new map type combining the inmap
-//   with the new key and output value from the FxServiceFn Effect
+// an FxStepSpec can be used in a different ways
+// - building an Object by chaining steps : each step 
+//     augments the Object with {K: V} and the following step 
+//     gets the map-under-construction
+// - building an Object by running steps on an array of inputs
+//     each step gets one value from the array of inputs and
+//     its output gets associated with the Object at K
 
 // an FxService interface will have 1 or more FxService fns
 export interface FxServiceFn<D, R, E, V> {
@@ -28,7 +33,7 @@ export type FxServiceTag<I, S> = Context.Tag<I, S>
 // at {K: V}... the service function F and its output V must be 
 // inferred, since there any many service functions per service interface S, 
 // so the type can't be parameterised
-export type StepSpec<K extends string, A, D, I, S, FK extends keyof S> =
+export type FxStepSpec<K extends string, A, D, I, S, FK extends keyof S> =
     {
         // the key at which the service output will be added to the pipeline accumulator object A
         readonly k: K
@@ -40,66 +45,66 @@ export type StepSpec<K extends string, A, D, I, S, FK extends keyof S> =
     }
 
 // recursively infer a tuple-type for an Effectful Object builder pipeline
-// from a tuple of StepSpecs, building up the Obj type along the way
-export type ObjectPipeline<Specs extends readonly [...any[]],
+// from a tuple of FxStepSpecs, building up the Obj type along the way
+export type ChainObject<Specs extends readonly [...any[]],
     ObjAcc,
     StepAcc extends [...any[]] = []> =
 
     // case: final spec - deliver final pipeline tuple type from StepAcc
     Specs extends [infer Head]
-    ? Head extends StepSpec<infer K, infer _A, infer D, infer I, infer S, infer FK>
+    ? Head extends FxStepSpec<infer K, infer _A, infer D, infer I, infer S, infer FK>
     ? S[FK] extends FxServiceFn<D, infer _R, infer _E, infer _V>
     // return the final inferred pipeline
-    ? readonly [...StepAcc, StepSpec<K, ObjAcc, D, I, S, FK>]
-    : ["ObjectPipelineFail", "B-final: Head extends StepSpec", Specs]
-    : ["ObjectPipelineFail", "A-final: Specs extends [infer Head]", Specs] 
+    ? readonly [...StepAcc, FxStepSpec<K, ObjAcc, D, I, S, FK>]
+    : ["ChainObjectFail", "B-final: Head extends FxStepSpec", Specs]
+    : ["ChainObjectFail", "A-final: Specs extends [infer Head]", Specs]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends [infer Head, ...infer Tail]
-    ? Head extends StepSpec<infer HK, infer _HA, infer HD, infer HI, infer HS, infer HFK>
+    ? Head extends FxStepSpec<infer HK, infer _HA, infer HD, infer HI, infer HS, infer HFK>
     ? HS[HFK] extends FxServiceFn<HD, infer _HR, infer _HE, infer HV>
     ? Tail extends [infer Next, ...any]
-    ? Next extends StepSpec<infer _NK, infer _NA, infer ND, infer _NI, infer NS, infer NFK>
+    ? Next extends FxStepSpec<infer _NK, infer _NA, infer ND, infer _NI, infer NS, infer NFK>
     ? NS[NFK] extends FxServiceFn<ND, infer _NR, infer _NE, infer _NV>
     // recurse
-    ? ObjectPipeline<Tail,
+    ? ChainObject<Tail,
         ObjAcc & { [K in HK]: HV },
-        [...StepAcc, StepSpec<HK, ObjAcc, HD, HI, HS, HFK>]>
-    : ["ObjectPipelineFail", "H-recurse: NS[NFK] extends FxServiceFn ", Specs]   
-    : ["ObjectPipelineFail", "G-recurse: Next extends StepSpec", Specs] 
-    : ["ObjectPipelineFail", "F-recurse: Tail extends [infer Next, ...any]", Specs] 
-    : ["ObjectPipelineFail", "E-recurse: HS[HFK] extends FxServiceFn", Specs] 
-    : ["ObjectPipelineFail", "D-recurse: Head extends StepSpec", Specs] 
-    : ["ObjectPipelineFail", "C-recurse: Specs extends [infer Head, ...infer Tail]", Specs]
+        [...StepAcc, FxStepSpec<HK, ObjAcc, HD, HI, HS, HFK>]>
+    : ["ChainObjectFail", "H-recurse: NS[NFK] extends FxServiceFn ", Specs]
+    : ["ChainObjectFail", "G-recurse: Next extends FxStepSpec", Specs]
+    : ["ChainObjectFail", "F-recurse: Tail extends [infer Next, ...any]", Specs]
+    : ["ChainObjectFail", "E-recurse: HS[HFK] extends FxServiceFn", Specs]
+    : ["ChainObjectFail", "D-recurse: Head extends FxStepSpec", Specs]
+    : ["ChainObjectFail", "C-recurse: Specs extends [infer Head, ...infer Tail]", Specs]
 
 // builds a new Object type from an intersected ObjAcc type,
-// which makes the intellisense much simpler
+// which makes the intellisense much nicer
 // https://stackoverflow.com/questions/57683303/how-can-i-see-the-full-expanded-contract-of-a-typescript-type
 export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
-// get the final Object type from a list of StepSpecs
-export type FinalObjectType<Specs extends readonly [...any[]], ObjAcc> =
-    ObjectPipeline<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
-    ? Last extends StepSpec<infer LK, infer LA, infer LD, infer _LI, infer LS, infer LFK>
+// get the final Object result type from a list of FxStepSpecs
+export type ChainObjectResult<Specs extends readonly [...any[]], ObjAcc> =
+    ChainObject<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
+    ? Last extends FxStepSpec<infer LK, infer LA, infer LD, infer _LI, infer LS, infer LFK>
     ? LS[LFK] extends FxServiceFn<LD, infer _LR, infer _LE, infer LV>
     // final Object type adds the final step output to the final step input type
     ? Expand<LA & { [K in LK]: LV }>
-    : ["FinalObjectTypeFail", "C-LS[LFK] extends FxServiceFn", ObjectPipeline<Specs, ObjAcc>]
-    : ["FinalObjectTypeFail", "B-Last extends StepSpec", ObjectPipeline<Specs, ObjAcc>]
-    : ["FinalObjectTypeFail", "A-ObjectPipeline<Specs, ObjAcc> extends", ObjectPipeline<Specs, ObjAcc>]
+    : ["ChainObjectResultFail", "C-LS[LFK] extends FxServiceFn", ChainObject<Specs, ObjAcc>]
+    : ["ChainObjectResultFail", "B-Last extends FxStepSpec", ChainObject<Specs, ObjAcc>]
+    : ["ChainObjectResultFail", "A-ChainObject<Specs, ObjAcc> extends", ChainObject<Specs, ObjAcc>]
 
 // since we want to pass an initial Data type param, but to infer 
-// StepSpecs - and typescript inference is all-or-nothing, we must curry
+// FxStepSpecs - and typescript inference is all-or-nothing, we must curry
 // https://effectivetypescript.com/2020/12/04/gentips-1-curry/
-export declare function buildObjectPipelineProg<Init>():
-    <StepSpecs extends readonly [...any[]]>
+export declare function chainObjectProg<Init>():
+    <FxStepSpecs extends readonly [...any[]]>
 
-        // and this trick allows the StepSpecs param to be typed as
-        //   readonly[...StepSpecs]
-        // while also applying the ObjectPipeline type checks
-        (_stepSpecs: ObjectPipeline<StepSpecs, Init> extends readonly [...StepSpecs] ? readonly [...StepSpecs] : ObjectPipeline<StepSpecs, Init>)
+        // and this trick allows the FxStepSpecs param to be typed as
+        //   readonly[...FxStepSpecs]
+        // while also applying the ChainObject type checks
+        (_FxStepSpecs: ChainObject<FxStepSpecs, Init> extends readonly [...FxStepSpecs] ? readonly [...FxStepSpecs] : ChainObject<FxStepSpecs, Init>)
 
-        => (arg: Init) => Effect.Effect<never, never, FinalObjectType<StepSpecs, Init>>
+        => (arg: Init) => Effect.Effect<never, never, ChainObjectResult<FxStepSpecs, Init>>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -133,14 +138,14 @@ export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
 
 // as const is required to prevent the k from being widened to a string type
 // and to ensure the specs array is interpreted as a tuple
-const getOrgStepSpec =
+const getOrgFxStepSpec =
 {
     k: "org" as const,
     f: (d: { data: { org_nick: string } }) => d.data.org_nick,
     svc: OrgService,
     svcFn: "getByNick" as const
 }
-const getUserStepSpec =
+const getUserFxStepSpec =
 {
     k: "user" as const,
     // note that this fn depends on the output of an OrgServiceI.getBy* step
@@ -149,20 +154,20 @@ const getUserStepSpec =
     svcFn: "getByIds" as const
 }
 export const specs = [
-    getOrgStepSpec,
-    getUserStepSpec
+    getOrgFxStepSpec,
+    getUserFxStepSpec
 ] as const
 
 // and finally, to the object pipeline program... defines the type of the required
 // input to the chain, and the computation steps to build the object. 
 // each step's f and serviceFn is checked against the accumulated object from the previous steps
 
-export const prog = buildObjectPipelineProg<{ data: { org_nick: string, user_id: string } }>()(specs)
+export const prog = chainObjectProg<{ data: { org_nick: string, user_id: string } }>()(specs)
 
 // consider ... error messages from inference are a bit weird ... if the transform could add in 
 // the type of the service fns somehow then that might help - but the service fns are
-// not currently in the StepSpec type except via indirection through the service interface...
-// maybe we can add the service-fn type as a type-param to the StepSpec ?
+// not currently in the FxStepSpec type except via indirection through the service interface...
+// maybe we can add the service-fn type as a type-param to the FxStepSpec ?
 
 // next - this effectfulObjectChain can generate pure-fn inputs - for the outputs we might
 // want to have a similar chain specification, but feed each of the pure-fn outputs [] 
