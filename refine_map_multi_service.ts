@@ -30,8 +30,6 @@ export interface FxServiceFn<D, R, E, V> {
 }
 
 export type FxServiceTag<I, S> = Context.Tag<I, S>
-export type ExtractTagId<T> = T extends FxServiceTag<infer I, infer _S> ? I : never
-export type ExtractTagService<T> = T extends FxServiceTag<infer _I, infer S> ? S : never
 
 // data defining a single Effectful step towards building an Object.
 // f transforms the Object-so-far:A into the argument D of 
@@ -48,16 +46,6 @@ export type StepSpec<K extends string, A, D, I, S, FK extends keyof S> =
         readonly svc: FxServiceTag<I, S>
         readonly svcFn: FK
     }
-
-// extract the FxServiceTag from a StepSpec
-export type ExtractFxServiceTag<T> = T extends StepSpec<infer _K, infer _A, infer _D, infer _I, infer _S, infer _FK>
-    ? T["svc"]
-    : never
-
-// extract the service Fn from a StepSpec
-export type ExtractFxServiceFn<T> = T extends StepSpec<infer _K, infer _A, infer _D, infer _I, infer S, infer FK>
-    ? S[FK] // ExtractTagService<T["svc"]>[FK]
-    : never
 
 // recursively infer a tuple-type for an Effectful Object builder pipeline
 // from a tuple of StepSpecs, building up the Obj type along the way
@@ -176,3 +164,14 @@ export const specs = [
 // each step's f is checked against the accumulated object from the previous steps
 
 export const prog = buildObjectPipelineProg<{ data: { org_nick: string, user_id: string } }>()(specs)
+
+// consider ... error messages from inference are a bit weird ... if the transform could add in 
+// the type of the service fns somehow then that might help - but the service fns are
+// not currently in the StepSpec type except via indirection through the service interface...
+// maybe we can add the service-fn type as a type-param to the StepSpec ?
+
+// next - this effectfulObjectChain can generate pure-fn inputs - for the outputs we might
+// want to have a similar chain specification, but feed each of the pure-fn outputs [] 
+// separately to a [key effectfulStep] - since the effects are likely independent
+// but it would still be nice to build an object to use as a return value (objects
+// being generally much nicer to consume than tuples because the keys give away semantics)
