@@ -255,22 +255,13 @@ export const specs = [
     getUserObjectStepSpec
 ] as const
 
-// and finally, to the object pipeline program... defines the type of the required
+// and finally, the object builder sprograms... defines the type of the required
 // input to the chain, and the computation steps to build the object. 
 // each step's f and serviceFn is checked against the accumulated object from the previous steps
 
+// program to build an Object by chaining the accumulating Object through the steps
 export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(specs)
 
-export const tupleProg =
-    tupleMapObjectStepsProg<[{ data: { org_nick: string } }, { data: { user_id: string }, org: Org }]>()(specs)
+// program to build an Object by mapping each step over it's corresponding input value
+export const tupleProg = tupleMapObjectStepsProg<[{ data: { org_nick: string } }, { data: { user_id: string }, org: Org }]>()(specs)
 
-// consider ... error messages from inference are a bit weird ... if the transform could add in 
-// the type of the service fns somehow then that might help - but the service fns are
-// not currently in the ObjectStepSpec type except via indirection through the service interface...
-// maybe we can add the service-fn type as a type-param to the ObjectStepSpec ?
-
-// next - this effectfulObjectChain can generate pure-fn inputs - for the outputs we might
-// want to have a similar chain specification, but feed each of the pure-fn outputs [] 
-// separately to a [key effectfulStep] - since the effects are likely independent
-// but it would still be nice to build an object to use as a return value (objects
-// being generally much nicer to consume than tuples because the keys give away semantics)
