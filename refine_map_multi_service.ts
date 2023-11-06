@@ -194,7 +194,7 @@ export type TupleMapObjectStepsReturn<Specs extends readonly [...any[]],
     : ["TupleMapObjectStepsReturn", "recurse-C: Head extends ObjectStepSpec", Specs]
     : ["TupleMapObjectStepsReturn", "recurse-B: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
     : ["TupleMapObjectStepsReturn", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
-        
+
 // once again, want to provide the Inputs type, but infer the ObjectStepSpecs type,
 // so we have to curry
 export declare function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>():
