@@ -15,7 +15,8 @@ import { Effect, Context } from "effect"
 // - building an Object by chaining steps : each step 
 //     augments the Object with {K: V} and the following step 
 //     gets the map-under-construction
-// - building an Object by running steps on an array of inputs
+// - building an Object by mapping steps independently over
+//     a tuple of corresponding inputs, with the output - 
 //     each step gets one value from the array of inputs and
 //     its output gets associated with the Object at K
 
@@ -27,9 +28,9 @@ export interface FxServiceFn<D, R, E, V> {
 export type FxServiceTag<I, S> = Context.Tag<I, S>
 
 // data defining a single Effectful step towards building an Object.
-// f transforms the Object-so-far:A into the argument D of 
+// f transforms an input A into the argument D of 
 // the service function F on service interface S,
-// and the output of the service function will then be added to the Object-so-far
+// and the output of the service function V will be added to the Object
 // at {K: V}... the service function F and its output V must be 
 // inferred, since there any many service functions per service interface S, 
 // so the type can't be parameterised
@@ -78,7 +79,7 @@ export type ChainObjectSteps<Specs extends readonly [...any[]],
     : ["ChainObjectStepsFail", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
 
 // builds a new Object type from an intersected ObjAcc type,
-// which makes the intellisense much nicer
+// making the intellisense much cleaner
 // https://stackoverflow.com/questions/57683303/how-can-i-see-the-full-expanded-contract-of-a-typescript-type
 export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
@@ -110,8 +111,8 @@ export declare function chainObjectStepsProg<Init>():
 
 //////////////////////////////////////////////////////////////////////////////
 
-// build an Object by independently mapping each step over corresponding values in an array,
-// accumulating all outputs at {K: V}
+// build an Object by independently mapping each Step over corresponding values in an Inputs tuple,
+// accumulating outputs in an Object {K: V}
 export type TupleMapObjectSteps<Specs extends readonly [...any[]],
     Inputs extends readonly [...any[]],
     StepAcc extends [...any[]] = []> =
@@ -155,6 +156,8 @@ export type TupleMapObjectSteps<Specs extends readonly [...any[]],
 // inferred steps
 export type TupleMapObjectStepsReturn<Specs extends readonly [...any[]],
     Inputs extends readonly [...any[]],
+    // the lint recommendation messes up the return type here, so ignoring it
+    // deno-lint-ignore ban-types
     ObjAcc = {},
     StepAcc extends [...any[]] = []> =
 
@@ -205,7 +208,7 @@ export declare function tupleMapObjectStepsProg<Inputs extends readonly [...any[
 
 //////////////////////////////////////////////////////////////////////////////
 
-// now to demonstrate...
+// demonstrating...
 
 // first some services for an Org and User...
 
@@ -250,7 +253,7 @@ const getUserObjectStepSpec =
     svc: UserService,
     svcFn: "getByIds" as const
 }
-export const specs = [
+export const stepSpecs = [
     getOrgObjectStepSpec,
     getUserObjectStepSpec
 ] as const
@@ -260,8 +263,8 @@ export const specs = [
 // each step's f and serviceFn is checked against the accumulated object from the previous steps
 
 // program to build an Object by chaining the accumulating Object through the steps
-export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(specs)
+export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(stepSpecs)
 
 // program to build an Object by mapping each step over it's corresponding input value
-export const tupleProg = tupleMapObjectStepsProg<[{ data: { org_nick: string } }, { data: { user_id: string }, org: Org }]>()(specs)
+export const tupleProg = tupleMapObjectStepsProg<[{ data: { org_nick: string } }, { data: { user_id: string }, org: Org }]>()(stepSpecs)
 
