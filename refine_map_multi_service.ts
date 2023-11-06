@@ -112,7 +112,7 @@ export declare function chainObjectStepsProg<Init>():
 
 // build an Object by independently mapping each step over corresponding values in an array,
 // accumulating all outputs at {K: V}
-export type ArrayMapObjectSteps<Specs extends readonly [...any[]],
+export type TupleMapObjectSteps<Specs extends readonly [...any[]],
     Inputs extends readonly [...any[]],
     StepAcc extends [...any[]] = []> =
 
@@ -123,9 +123,9 @@ export type ArrayMapObjectSteps<Specs extends readonly [...any[]],
     ? S[FK] extends FxServiceFn<D, infer _R, infer _E, infer _V>
     // return the final inferred pipeline
     ? readonly [...StepAcc, ObjectStepSpec<K, HeadIn, D, I, S, FK>]
-    : ["ArrayMapObjectSteps", "final-C: S[FK] extends FxServiceFn<", Specs]
-    : ["ArrayMapObjectSteps", "final-B: Head extends ObjectStepSpec", Specs]
-    : ["ArrayMapObjectSteps", "final-A: Inputs extends [infer HeadIn]", Specs]
+    : ["TupleMapObjectSteps", "final-C: S[FK] extends FxServiceFn<", Specs]
+    : ["TupleMapObjectSteps", "final-B: Head extends ObjectStepSpec", Specs]
+    : ["TupleMapObjectSteps", "final-A: Inputs extends [infer HeadIn]", Specs]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends [infer Head, ...infer Tail]
@@ -137,24 +137,25 @@ export type ArrayMapObjectSteps<Specs extends readonly [...any[]],
     ? Next extends ObjectStepSpec<infer _NK, NextIn, infer ND, infer _NI, infer NS, infer NFK>
     ? NS[NFK] extends FxServiceFn<ND, infer _NR, infer _NE, infer _NV>
     // recurse
-    ? ChainObjectSteps<Tail,
+    ? TupleMapObjectSteps<Tail,
+        TailIn,
         [...StepAcc, ObjectStepSpec<HK, HeadIn, HD, HI, HS, HFK>]>
-    : ["ArrayMapObjectSteps", "recurse-H: NS[NFK] extends FxServiceFn ", Specs]
-    : ["ArrayMapObjectSteps", "recurse-G: Next extends ObjectStepSpec", Specs]
-    : ["ArrayMapObjectSteps", "recurse-F: TailIn extends [infer NextIn, ...any]", Specs]
-    : ["ArrayMapObjectSteps", "recurse-E: Tail extends [infer Next, ...any]", Specs]
-    : ["ArrayMapObjectSteps", "recurse-D: HS[HFK] extends FxServiceFn", Specs]
-    : ["ArrayMapObjectSteps", "recurse-C: Head extends ObjectStepSpec", Specs]
-    : ["ArrayMapObjectSteps", "recurse-B: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
-    : ["ArrayMapObjectSteps", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
+    : ["TupleMapObjectSteps", "recurse-H: NS[NFK] extends FxServiceFn ", Specs]
+    : ["TupleMapObjectSteps", "recurse-G: Next extends ObjectStepSpec", Specs]
+    : ["TupleMapObjectSteps", "recurse-F: TailIn extends [infer NextIn, ...any]", Specs]
+    : ["TupleMapObjectSteps", "recurse-E: Tail extends [infer Next, ...any]", Specs]
+    : ["TupleMapObjectSteps", "recurse-D: HS[HFK] extends FxServiceFn", Specs]
+    : ["TupleMapObjectSteps", "recurse-C: Head extends ObjectStepSpec", Specs]
+    : ["TupleMapObjectSteps", "recurse-B: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
+    : ["TupleMapObjectSteps", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
 
 // calculate the return type ... since the array type is not chained through
 // the calculation, calculating the return type looks very similar to checking
 // the step constraints, but we accumulate the return type rather than the 
 // inferred steps
-export type ArrayMapObjectStepsReturn<Specs extends readonly [...any[]],
+export type TupleMapObjectStepsReturn<Specs extends readonly [...any[]],
     Inputs extends readonly [...any[]],
-    ObjAcc = Record<string | number | symbol, never>,
+    ObjAcc = {},
     StepAcc extends [...any[]] = []> =
 
     // case: final spec - return type 
@@ -163,10 +164,10 @@ export type ArrayMapObjectStepsReturn<Specs extends readonly [...any[]],
     ? Head extends ObjectStepSpec<infer K, HeadIn, infer D, infer _I, infer S, infer FK>
     ? S[FK] extends FxServiceFn<D, infer _R, infer _E, infer V>
     // return the final inferred pipeline
-    ? ObjAcc & { [KK in K]: V }
-    : ["ArrayMapObjectStepsReturn", "final-C: S[FK] extends FxServiceFn", Specs]
-    : ["ArrayMapObjectStepsReturn", "final-B: Head extends ObjectStepSpec", Specs]
-    : ["ArrayMapObjectStepsReturn", "final-A: Inputs extends [infer HeadIn]", Specs]
+    ? Expand<ObjAcc & { [KK in K]: V }>
+    : ["TupleMapObjectStepsReturn", "final-C: S[FK] extends FxServiceFn", Specs]
+    : ["TupleMapObjectStepsReturn", "final-B: Head extends ObjectStepSpec", Specs]
+    : ["TupleMapObjectStepsReturn", "final-A: Inputs extends [infer HeadIn]", Specs]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends [infer Head, ...infer Tail]
@@ -178,29 +179,29 @@ export type ArrayMapObjectStepsReturn<Specs extends readonly [...any[]],
     ? Next extends ObjectStepSpec<infer _NK, NextIn, infer ND, infer _NI, infer NS, infer NFK>
     ? NS[NFK] extends FxServiceFn<ND, infer _NR, infer _NE, infer _NV>
     // recurse
-    ? ArrayMapObjectStepsReturn<Tail,
-        Inputs,
+    ? TupleMapObjectStepsReturn<Tail,
+        TailIn,
         ObjAcc & { [K in HK]: HV },
         [...StepAcc, ObjectStepSpec<HK, HeadIn, HD, HI, HS, HFK>]>
-    : ["ArrayMapObjectStepsReturn", "recurse-H: NS[NFK] extends FxServiceFn ", Specs]
-    : ["ArrayMapObjectStepsReturn", "recurse-G: Next extends ObjectStepSpec", Specs]
-    : ["ArrayMapObjectStepsReturn", "recurse-F: TailIn extends [infer NextIn, ...any]", Specs]
-    : ["ArrayMapObjectStepsReturn", "recurse-E: Tail extends [infer Next, ...any]", Specs]
-    : ["ArrayMapObjectStepsReturn", "recurse-D: HS[HFK] extends FxServiceFn", Specs]
-    : ["ArrayMapObjectStepsReturn", "recurse-C: Head extends ObjectStepSpec", Specs]
-    : ["ArrayMapObjectStepsReturn", "recurse-B: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
-    : ["ArrayMapObjectStepsReturn", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
+    : ["TupleMapObjectStepsReturn", "recurse-H: NS[NFK] extends FxServiceFn ", Specs]
+    : ["TupleMapObjectStepsReturn", "recurse-G: Next extends ObjectStepSpec", Specs]
+    : ["TupleMapObjectStepsReturn", "recurse-F: TailIn extends [infer NextIn, ...any]", Specs]
+    : ["TupleMapObjectStepsReturn", "recurse-E: Tail extends [infer Next, ...any]", Specs]
+    : ["TupleMapObjectStepsReturn", "recurse-D: HS[HFK] extends FxServiceFn", Specs]
+    : ["TupleMapObjectStepsReturn", "recurse-C: Head extends ObjectStepSpec", Specs]
+    : ["TupleMapObjectStepsReturn", "recurse-B: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
+    : ["TupleMapObjectStepsReturn", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
         
 // once again, want to provide the Inputs type, but infer the ObjectStepSpecs type,
 // so we have to curry
-export declare function arrayMapObjectStepsProg<Inputs extends readonly [...any[]]>():
+export declare function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>():
     <ObjectStepSpecs extends readonly [...any[]]>
 
-        (_ObjectStepSpecs: ArrayMapObjectSteps<ObjectStepSpecs, Inputs> extends readonly [...ObjectStepSpecs]
+        (_ObjectStepSpecs: TupleMapObjectSteps<ObjectStepSpecs, Inputs> extends readonly [...ObjectStepSpecs]
             ? readonly [...ObjectStepSpecs]
-            : ArrayMapObjectSteps<ObjectStepSpecs, Inputs>)
+            : TupleMapObjectSteps<ObjectStepSpecs, Inputs>)
 
-        => (inputs: Inputs) => Effect.Effect<never, never, ArrayMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
+        => (inputs: Inputs) => Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -258,7 +259,10 @@ export const specs = [
 // input to the chain, and the computation steps to build the object. 
 // each step's f and serviceFn is checked against the accumulated object from the previous steps
 
-export const prog = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(specs)
+export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(specs)
+
+export const tupleProg =
+    tupleMapObjectStepsProg<[{ data: { org_nick: string } }, { data: { user_id: string }, org: Org }]>()(specs)
 
 // consider ... error messages from inference are a bit weird ... if the transform could add in 
 // the type of the service fns somehow then that might help - but the service fns are
