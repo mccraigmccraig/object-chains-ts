@@ -14,12 +14,8 @@ export type FxServiceTag<I, S> = Context.Tag<I, S>
 
 // an ObjectStepSpec defines a single Effectful step towards building an Object.
 // - f transforms an input A into the argument D of 
-// the FxServiceFn on the service interface at S[FK],
-// and the output of the FxServiceFn V will be added to the Object
-// as {K: V}... the FxServiceFn type must be 
-// inferred, since there any many FxServiceFns per service interface S, 
-// so the type can't be parameterised
-//
+// the FxServiceFn, and the output of the FxServiceFn V will be added to the
+// Object as {K: V}...
 // an ObjectStepSpec can be used in different ways:
 //
 // - building an Object by chaining steps : each step 
@@ -29,16 +25,14 @@ export type FxServiceTag<I, S> = Context.Tag<I, S>
 //     a tuple of corresponding inputs - 
 //     each step gets one value from the array of inputs and
 //     its output V gets associated with the Object at K
-export type ObjectStepSpec<K extends string, A, D, I, S, FK extends keyof S> =
-    {
-        // the key at which the FxServiceFn output V will be added to the Object
-        readonly k: K
-        // a pure function which maps the input A to the FxServiceFn input D
-        readonly f: (arg: A) => D
-        // a service interface and the key of an FxServiceFn
-        readonly svc: FxServiceTag<I, S>
-        readonly svcFn: FK
-    }
+export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
+    // the key at which the FxServiceFn output V will be added to the Object
+    readonly k: K
+    // a pure function which maps the input A to the FxServiceFn input D
+    readonly f: (arg: A) => D
+    // an effectful function of D, producing V
+    readonly svcFn: FxServiceFn<D, R, E, V>
+}
 
 // build an Object by chaining an initial value through a sequence
 // of steps, accumulating {K: V} after each step
@@ -48,28 +42,22 @@ export type ChainObjectSteps<Specs extends readonly [...any[]],
 
     // case: final spec - deliver final pipeline tuple type from StepAcc
     Specs extends [infer Head]
-    ? Head extends ObjectStepSpec<infer K, infer _A, infer D, infer I, infer S, infer FK>
-    ? S[FK] extends FxServiceFn<D, infer _R, infer _E, infer _V>
+    ? Head extends ObjectStepSpec<infer K, infer _A, infer D, infer R, infer E, infer V>
     // return the final inferred pipeline
-    ? readonly [...StepAcc, ObjectStepSpec<K, ObjAcc, D, I, S, FK>]
-    : ["ChainObjectStepsFail", "final-B: S[FK] extends FxServiceFn", Specs]
+    ? readonly [...StepAcc, ObjectStepSpec<K, ObjAcc, D, R, E, V>]
     : ["ChainObjectStepsFail", "final-A: Head extends ObjectStepSpec", Specs]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends [infer Head, ...infer Tail]
-    ? Head extends ObjectStepSpec<infer HK, infer _HA, infer HD, infer HI, infer HS, infer HFK>
-    ? HS[HFK] extends FxServiceFn<HD, infer _HR, infer _HE, infer HV>
+    ? Head extends ObjectStepSpec<infer HK, infer _HA, infer HD, infer HR, infer HE, infer HV>
     ? Tail extends [infer Next, ...any]
-    ? Next extends ObjectStepSpec<infer _NK, infer _NA, infer ND, infer _NI, infer NS, infer NFK>
-    ? NS[NFK] extends FxServiceFn<ND, infer _NR, infer _NE, infer _NV>
+    ? Next extends ObjectStepSpec<infer _NK, infer _NA, infer _ND, infer _NR, infer _NE, infer _NV>
     // recurse
     ? ChainObjectSteps<Tail,
         ObjAcc & { [K in HK]: HV },
-        [...StepAcc, ObjectStepSpec<HK, ObjAcc, HD, HI, HS, HFK>]>
-    : ["ChainObjectStepsFail", "recurse-F: NS[NFK] extends FxServiceFn ", Specs]
+        [...StepAcc, ObjectStepSpec<HK, ObjAcc, HD, HR, HE, HV>]>
     : ["ChainObjectStepsFail", "recurse-E: Next extends ObjectStepSpec", Specs]
     : ["ChainObjectStepsFail", "recurse-D: Tail extends [infer Next, ...any]", Specs]
-    : ["ChainObjectStepsFail", "recurse-C: HS[HFK] extends FxServiceFn", Specs]
     : ["ChainObjectStepsFail", "recurse-B: Head extends ObjectStepSpec", Specs]
     : ["ChainObjectStepsFail", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
 
@@ -81,11 +69,9 @@ export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 // get the final Object result type from a list of ObjectStepSpecs
 export type ChainObjectStepsReturn<Specs extends readonly [...any[]], ObjAcc> =
     ChainObjectSteps<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
-    ? Last extends ObjectStepSpec<infer LK, infer LA, infer LD, infer _LI, infer LS, infer LFK>
-    ? LS[LFK] extends FxServiceFn<LD, infer _LR, infer _LE, infer LV>
+    ? Last extends ObjectStepSpec<infer LK, infer LA, infer _LD, infer _LR, infer _LE, infer LV>
     // final Object type adds the final step output to the final step input type
     ? Expand<LA & { [K in LK]: LV }>
-    : ["ChainObjectStepsReturnFail", "C-LS[LFK] extends FxServiceFn", ChainObjectSteps<Specs, ObjAcc>]
     : ["ChainObjectStepsReturnFail", "B-Last extends ObjectStepSpec", ChainObjectSteps<Specs, ObjAcc>]
     : ["ChainObjectStepsReturnFail", "A-ChainObjectSteps<Specs, ObjAcc> extends", ChainObjectSteps<Specs, ObjAcc>]
 
@@ -115,32 +101,26 @@ export type TupleMapObjectSteps<Specs extends readonly [...any[]],
     // case: final spec - deliver final pipeline tuple type from StepAcc
     Specs extends [infer Head]
     ? Inputs extends [infer HeadIn]
-    ? Head extends ObjectStepSpec<infer K, HeadIn, infer D, infer I, infer S, infer FK>
-    ? S[FK] extends FxServiceFn<D, infer _R, infer _E, infer _V>
+    ? Head extends ObjectStepSpec<infer K, HeadIn, infer D, infer R, infer E, infer V>
     // return the final inferred pipeline
-    ? readonly [...StepAcc, ObjectStepSpec<K, HeadIn, D, I, S, FK>]
-    : ["TupleMapObjectSteps", "final-C: S[FK] extends FxServiceFn<", Specs]
+    ? readonly [...StepAcc, ObjectStepSpec<K, HeadIn, D, R, E, V>]
     : ["TupleMapObjectSteps", "final-B: Head extends ObjectStepSpec", Specs]
     : ["TupleMapObjectSteps", "final-A: Inputs extends [infer HeadIn]", Specs]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends [infer Head, ...infer Tail]
     ? Inputs extends [infer HeadIn, ...infer TailIn]
-    ? Head extends ObjectStepSpec<infer HK, HeadIn, infer HD, infer HI, infer HS, infer HFK>
-    ? HS[HFK] extends FxServiceFn<HD, infer _HR, infer _HE, infer HV>
+    ? Head extends ObjectStepSpec<infer HK, HeadIn, infer HD, infer HR, infer HE, infer HV>
     ? Tail extends [infer Next, ...any]
     ? TailIn extends [infer NextIn, ...any]
-    ? Next extends ObjectStepSpec<infer _NK, NextIn, infer ND, infer _NI, infer NS, infer NFK>
-    ? NS[NFK] extends FxServiceFn<ND, infer _NR, infer _NE, infer _NV>
+    ? Next extends ObjectStepSpec<infer _NK, NextIn, infer _ND, infer _NR, infer _NE, infer _NV>
     // recurse
     ? TupleMapObjectSteps<Tail,
         TailIn,
-        [...StepAcc, ObjectStepSpec<HK, HeadIn, HD, HI, HS, HFK>]>
-    : ["TupleMapObjectSteps", "recurse-H: NS[NFK] extends FxServiceFn ", Specs]
+        [...StepAcc, ObjectStepSpec<HK, HeadIn, HD, HR, HE, HV>]>
     : ["TupleMapObjectSteps", "recurse-G: Next extends ObjectStepSpec", Specs]
     : ["TupleMapObjectSteps", "recurse-F: TailIn extends [infer NextIn, ...any]", Specs]
     : ["TupleMapObjectSteps", "recurse-E: Tail extends [infer Next, ...any]", Specs]
-    : ["TupleMapObjectSteps", "recurse-D: HS[HFK] extends FxServiceFn", Specs]
     : ["TupleMapObjectSteps", "recurse-C: Head extends ObjectStepSpec", Specs]
     : ["TupleMapObjectSteps", "recurse-B: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
     : ["TupleMapObjectSteps", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
@@ -159,33 +139,27 @@ export type TupleMapObjectStepsReturn<Specs extends readonly [...any[]],
     // case: final spec - return type 
     Specs extends [infer Head]
     ? Inputs extends [infer HeadIn]
-    ? Head extends ObjectStepSpec<infer K, HeadIn, infer D, infer _I, infer S, infer FK>
-    ? S[FK] extends FxServiceFn<D, infer _R, infer _E, infer V>
+    ? Head extends ObjectStepSpec<infer K, HeadIn, infer _D, infer _R, infer _E, infer V>
     // return the final inferred pipeline
     ? Expand<ObjAcc & { [KK in K]: V }>
-    : ["TupleMapObjectStepsReturn", "final-C: S[FK] extends FxServiceFn", Specs]
     : ["TupleMapObjectStepsReturn", "final-B: Head extends ObjectStepSpec", Specs]
     : ["TupleMapObjectStepsReturn", "final-A: Inputs extends [infer HeadIn]", Specs]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends [infer Head, ...infer Tail]
     ? Inputs extends [infer HeadIn, ...infer TailIn]
-    ? Head extends ObjectStepSpec<infer HK, HeadIn, infer HD, infer HI, infer HS, infer HFK>
-    ? HS[HFK] extends FxServiceFn<HD, infer _HR, infer _HE, infer HV>
+    ? Head extends ObjectStepSpec<infer HK, HeadIn, infer HD, infer HR, infer HE, infer HV>
     ? Tail extends [infer Next, ...any]
     ? TailIn extends [infer NextIn, ...any]
-    ? Next extends ObjectStepSpec<infer _NK, NextIn, infer ND, infer _NI, infer NS, infer NFK>
-    ? NS[NFK] extends FxServiceFn<ND, infer _NR, infer _NE, infer _NV>
+    ? Next extends ObjectStepSpec<infer _NK, NextIn, infer _ND, infer _NR, infer _NE, infer _NV>
     // recurse
     ? TupleMapObjectStepsReturn<Tail,
         TailIn,
         ObjAcc & { [K in HK]: HV },
-        [...StepAcc, ObjectStepSpec<HK, HeadIn, HD, HI, HS, HFK>]>
-    : ["TupleMapObjectStepsReturn", "recurse-H: NS[NFK] extends FxServiceFn ", Specs]
+        [...StepAcc, ObjectStepSpec<HK, HeadIn, HD, HR, HE, HV>]>
     : ["TupleMapObjectStepsReturn", "recurse-G: Next extends ObjectStepSpec", Specs]
     : ["TupleMapObjectStepsReturn", "recurse-F: TailIn extends [infer NextIn, ...any]", Specs]
     : ["TupleMapObjectStepsReturn", "recurse-E: Tail extends [infer Next, ...any]", Specs]
-    : ["TupleMapObjectStepsReturn", "recurse-D: HS[HFK] extends FxServiceFn", Specs]
     : ["TupleMapObjectStepsReturn", "recurse-C: Head extends ObjectStepSpec", Specs]
     : ["TupleMapObjectStepsReturn", "recurse-B: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
     : ["TupleMapObjectStepsReturn", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
@@ -233,20 +207,30 @@ export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
 
 // as const is required to prevent the k from being widened to a string type
 // and to ensure the specs array is interpreted as a tuple
-const getOrgObjectStepSpec =
+const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string } }, string, OrgService, never, Org> */ =
 {
     k: "org" as const,
     f: (d: { data: { org_nick: string } }) => d.data.org_nick,
-    svc: OrgService,
-    svcFn: "getByNick" as const
+    svcFn: (org_nick: string) => {
+        return  Effect.gen(function* (_) {
+            const svc = yield* _(OrgService)
+            const org = yield* _(svc.getByNick(org_nick))
+            return org
+        })
+    }
 }
-const getUserObjectStepSpec =
+const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: string }, org: Org }, {org_id: string, user_id: string}, UserService, never, User> */ =
 {
     k: "user" as const,
     // note that this fn depends on the output of an OrgServiceI.getBy* step
     f: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
-    svc: UserService,
-    svcFn: "getByIds" as const
+    svcFn: (d: {org_id: string, user_id: string}) => {
+        return Effect.gen(function* (_) {
+            const svc = yield* _(UserService)
+            const user = yield* _(svc.getByIds(d))
+            return user
+        })
+    }
 }
 export const stepSpecs = [
     getOrgObjectStepSpec,
