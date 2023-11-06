@@ -191,6 +191,13 @@ export interface OrgServiceI {
     readonly getByNick: (nick: string) => Effect.Effect<never, never, Org>
 }
 export const OrgService = Context.Tag<OrgService, OrgServiceI>("OrgService")
+export const getOrgByNick: FxServiceFn<string, OrgService, never, Org> = (org_nick: string) => {
+    return Effect.gen(function* (_) {
+        const svc = yield* _(OrgService)
+        const org = yield* _(svc.getByNick(org_nick))
+        return org
+    })
+}
 
 export type User = {
     id: string
@@ -202,6 +209,13 @@ export interface UserServiceI {
     readonly getByIds: (d: { org_id: string, user_id: string }) => Effect.Effect<never, never, User>
 }
 export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
+export const getUserByIds: FxServiceFn<{ org_id: string, user_id: string }, UserService, never, User> = (d: { org_id: string, user_id: string }) => {
+    return Effect.gen(function* (_) {
+        const svc = yield* _(UserService)
+        const user = yield* _(svc.getByIds(d))
+        return user
+    })
+}
 
 // then some computation steps...
 
@@ -211,26 +225,14 @@ const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string
 {
     k: "org" as const,
     f: (d: { data: { org_nick: string } }) => d.data.org_nick,
-    svcFn: (org_nick: string) => {
-        return  Effect.gen(function* (_) {
-            const svc = yield* _(OrgService)
-            const org = yield* _(svc.getByNick(org_nick))
-            return org
-        })
-    }
+    svcFn: getOrgByNick
 }
 const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: string }, org: Org }, {org_id: string, user_id: string}, UserService, never, User> */ =
 {
     k: "user" as const,
     // note that this fn depends on the output of an OrgServiceI.getBy* step
     f: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
-    svcFn: (d: {org_id: string, user_id: string}) => {
-        return Effect.gen(function* (_) {
-            const svc = yield* _(UserService)
-            const user = yield* _(svc.getByIds(d))
-            return user
-        })
-    }
+    svcFn: getUserByIds
 }
 export const stepSpecs = [
     getOrgObjectStepSpec,
