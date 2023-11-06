@@ -258,11 +258,9 @@ export const stepSpecs = [
     getUserObjectStepSpec
 ] as const
 
-// and finally, the object builder sprograms... defines the type of the required
-// input to the chain, and the computation steps to build the object. 
-// each step's f and serviceFn is checked against the accumulated object from the previous steps
+// and finally, the object builder programs... 
 
-// program to build an Object by chaining the accumulating Object through the steps
+// a program to build an Object by chaining the accumulating Object through the steps
 //
 // $ExpectType const chainProg: (arg: {
 //     data: {
@@ -279,7 +277,7 @@ export const stepSpecs = [
 // }>
 export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(stepSpecs)
 
-// program to build an Object by mapping each step over it's corresponding input value
+// a program to build an Object by mapping each step over it's corresponding input value
 //
 // $ExpectType const tupleProg: (inputs: [{
 //     data: {
