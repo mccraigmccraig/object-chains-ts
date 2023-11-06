@@ -20,7 +20,7 @@ import { Effect, Context } from "effect"
 //     each step gets one value from the array of inputs and
 //     its output gets associated with the Object at K
 
-// an FxService interface will have 1 or more FxService fns
+// an FxService interface will have 1 or more FxServiceFns
 export interface FxServiceFn<D, R, E, V> {
     (d: D): Effect.Effect<R, E, V>
 }
@@ -36,11 +36,11 @@ export type FxServiceTag<I, S> = Context.Tag<I, S>
 // so the type can't be parameterised
 export type ObjectStepSpec<K extends string, A, D, I, S, FK extends keyof S> =
     {
-        // the key at which the service output will be added to the pipeline accumulator object A
+        // the key at which the FxServiceFn output V will be added to the Object
         readonly k: K
-        // a pure function which maps the accumulator to the service input D
+        // a pure function which maps the input A to the FxServiceFn input D
         readonly f: (arg: A) => D
-        // a service interface and the key of a service fn
+        // a service interface and the key of an FxServiceFn
         readonly svc: FxServiceTag<I, S>
         readonly svcFn: FK
     }
