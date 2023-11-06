@@ -263,8 +263,36 @@ export const stepSpecs = [
 // each step's f and serviceFn is checked against the accumulated object from the previous steps
 
 // program to build an Object by chaining the accumulating Object through the steps
+//
+// $ExpectType const chainProg: (arg: {
+//     data: {
+//         org_nick: string;
+//         user_id: string;
+//     };
+// }) => Effect.Effect<never, never, {
+//     data: {
+//         org_nick: string;
+//         user_id: string;
+//     };
+//     org: Org;
+//     user: User;
+// }>
 export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(stepSpecs)
 
 // program to build an Object by mapping each step over it's corresponding input value
+//
+// $ExpectType const tupleProg: (inputs: [{
+//     data: {
+//         org_nick: string;
+//     };
+// }, {
+//     data: {
+//         user_id: string;
+//     };
+//     org: Org;
+// }]) => Effect.Effect<never, never, {
+//     org: Org;
+//     user: User;
+// }>
 export const tupleProg = tupleMapObjectStepsProg<[{ data: { org_nick: string } }, { data: { user_id: string }, org: Org }]>()(stepSpecs)
 
