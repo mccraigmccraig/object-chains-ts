@@ -4,36 +4,31 @@ import { Effect, Context } from "effect"
 // inspiration:
 // https://dev.to/ecyrbe/how-to-use-advanced-typescript-to-define-a-pipe-function-381h
 
-// each ObjectStepSpec step defines:
-// - a key, k:
-// - a tag, svc:, for an FxService interface
-// - a key, svcFn:, for an FxServiceFn on the FxService
-// - a fn, f:,  which takes the output map of the previous step and
-//   returns the input type of the FxServiceFn
-// 
-// an ObjectStepSpec can be used in a different ways
-// - building an Object by chaining steps : each step 
-//     augments the Object with {K: V} and the following step 
-//     gets the map-under-construction
-// - building an Object by mapping steps independently over
-//     a tuple of corresponding inputs, with the output - 
-//     each step gets one value from the array of inputs and
-//     its output gets associated with the Object at K
-
-// an FxService interface will have 1 or more FxServiceFns
+// Service interfaces have 1 or more FxServiceFns which perform
+// the effectful computations in a step
 export interface FxServiceFn<D, R, E, V> {
     (d: D): Effect.Effect<R, E, V>
 }
 
 export type FxServiceTag<I, S> = Context.Tag<I, S>
 
-// data defining a single Effectful step towards building an Object.
-// f transforms an input A into the argument D of 
-// the service function F on service interface S,
-// and the output of the service function V will be added to the Object
-// at {K: V}... the service function F and its output V must be 
-// inferred, since there any many service functions per service interface S, 
+// an ObjectStepSpec defines a single Effectful step towards building an Object.
+// - f transforms an input A into the argument D of 
+// the FxServiceFn on the service interface at S[FK],
+// and the output of the FxServiceFn V will be added to the Object
+// as {K: V}... the FxServiceFn type must be 
+// inferred, since there any many FxServiceFns per service interface S, 
 // so the type can't be parameterised
+//
+// an ObjectStepSpec can be used in different ways:
+//
+// - building an Object by chaining steps : each step 
+//     augments the Object with {K: V} and the following step 
+//     gets the Object-under-construction
+// - building an Object by mapping steps independently over
+//     a tuple of corresponding inputs - 
+//     each step gets one value from the array of inputs and
+//     its output V gets associated with the Object at K
 export type ObjectStepSpec<K extends string, A, D, I, S, FK extends keyof S> =
     {
         // the key at which the FxServiceFn output V will be added to the Object
