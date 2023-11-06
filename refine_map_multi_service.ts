@@ -122,9 +122,9 @@ export type ArrayMapObjectSteps<Specs extends readonly [...any[]],
     ? S[FK] extends FxServiceFn<D, infer _R, infer _E, infer _V>
     // return the final inferred pipeline
     ? readonly [...StepAcc, ObjectStepSpec<K, HeadIn, D, I, S, FK>]
-    : ["ChainObjectStepsFail", "C-final: Head extends ObjectStepSpec", Specs]
-    : ["ChainObjectStepsFail", "B-final: Inputs extends [infer HeadIn]", Specs]
-    : ["ChainObjectStepsFail", "A-final: Specs extends [infer Head]", Specs]
+    : ["ArrayMapObjectSteps", "C-final: Head extends ObjectStepSpec", Specs]
+    : ["ArrayMapObjectSteps", "B-final: Inputs extends [infer HeadIn]", Specs]
+    : ["ArrayMapObjectSteps", "A-final: Specs extends [infer Head]", Specs]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends [infer Head, ...infer Tail]
@@ -139,14 +139,14 @@ export type ArrayMapObjectSteps<Specs extends readonly [...any[]],
     ? ChainObjectSteps<Tail,
         ObjAcc & { [K in HK]: HV },
         [...StepAcc, ObjectStepSpec<HK, HeadIn, HD, HI, HS, HFK>]>
-    : ["ChainObjectStepsFail", "J-recurse: NS[NFK] extends FxServiceFn ", Specs]
-    : ["ChainObjectStepsFail", "I-recurse: Next extends ObjectStepSpec", Specs]
-    : ["ChainObjectStepsFail", "H-recurse: TailIn extends [infer NextIn, ...any]", Specs]
-    : ["ChainObjectStepsFail", "G-recurse: Tail extends [infer Next, ...any]", Specs]
-    : ["ChainObjectStepsFail", "F-recurse: HS[HFK] extends FxServiceFn", Specs]
-    : ["ChainObjectStepsFail", "E-recurse: Head extends ObjectStepSpec", Specs]
-    : ["ChainObjectStepsFail", "D-recurse: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
-    : ["ChainObjectStepsFail", "C-recurse: Specs extends [infer Head, ...infer Tail]", Specs]
+    : ["ArrayMapObjectSteps", "J-recurse: NS[NFK] extends FxServiceFn ", Specs]
+    : ["ArrayMapObjectSteps", "I-recurse: Next extends ObjectStepSpec", Specs]
+    : ["ArrayMapObjectSteps", "H-recurse: TailIn extends [infer NextIn, ...any]", Specs]
+    : ["ArrayMapObjectSteps", "G-recurse: Tail extends [infer Next, ...any]", Specs]
+    : ["ArrayMapObjectSteps", "F-recurse: HS[HFK] extends FxServiceFn", Specs]
+    : ["ArrayMapObjectSteps", "E-recurse: Head extends ObjectStepSpec", Specs]
+    : ["ArrayMapObjectSteps", "D-recurse: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
+    : ["ArrayMapObjectSteps", "C-recurse: Specs extends [infer Head, ...infer Tail]", Specs]
 
 // calculate the return type ... since the array type is not chained through
 // the calculation, calculating the return type looks very similar to checking
