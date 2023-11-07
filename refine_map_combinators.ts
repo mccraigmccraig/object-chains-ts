@@ -10,21 +10,23 @@ export type FxServiceTag<I, S> = Context.Tag<I, S>
 
 export type FxServiceFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
 
+// check that S[K] is an FxServiceFn as required
 export type CheckFxServiceFnTag<I, S, K extends keyof S> =
-    S[K] extends FxServiceFn<infer _D, infer _R, infer _E, infer _V>    
+    S[K] extends FxServiceFn<infer _D, infer _R, infer _E, infer _V>
     ? FxServiceTag<I, S>
     : never
 
-export type InvokeFxServiceFnResult<I, S, K extends keyof S> = 
+// add the service itself into the result of the invocation
+export type InvokeFxServiceFnResult<I, S, K extends keyof S> =
     S[K] extends FxServiceFn<infer D, infer R, infer E, infer V>
     ? FxServiceFn<D, R | I, E, V>
     : never
 
-export type InvokeFxServiceFnParam<_I, S, K extends keyof S> = 
+export type InvokeFxServiceFnParam<_I, S, K extends keyof S> =
     S[K] extends FxServiceFn<infer D, infer _R, infer _E, infer _V>
     ? D
     : never
-    
+
 export type InvokeFxServiceFnFxServiceFn<_I, S, K extends keyof S> =
     S[K] extends FxServiceFn<infer D, infer R, infer E, infer V>
     ? FxServiceFn<D, R, E, V>
@@ -34,13 +36,17 @@ export type InvokeFxServiceFnFxServiceFnResult<_I, S, K extends keyof S> =
     S[K] extends FxServiceFn<infer D, infer R, infer E, infer V>
     ? Effect.Effect<R, E, V>
     : never
-    
+
+// returns a function of the FxServiceFn data param, which 
+// looks up the service and invokes the FxServiceFn. Adds
+// the service into R
 export const invokeFxServiceFn = <I, S, K extends keyof S>(tag: CheckFxServiceFnTag<I, S, K>, k: K): InvokeFxServiceFnResult<I, S, K> => {
-    return (d: InvokeFxServiceFnParam<I, S, K>) => {
-        return  Effect.gen(function* (_) {
+    const rf = (d: InvokeFxServiceFnParam<I, S, K>) => {
+        return Effect.gen(function* (_) {
             const svc = yield* _(tag)
+
             const fn = svc[k] as InvokeFxServiceFnFxServiceFn<I, S, K>
-            
+
             if (typeof fn === 'function') {
                 const r = yield* _(fn(d) as InvokeFxServiceFnFxServiceFnResult<I, S, K>)
                 return r
@@ -49,6 +55,7 @@ export const invokeFxServiceFn = <I, S, K extends keyof S>(tag: CheckFxServiceFn
             }
         })
     }
+    return rf as InvokeFxServiceFnResult<I, S, K>
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -67,6 +74,7 @@ export interface OrgServiceI {
     readonly getByNick: (nick: string) => Effect.Effect<never, never, Org>
 }
 export const OrgService = Context.Tag<OrgService, OrgServiceI>("OrgService")
+
 export const getOrgByNick = invokeFxServiceFn(OrgService, "getByNick")
 
 export type User = {
@@ -79,8 +87,9 @@ export interface UserServiceI {
     readonly getByIds: (d: { org_id: string, user_id: string }) => Effect.Effect<never, never, User>
 }
 export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
+
 export const getUserByIds = invokeFxServiceFn(UserService, "getByIds")
-    
+
 //////////////////////////////////////////////////////////////////////////////
 
 
