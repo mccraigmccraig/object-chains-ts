@@ -6,11 +6,83 @@ import { Effect, Context } from "effect"
 
 // Service interfaces have 1 or more FxServiceFns which perform
 // the effectful computations in a step
-export interface FxServiceFn<D, R, E, V> {
-    (d: D): Effect.Effect<R, E, V>
+export type FxServiceTag<I, S> = Context.Tag<I, S>
+
+export type FxServiceFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
+
+export type CheckFxServiceFnTag<I, S, K extends keyof S> =
+    S[K] extends FxServiceFn<infer _D, infer _R, infer _E, infer _V>    
+    ? FxServiceTag<I, S>
+    : never
+
+export type InvokeFxServiceFnResult<I, S, K extends keyof S> = 
+    S[K] extends FxServiceFn<infer D, infer R, infer E, infer V>
+    ? FxServiceFn<D, R | I, E, V>
+    : never
+
+export type InvokeFxServiceFnParam<_I, S, K extends keyof S> = 
+    S[K] extends FxServiceFn<infer D, infer _R, infer _E, infer _V>
+    ? D
+    : never
+    
+export type InvokeFxServiceFnFxServiceFn<_I, S, K extends keyof S> =
+    S[K] extends FxServiceFn<infer D, infer R, infer E, infer V>
+    ? FxServiceFn<D, R, E, V>
+    : never
+
+export type InvokeFxServiceFnFxServiceFnResult<_I, S, K extends keyof S> =
+    S[K] extends FxServiceFn<infer D, infer R, infer E, infer V>
+    ? Effect.Effect<R, E, V>
+    : never
+    
+export const invokeFxServiceFn = <I, S, K extends keyof S>(tag: CheckFxServiceFnTag<I, S, K>, k: K): InvokeFxServiceFnResult<I, S, K> => {
+    return (d: InvokeFxServiceFnParam<I, S, K>) => {
+        return  Effect.gen(function* (_) {
+            const svc = yield* _(tag)
+            const fn = svc[k] as InvokeFxServiceFnFxServiceFn<I, S, K>
+            
+            if (typeof fn === 'function') {
+                const r = yield* _(fn(d) as InvokeFxServiceFnFxServiceFnResult<I, S, K>)
+                return r
+            } else {
+                throw new Error("no FxServiceFn: " + k.toString())
+            }
+        })
+    }
 }
 
-export type FxServiceTag<I, S> = Context.Tag<I, S>
+//////////////////////////////////////////////////////////////////////////////
+
+// demonstrating...
+
+// first some services for an Org and User...
+
+export type Org = {
+    id: string
+    name: string
+}
+interface OrgService { readonly _: unique symbol }
+export interface OrgServiceI {
+    readonly getById: (id: string) => Effect.Effect<never, never, Org>
+    readonly getByNick: (nick: string) => Effect.Effect<never, never, Org>
+}
+export const OrgService = Context.Tag<OrgService, OrgServiceI>("OrgService")
+export const getOrgByNick = invokeFxServiceFn(OrgService, "getByNick")
+
+export type User = {
+    id: string
+    name: string
+}
+interface UserService { readonly _: unique symbol }
+// the service interface
+export interface UserServiceI {
+    readonly getByIds: (d: { org_id: string, user_id: string }) => Effect.Effect<never, never, User>
+}
+export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
+export const getUserByIds = invokeFxServiceFn(UserService, "getByIds")
+    
+//////////////////////////////////////////////////////////////////////////////
+
 
 // an ObjectStepSpec defines a single Effectful step towards building an Object.
 // - f transforms an input A into the argument D of 
@@ -175,47 +247,9 @@ export declare function tupleMapObjectStepsProg<Inputs extends readonly [...any[
 
         => (inputs: Inputs) => Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
 
+
+
 //////////////////////////////////////////////////////////////////////////////
-
-// demonstrating...
-
-// first some services for an Org and User...
-
-export type Org = {
-    id: string
-    name: string
-}
-interface OrgService { readonly _: unique symbol }
-export interface OrgServiceI {
-    readonly getById: (id: string) => Effect.Effect<never, never, Org>
-    readonly getByNick: (nick: string) => Effect.Effect<never, never, Org>
-}
-export const OrgService = Context.Tag<OrgService, OrgServiceI>("OrgService")
-export const getOrgByNick: FxServiceFn<string, OrgService, never, Org> = (org_nick: string) => {
-    return Effect.gen(function* (_) {
-        const svc = yield* _(OrgService)
-        const org = yield* _(svc.getByNick(org_nick))
-        return org
-    })
-}
-
-export type User = {
-    id: string
-    name: string
-}
-interface UserService { readonly _: unique symbol }
-// the service interface
-export interface UserServiceI {
-    readonly getByIds: (d: { org_id: string, user_id: string }) => Effect.Effect<never, never, User>
-}
-export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
-export const getUserByIds: FxServiceFn<{ org_id: string, user_id: string }, UserService, never, User> = (d: { org_id: string, user_id: string }) => {
-    return Effect.gen(function* (_) {
-        const svc = yield* _(UserService)
-        const user = yield* _(svc.getByIds(d))
-        return user
-    })
-}
 
 // then some computation steps...
 
