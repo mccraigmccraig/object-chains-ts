@@ -88,9 +88,9 @@ export function chainObjectStepsProg<Init>() {
     return function <ObjectStepSpecs extends readonly [...any[]]>
         (_objectStepSpecs: ChainObjectSteps<ObjectStepSpecs, Init> extends readonly [...ObjectStepSpecs]
             ? readonly [...ObjectStepSpecs]
-            : ChainObjectSteps<ObjectStepSpecs, Init>): (arg: Init) => Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>> {
+            : ChainObjectSteps<ObjectStepSpecs, Init>) {
 
-        return function (arg: Init): Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>> {
+        return function (_arg: Init) {
             return undefined as unknown as Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
         }
     }
@@ -186,11 +186,11 @@ export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
 
     return function <ObjectStepSpecs extends readonly [...any[]]>
 
-        (_ObjectStepSpecs: TupleMapObjectSteps<ObjectStepSpecs, Inputs> extends readonly [...ObjectStepSpecs]
+        (_objectStepSpecs: TupleMapObjectSteps<ObjectStepSpecs, Inputs> extends readonly [...ObjectStepSpecs]
             ? readonly [...ObjectStepSpecs]
-            : TupleMapObjectSteps<ObjectStepSpecs, Inputs>): (inputs: Inputs) => Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>> {
+            : TupleMapObjectSteps<ObjectStepSpecs, Inputs>) {
 
-        return function (inputs: Inputs): Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>> {
+        return function (_inputs: Inputs) {
             return undefined as unknown as Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
         }
     }
