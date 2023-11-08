@@ -4,11 +4,14 @@ import { Effect, Context } from "effect"
 // inspiration:
 // https://dev.to/ecyrbe/how-to-use-advanced-typescript-to-define-a-pipe-function-381h
 
-// Service interfaces have 1 or more FxServiceFns which perform
-// the effectful computations in a step
-export type FxServiceTag<I, S> = Context.Tag<I, S>
-
+// maps are built with a sequence of effectful functions. FxServiceFn
+// is a simple effectful function interface, taking a single 
+// parameter and returning an Effect.Effect
 export type FxServiceFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
+
+// Service interfaces have 1 or more FxServiceFns which perform
+// the effectful computations in a step, and are named by tags
+export type FxServiceTag<I, S> = Context.Tag<I, S>
 
 // check that S[K] is an FxServiceFn as required
 type CheckFxServiceFnTag<I, S, K extends keyof S> =
@@ -16,7 +19,7 @@ type CheckFxServiceFnTag<I, S, K extends keyof S> =
     ? FxServiceTag<I, S>
     : never
 
-// add the service itself into the result of the invocation
+// add the service to the FxServiceFn result's R
 type InvokeFxServiceFnResult<I, S, K extends keyof S> =
     S[K] extends FxServiceFn<infer D, infer R, infer E, infer V>
     ? FxServiceFn<D, R | I, E, V>
@@ -28,7 +31,7 @@ type InvokeFxServiceFnParam<_I, S, K extends keyof S> =
     ? D
     : never
 
-// returns a new FxServiceFn, which looks up an FxServiceFn
+// returns a new FxServiceFn, which looks up the FxServiceFn
 // on a service and invokes it. Adds the service into R
 export const invokeFxServiceFn = <I, S, K extends keyof S>(tag: CheckFxServiceFnTag<I, S, K>, k: K): InvokeFxServiceFnResult<I, S, K> => {
     const rf = (d: InvokeFxServiceFnParam<I, S, K>) => {
@@ -48,7 +51,7 @@ export const invokeFxServiceFn = <I, S, K extends keyof S>(tag: CheckFxServiceFn
 }
 
 // an ObjectStepSpec defines a single Effectful step towards building an Object.
-// - f transforms an input A into the argument D of 
+// - inFn transforms an input A into the argument D of 
 // the FxServiceFn, and the output of the FxServiceFn V will be added to the
 // Object as {K: V}...
 // an ObjectStepSpec can be used in different ways:
@@ -64,7 +67,7 @@ export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
     // the key at which the FxServiceFn output V will be added to the Object
     readonly k: K
     // a pure function which maps the input A to the FxServiceFn input D
-    readonly f: (arg: A) => D
+    readonly inFn: (arg: A) => D
     // an effectful function of D, producing V
     readonly svcFn: FxServiceFn<D, R, E, V>
 }
@@ -253,14 +256,14 @@ export const getUserByIds = invokeFxServiceFn(UserService, "getByIds")
 const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string } }, string, OrgService, never, Org> */ =
 {
     k: "org" as const,
-    f: (d: { data: { org_nick: string } }) => d.data.org_nick,
+    inFn: (d: { data: { org_nick: string } }) => d.data.org_nick,
     svcFn: getOrgByNick
 }
 const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: string }, org: Org }, {org_id: string, user_id: string}, UserService, never, User> */ =
 {
     k: "user" as const,
     // note that this fn depends on the output of an OrgServiceI.getBy* step
-    f: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
+    inFn: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
     svcFn: getUserByIds
 }
 export const stepSpecs = [
