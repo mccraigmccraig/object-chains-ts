@@ -71,17 +71,42 @@ type ChainObjectStepsReturn<Specs extends readonly [...any[]], ObjAcc> =
 // since we want to pass an initial Data type param, but to infer 
 // ObjectStepSpecs - and typescript inference is all-or-nothing, we must curry
 // https://effectivetypescript.com/2020/12/04/gentips-1-curry/
-export declare function chainObjectStepsProg<Init>():
+// export declare function chainObjectStepsProg<Init>():
+//     <ObjectStepSpecs extends readonly [...any[]]>
+
+//         // and this trick allows the ObjectStepSpecs param to be typed as
+//         //   readonly[...ObjectStepSpecs]
+//         // while also applying the ChainObjectSteps type checks
+//         (_ObjectStepSpecs: ChainObjectSteps<ObjectStepSpecs, Init> extends readonly [...ObjectStepSpecs]
+//             ? readonly [...ObjectStepSpecs]
+//             : ChainObjectSteps<ObjectStepSpecs, Init>)
+
+//         => (arg: Init) => Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
+
+export function chainObjectStepsProg<Init>():
     <ObjectStepSpecs extends readonly [...any[]]>
 
         // and this trick allows the ObjectStepSpecs param to be typed as
         //   readonly[...ObjectStepSpecs]
         // while also applying the ChainObjectSteps type checks
-        (_ObjectStepSpecs: ChainObjectSteps<ObjectStepSpecs, Init> extends readonly [...ObjectStepSpecs]
+        (_objectStepSpecs: ChainObjectSteps<ObjectStepSpecs, Init> extends readonly [...ObjectStepSpecs]
             ? readonly [...ObjectStepSpecs]
             : ChainObjectSteps<ObjectStepSpecs, Init>)
 
-        => (arg: Init) => Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
+        => (arg: Init) => Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>> {
+
+    return function <ObjectStepSpecs extends readonly [...any[]]>
+
+        (_objectStepSpecs: ChainObjectSteps<ObjectStepSpecs, Init> extends readonly [...ObjectStepSpecs]
+            ? readonly [...ObjectStepSpecs]
+            : ChainObjectSteps<ObjectStepSpecs, Init>): (arg: Init) => Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>> {
+
+        return (arg: Init): Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>> {
+            return undefined as unknown as Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
+        }
+    }
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 
