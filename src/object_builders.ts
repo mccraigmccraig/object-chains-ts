@@ -83,25 +83,14 @@ type ChainObjectStepsReturn<Specs extends readonly [...any[]], ObjAcc> =
 
 //         => (arg: Init) => Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
 
-export function chainObjectStepsProg<Init>():
-    <ObjectStepSpecs extends readonly [...any[]]>
-
-        // and this trick allows the ObjectStepSpecs param to be typed as
-        //   readonly[...ObjectStepSpecs]
-        // while also applying the ChainObjectSteps type checks
-        (_objectStepSpecs: ChainObjectSteps<ObjectStepSpecs, Init> extends readonly [...ObjectStepSpecs]
-            ? readonly [...ObjectStepSpecs]
-            : ChainObjectSteps<ObjectStepSpecs, Init>)
-
-        => (arg: Init) => Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>> {
+export function chainObjectStepsProg<Init>() {
 
     return function <ObjectStepSpecs extends readonly [...any[]]>
-
         (_objectStepSpecs: ChainObjectSteps<ObjectStepSpecs, Init> extends readonly [...ObjectStepSpecs]
             ? readonly [...ObjectStepSpecs]
             : ChainObjectSteps<ObjectStepSpecs, Init>): (arg: Init) => Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>> {
 
-        return (arg: Init): Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>> {
+        return function (arg: Init): Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>> {
             return undefined as unknown as Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
         }
     }
@@ -184,11 +173,25 @@ type TupleMapObjectStepsReturn<Specs extends readonly [...any[]],
 
 // once again, want to provide the Inputs type, but infer the ObjectStepSpecs type,
 // so we have to curry
-export declare function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>():
-    <ObjectStepSpecs extends readonly [...any[]]>
+// export declare function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>():
+//     <ObjectStepSpecs extends readonly [...any[]]>
+
+//         (_ObjectStepSpecs: TupleMapObjectSteps<ObjectStepSpecs, Inputs> extends readonly [...ObjectStepSpecs]
+//             ? readonly [...ObjectStepSpecs]
+//             : TupleMapObjectSteps<ObjectStepSpecs, Inputs>)
+
+//         => (inputs: Inputs) => Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
+
+export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
+
+    return function <ObjectStepSpecs extends readonly [...any[]]>
 
         (_ObjectStepSpecs: TupleMapObjectSteps<ObjectStepSpecs, Inputs> extends readonly [...ObjectStepSpecs]
             ? readonly [...ObjectStepSpecs]
-            : TupleMapObjectSteps<ObjectStepSpecs, Inputs>)
+            : TupleMapObjectSteps<ObjectStepSpecs, Inputs>): (inputs: Inputs) => Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>> {
 
-        => (inputs: Inputs) => Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
+        return function (inputs: Inputs): Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>> {
+            return undefined as unknown as Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
+        }
+    }
+}
