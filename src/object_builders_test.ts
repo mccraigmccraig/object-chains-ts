@@ -1,7 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
 import { invokeFxServiceFn } from "./fx_service_fn.ts"
-import { buildObjectStepFn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
+import { objectStepFn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
 export type Org = {
     id: string
@@ -72,7 +72,7 @@ export const stepSpecs = [
 //     org: Org;
 //     user: User;
 // }>
-export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(stepSpecs)
+// export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(stepSpecs)
 
 // a program to build an Object by mapping each step over it's corresponding input value
 //
@@ -89,26 +89,70 @@ export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_i
 //     org: Org;
 //     user: User;
 // }>
-export const tupleProg = tupleMapObjectStepsProg<[{ data: { org_nick: string } }, { data: { user_id: string }, org: Org }]>()(stepSpecs)
+// export const tupleProg = tupleMapObjectStepsProg<[{ data: { org_nick: string } }, { data: { user_id: string }, org: Org }]>()(stepSpecs)
 
 
-// a simple context with an OrgService which echos data back
-const orgEchoContext = Context.empty().pipe(
+// a simple context with an OrgService and a UserService which echo data back
+const echoContext = Context.empty().pipe(
     Context.add(OrgService, OrgService.of({
-        getById: (id: string) => Effect.succeed({ id: id, name: id.toString() }),
-        getByNick: (nick: string) => Effect.succeed({ id: nick, name: nick })
+        getById: (id: string) => Effect.succeed({ id: id, name: "Foo" }),
+        getByNick: (nick: string) => Effect.succeed({ id: nick, name: "Foo" })
+    })),
+    Context.add(UserService, UserService.of({
+        getByIds: (d: { org_id: string, user_id: string }) => Effect.succeed({ id: d.user_id, name: "Bar" })
     })))
 
 
-
-
 Deno.test("buildObjectStepFn runs a step", () => {
-    const stepFn = buildObjectStepFn<{ data: { org_nick: string } }>()(getOrgObjectStepSpec)
+    const stepFn = objectStepFn<{ data: { org_nick: string } }>()(getOrgObjectStepSpec)
 
-    const input = { data: { org_nick: "bob" } }
+    const input = { data: { org_nick: "foo" } }
     const stepEffect = stepFn(input)
-    const runnable = Effect.provide(stepEffect, orgEchoContext)
+    const runnable = Effect.provide(stepEffect, echoContext)
     const r = Effect.runSync(runnable)
 
-    assertEquals(r, {...input, ...{org: {id: "bob", name: "bob"}}})
+    assertEquals(r, {...input, ...{org: {id: "foo", name: "Foo"}}})
+})
+
+Deno.test("chainObjectStepsProg chains steps", () => {
+    const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(stepSpecs)
+    const input = { data: { org_nick: "foo", user_id: "100" } }
+
+    const chainEffect = chainProg(input)
+    const runnable = Effect.provide(chainEffect, echoContext)
+
+    const r = Effect.runSync(runnable)
+
+    assertEquals(r, {
+        ...input,
+        ...{
+            org: { id: "foo", name: "Foo" },
+            ...{ user: { id: "100", name: "Bar" } }
+        }
+    })
+})
+
+Deno.test("tupleMapObjectStepsProg maps steps over a tuple", () => {
+    const tupleMapProg =
+        tupleMapObjectStepsProg< readonly [
+            { data: { org_nick: string } },
+            { data: { user_id: string }, org: Org }]>()(stepSpecs)
+
+    const input = [
+        { data: { org_nick: "foo" } },
+        {
+            data: { user_id: "100" },
+            org: { id: "foo", name: "Foo" }
+        }] as const
+    
+    const tupleMapEffect = tupleMapProg(input)
+
+    const runnable = Effect.provide(tupleMapEffect, echoContext)
+
+    const r = Effect.runSync(runnable)
+
+    assertEquals(r, {
+        org: { id: "foo", name: "Foo" },
+        user: { id: "100", name: "Bar" }
+    })
 })

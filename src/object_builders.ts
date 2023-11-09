@@ -28,15 +28,19 @@ export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
 }
 
 // returns a function of Obj which refines Obj according to the ObjectStepSpec
-export function buildObjectStepFn<Obj>() {
+export function objectStepFn<Obj>() {
     return function <K extends string, D, R, E, V>(step: ObjectStepSpec<K, Obj, D, R, E, V>) {
         return function (obj: Obj) {
+            console.log("START OBJECT STEP FN", step)
             return Effect.gen(function* (_) {
                 const d = step.inFn(obj)
+                console.log("OBJECT STEP FN d", d)
                 const v = yield* _(step.svcFn(d))
+                console.log("OBJECT STEP FN v", v)
                 // new key gets typed as a string without the cast
                 // (and yeuch mutable objects)
                 const r = { ...obj, [step.k]: v } as Obj & { [_K in K]: V }
+                console.log("OBJECT STEP FN r", r)
                 return r
             })
         }
@@ -106,15 +110,20 @@ export function chainObjectStepsProg<Init>() {
             ? readonly [...ObjectStepSpecs]
             : ChainObjectSteps<ObjectStepSpecs, Init>) {
 
-        // i think we would need existential types to type this implementation
-        const stepFns: any[] = objectStepSpecs.map((step) => buildObjectStepFn()(step))
+        console.log("STEPS", objectStepSpecs)
 
-        const r = stepFns.toReversed().reduce(
+        // i think we would need existential types to type this implementation
+        const stepFns: any[] = objectStepSpecs.map((step) => objectStepFn()(step))
+        
+        const r = stepFns.reduce(
             (prev, stepFn) => {
                 return function (obj: any) {
+                    console.log("START STEP", obj)
                     return Effect.gen(function* (_) {
                         const nobj = yield* _(prev(obj))
+                        console.log("PREV STEP", nobj)
                         const r = yield* _(stepFn(nobj))
+                        console.log("LEAVE STEP", r)
                         return r
                     })
                 }
@@ -220,7 +229,7 @@ export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
             ? readonly [...ObjectStepSpecs]
             : TupleMapObjectSteps<ObjectStepSpecs, Inputs>) {
 
-        const stepFns = objectStepSpecs.map((step) => buildObjectStepFn()(step))
+        const stepFns = objectStepSpecs.map((step) => objectStepFn()(step))
 
         const r = function (inputs: Inputs) {
             return Effect.gen(function* (_) {
