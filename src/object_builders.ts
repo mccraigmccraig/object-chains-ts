@@ -27,7 +27,7 @@ export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
     readonly svcFn: FxServiceFn<D, R, E, V>
 }
 
-// returns a function of Obj which augments Obj according to the ObjectStepSpec
+// returns a function of Obj which refines Obj according to the ObjectStepSpec
 function buildObjectStepFn<Obj>() {
     return function <K extends string, D, R, E, V>(step: ObjectStepSpec<K, Obj, D, R, E, V>) {
         return function (obj: Obj) {
@@ -106,9 +106,11 @@ export function chainObjectStepsProg<Init>() {
             ? readonly [...ObjectStepSpecs]
             : ChainObjectSteps<ObjectStepSpecs, Init>) {
 
-        const r = objectStepSpecs.toReversed().reduce(
-            (prev, step) => {
-                const stepFn = buildObjectStepFn()(step)
+        // i think we would need existential types to type this implementation
+        const stepFns: any[] = objectStepSpecs.map((step) => buildObjectStepFn()(step))
+
+        const r = stepFns.toReversed().reduce(
+            (prev, stepFn) => {
                 return function (obj: any) {
                     return Effect.gen(function* (_) {
                         const nobj = yield* _(prev(obj))
