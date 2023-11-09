@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
-import { Effect, Context } from "effect"
-import { FxServiceFn, invokeFxServiceFn } from "./fx_service_fn.ts"
+import { Effect } from "effect"
+import { FxServiceFn } from "./fx_service_fn.ts"
 
 // inspiration:
 // https://dev.to/ecyrbe/how-to-use-advanced-typescript-to-define-a-pipe-function-381h
@@ -25,6 +25,22 @@ export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
     readonly inFn: (arg: A) => D
     // an effectful function of D, producing V
     readonly svcFn: FxServiceFn<D, R, E, V>
+}
+
+// returns a function of Obj which augments Obj according to the ObjectStepSpec
+function buildObjectStepFn<Obj>() {
+    return function <K extends string, D, R, E, V>(step: ObjectStepSpec<K, Obj, D, R, E, V>) {
+        return function (obj: Obj) {
+            return Effect.gen(function* (_) {
+                const d = step.inFn(obj)
+                const v = yield* _(step.svcFn(d))
+                // new key gets typed as a string without the cast
+                // (and yeuch mutable objects)
+                const r = { ...obj, [step.k]: v } as Obj & { [_K in K]: V }
+                return r
+            })
+        }
+    }
 }
 
 // build an Object by chaining an initial value through a sequence
@@ -86,13 +102,25 @@ type ChainObjectStepsReturn<Specs extends readonly [...any[]], ObjAcc> =
 export function chainObjectStepsProg<Init>() {
 
     return function <ObjectStepSpecs extends readonly [...any[]]>
-        (_objectStepSpecs: ChainObjectSteps<ObjectStepSpecs, Init> extends readonly [...ObjectStepSpecs]
+        (objectStepSpecs: ChainObjectSteps<ObjectStepSpecs, Init> extends readonly [...ObjectStepSpecs]
             ? readonly [...ObjectStepSpecs]
             : ChainObjectSteps<ObjectStepSpecs, Init>) {
 
-        return function (_arg: Init) {
-            return undefined as unknown as Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
-        }
+        const r = objectStepSpecs.toReversed().reduce(
+            (prev, step) => {
+                const stepFn = buildObjectStepFn()(step)
+                return function (obj: any) {
+                    return Effect.gen(function* (_) {
+                        const nobj = yield* _(prev(obj))
+                        const r = yield* _(stepFn(nobj))
+                        return r
+                    })
+                }
+            },
+            // start with the no-steps fn
+            (obj: Init) => Effect.succeed(obj))
+
+        return r as (obj: Init) => Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
     }
 }
 
@@ -186,12 +214,27 @@ export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
 
     return function <ObjectStepSpecs extends readonly [...any[]]>
 
-        (_objectStepSpecs: TupleMapObjectSteps<ObjectStepSpecs, Inputs> extends readonly [...ObjectStepSpecs]
+        (objectStepSpecs: TupleMapObjectSteps<ObjectStepSpecs, Inputs> extends readonly [...ObjectStepSpecs]
             ? readonly [...ObjectStepSpecs]
             : TupleMapObjectSteps<ObjectStepSpecs, Inputs>) {
 
-        return function (_inputs: Inputs) {
-            return undefined as unknown as Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
+        const stepFns = objectStepSpecs.map((step) => buildObjectStepFn()(step))
+
+        const r = function (inputs: Inputs) {
+            return Effect.gen(function* (_) {
+                const oEffects = stepFns.map((stepFn, i) => stepFn(inputs[i]))
+
+                // docs says Effect.all runs effects in sequence - which is what we need (since
+                // tuple return is intended to reflect an ordering dependency)
+                const oVals = yield* _(Effect.all(oEffects))
+                const oMap = oVals.reduce((rObj: any, stepObj: any) => {
+                    return { ...rObj, ...stepObj }
+                },
+                    {})
+                return oMap
+            })
         }
+
+        return r as (inputs: Inputs) => Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
     }
 }
