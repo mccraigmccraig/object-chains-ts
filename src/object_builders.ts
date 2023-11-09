@@ -28,7 +28,7 @@ export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
 }
 
 // returns a function of Obj which refines Obj according to the ObjectStepSpec
-function buildObjectStepFn<Obj>() {
+export function buildObjectStepFn<Obj>() {
     return function <K extends string, D, R, E, V>(step: ObjectStepSpec<K, Obj, D, R, E, V>) {
         return function (obj: Obj) {
             return Effect.gen(function* (_) {
@@ -240,3 +240,10 @@ export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
         return r as (inputs: Inputs) => Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
     }
 }
+
+
+// next: 
+// - bring step R and E out to the top-level types
+// - combinators to build sequences of ObjectStepSpecs (maybe not at this level - i think 
+//   the data-oriented approach is fine at this low level, and combinators can consume/emit
+//   data structures)

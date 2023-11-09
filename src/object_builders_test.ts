@@ -1,7 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
 import { invokeFxServiceFn } from "./fx_service_fn.ts"
-import { chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
+import { buildObjectStepFn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
 export type Org = {
     id: string
@@ -91,6 +91,24 @@ export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_i
 // }>
 export const tupleProg = tupleMapObjectStepsProg<[{ data: { org_nick: string } }, { data: { user_id: string }, org: Org }]>()(stepSpecs)
 
-// next: 
-// - bring step R and E out to the top-level types
-// - combinators to build sequences of ObjectStepSpecs
+
+// a simple context with an OrgService which echos data back
+const orgEchoContext = Context.empty().pipe(
+    Context.add(OrgService, OrgService.of({
+        getById: (id: string) => Effect.succeed({ id: id, name: id.toString() }),
+        getByNick: (nick: string) => Effect.succeed({ id: nick, name: nick })
+    })))
+
+
+
+
+Deno.test("buildObjectStepFn runs a step", () => {
+    const stepFn = buildObjectStepFn<{ data: { org_nick: string } }>()(getOrgObjectStepSpec)
+
+    const input = { data: { org_nick: "bob" } }
+    const stepEffect = stepFn(input)
+    const runnable = Effect.provide(stepEffect, orgEchoContext)
+    const r = Effect.runSync(runnable)
+
+    assertEquals(r, {...input, ...{org: {id: "bob", name: "bob"}}})
+})
