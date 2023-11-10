@@ -38,8 +38,7 @@ export function objectStepFn<Obj>() {
                 const v = yield* _(step.svcFn(d))
                 console.log("OBJECT STEP FN v", step.k, v)
                 // new key gets typed as a string without the cast
-                // (and yeuch mutable objects)
-                const r = { ...obj, [step.k]: v } as Obj & { [_K in K]: V }
+                const r = { [step.k]: v } as { [_K in K]: V }
                 console.log("OBJECT STEP FN r", step.k, r)
                 return r
             })
@@ -120,10 +119,13 @@ export function chainObjectStepsProg<Init>() {
                 return function (obj: any) {
                     console.log("START STEP", obj)
                     return Effect.gen(function* (_) {
-                        const nobj = yield* _(prev(obj))
-                        console.log("PREV STEP", nobj)
-                        const r = yield* _(stepFn(nobj))
-                        console.log("LEAVE STEP", r)
+                        const prevStepObj: any = yield* _(prev(obj))
+                        const stepIn = {...obj, ...prevStepObj}
+                        console.log("PREV STEP", prevStepObj)
+                        const stepObj: any = yield* _(stepFn(stepIn))
+                        console.log("STEP", stepObj)
+                        const r = {...prevStepObj, ...stepObj}
+                        console.log("END STEP OBJ", r)
                         return r
                     })
                 }

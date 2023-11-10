@@ -89,7 +89,7 @@ export const stepSpecs = [
 //     org: Org;
 //     user: User;
 // }>
-// export const tupleProg = tupleMapObjectStepsProg<[{ data: { org_nick: string } }, { data: { user_id: string }, org: Org }]>()(stepSpecs)
+export const tupleProg = tupleMapObjectStepsProg<[{ data: { org_nick: string } }, { data: { user_id: string }, org: Org }]>()(stepSpecs)
 
 
 // a simple context with an OrgService and a UserService which echo data back
@@ -111,7 +111,7 @@ Deno.test("buildObjectStepFn runs a step", () => {
     const runnable = Effect.provide(stepEffect, echoContext)
     const r = Effect.runSync(runnable)
 
-    assertEquals(r, {...input, ...{org: {id: "foo", name: "Foo"}}})
+    assertEquals(r, {org: {id: "foo", name: "Foo"}})
 })
 
 Deno.test("chainObjectStepsProg chains steps", () => {
@@ -125,25 +125,21 @@ Deno.test("chainObjectStepsProg chains steps", () => {
 
     assertEquals(r, {
         ...input,
-        ...{
-            org: { id: "foo", name: "Foo" },
-            ...{ user: { id: "100", name: "Bar" } }
-        }
+        org: { id: "foo", name: "Foo" },
+        user: { id: "100", name: "Bar" } 
     })
 })
 
 Deno.test("tupleMapObjectStepsProg maps steps over a tuple", () => {
     const tupleMapProg =
-        tupleMapObjectStepsProg< readonly [
+        tupleMapObjectStepsProg<readonly [
             { data: { org_nick: string } },
             { data: { user_id: string }, org: Org }]>()(stepSpecs)
 
     const input = [
         { data: { org_nick: "foo" } },
-        {
-            data: { user_id: "100" },
-            org: { id: "foo", name: "Foo" }
-        }] as const
+        { data: { user_id: "100" }, org: { id: "foo", name: "Foo" } }
+    ] as const
     
     const tupleMapEffect = tupleMapProg(input)
 
@@ -156,3 +152,5 @@ Deno.test("tupleMapObjectStepsProg maps steps over a tuple", () => {
         user: { id: "100", name: "Bar" }
     })
 })
+
+
