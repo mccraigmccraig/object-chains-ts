@@ -39,7 +39,7 @@ export function objectStepFn<Obj>() {
                 console.log("OBJECT STEP FN v", step.k, v)
                 // new key gets typed as a string without the cast
                 const r = { [step.k]: v } as { [_K in K]: V }
-                console.log("OBJECT STEP FN r", step.k, r)
+                console.log("END OBJECT STEP FN r", step.k, r)
                 return r
             })
         }
@@ -132,7 +132,7 @@ export function chainObjectStepsProg<Init>() {
         const r = stepFns.reduce(
             (prev, stepFn) => {
                 return function (obj: any) {
-                    console.log("START STEP", obj)
+                    console.log("START CHAIN", obj)
                     return Effect.gen(function* (_) {
                         const prevStepObj: any = yield* _(prev(obj))
                         const stepIn = { ...obj, ...prevStepObj }
@@ -249,6 +249,7 @@ export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
         const stepFns = objectStepSpecs.map((step) => objectStepFn()(step))
 
         const r = function (inputs: Inputs) {
+            console.log("START TUPLE_MAP", inputs)
             return Effect.gen(function* (_) {
                 const oEffects = stepFns.map((stepFn, i) => stepFn(inputs[i]))
 
@@ -259,6 +260,8 @@ export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
                     return { ...rObj, ...stepObj }
                 },
                     {})
+                
+                console.log("END TUPLE_MAP", oMap)
                 return oMap
             })
         }
