@@ -46,6 +46,21 @@ export function objectStepFn<Obj>() {
     }
 }
 
+// utility type to get a Union from a Tuple of types
+type UnionFromTuple<Tuple extends readonly any[]> = Tuple[number]
+
+// get a union of all the R dependencies from a tuple of steps
+type ObjectStepDeps<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer R, infer _E, infer _V> ? R : never
+type ObjectStepsDeps<Tuple extends readonly [...any[]]> = UnionFromTuple<{
+    +readonly [Index in keyof Tuple]: ObjectStepDeps<Tuple[Index]>
+} & { length: Tuple['length'] }>
+
+// get a union of all the E errors from a tuple of steps
+type ObjectStepErrors<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer _R, infer E, infer _V> ? E : never
+type ObjectStepsErrors<Tuple extends readonly [...any[]]> = UnionFromTuple<{
+    +readonly [Index in keyof Tuple]: ObjectStepErrors<Tuple[Index]>
+} & { length: Tuple['length'] }>
+
 // build an Object by chaining an initial value through a sequence
 // of steps, accumulating {K: V} after each step
 type ChainObjectSteps<Specs extends readonly [...any[]],
@@ -133,7 +148,7 @@ export function chainObjectStepsProg<Init>() {
             // start with the no-steps fn
             (obj: Init) => Effect.succeed(obj))
 
-        return r as (obj: Init) => Effect.Effect<never, never, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
+        return r as (obj: Init) => Effect.Effect<ObjectStepsDeps<ObjectStepSpecs>, ObjectStepsErrors<ObjectStepSpecs>, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
     }
 }
 
@@ -248,13 +263,12 @@ export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
             })
         }
 
-        return r as (inputs: Inputs) => Effect.Effect<never, never, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
+        return r as (inputs: Inputs) => Effect.Effect<ObjectStepsDeps<ObjectStepSpecs>, ObjectStepsErrors<ObjectStepSpecs>, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
     }
 }
 
 
 // next: 
-// - bring step R and E out to the top-level types
 // - combinators to build sequences of ObjectStepSpecs (maybe not at this level - i think 
 //   the data-oriented approach is fine at this low level, and combinators can consume/emit
 //   data structures)
