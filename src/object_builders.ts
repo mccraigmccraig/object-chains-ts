@@ -113,18 +113,18 @@ export function chainObjectStepsProg<Init>() {
 
         // i think we would need existential types to type this implementation
         const stepFns: any[] = objectStepSpecs.map((step) => objectStepFn()(step))
-        
+
         const r = stepFns.reduce(
             (prev, stepFn) => {
                 return function (obj: any) {
                     console.log("START STEP", obj)
                     return Effect.gen(function* (_) {
                         const prevStepObj: any = yield* _(prev(obj))
-                        const stepIn = {...obj, ...prevStepObj}
+                        const stepIn = { ...obj, ...prevStepObj }
                         console.log("PREV STEP", prevStepObj)
                         const stepObj: any = yield* _(stepFn(stepIn))
                         console.log("STEP", stepObj)
-                        const r = {...prevStepObj, ...stepObj}
+                        const r = { ...prevStepObj, ...stepObj }
                         console.log("END STEP OBJ", r)
                         return r
                     })
