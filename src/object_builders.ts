@@ -31,8 +31,10 @@ export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
 export function objectStepFn<Obj>() {
     return function <K extends string, D, R, E, V>(step: ObjectStepSpec<K, Obj, D, R, E, V>) {
         return function (obj: Obj) {
-            console.log("START OBJECT STEP FN", step.k, step)
+            console.log("CREATE OBJECT STEP FN", step.k, step)
+
             return Effect.gen(function* (_) {
+                console.log("RUN OBJECT STEP FN", step.k, step)
                 const d = step.inFn(obj)
                 console.log("OBJECT STEP FN d", step.k, d)
                 const v = yield* _(step.svcFn(d))
@@ -124,16 +126,15 @@ export function chainObjectStepsProg<Init>() {
             ? readonly [...ObjectStepSpecs]
             : ChainObjectSteps<ObjectStepSpecs, Init>) {
 
-        console.log("STEPS", objectStepSpecs)
-
         // i think we would need existential types to type this implementation
         const stepFns: any[] = objectStepSpecs.map((step) => objectStepFn()(step))
 
         const r = stepFns.reduce(
             (prev, stepFn) => {
                 return function (obj: any) {
-                    console.log("START CHAIN", obj)
+                    console.log("CREATE CHAIN EFFECT", obj)
                     return Effect.gen(function* (_) {
+                        console.log("RUN CHAIN EFFECT", obj)
                         const prevStepObj: any = yield* _(prev(obj))
                         const stepIn = { ...obj, ...prevStepObj }
                         console.log("PREV STEP", prevStepObj)
@@ -249,8 +250,10 @@ export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
         const stepFns = objectStepSpecs.map((step) => objectStepFn()(step))
 
         const r = function (inputs: Inputs) {
-            console.log("START TUPLE_MAP", inputs)
+            console.log("CREATE TUPLE_MAP EFFECT", inputs)
             return Effect.gen(function* (_) {
+                console.log("RUN TUPLE_MAP EFFECT", inputs)
+
                 const oEffects = stepFns.map((stepFn, i) => stepFn(inputs[i]))
 
                 // docs says Effect.all runs effects in sequence - which is what we need (since
