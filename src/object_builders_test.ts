@@ -72,7 +72,7 @@ export const stepSpecs = [
 //     org: Org;
 //     user: User;
 // }>
-// export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(stepSpecs)
+export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(stepSpecs)
 
 // a program to build an Object by mapping each step over it's corresponding input value
 //
@@ -111,14 +111,16 @@ Deno.test("buildObjectStepFn runs a step", () => {
     const runnable = Effect.provide(stepEffect, echoContext)
     const r = Effect.runSync(runnable)
 
-    assertEquals(r, {org: {id: "foo", name: "Foo"}})
+    assertEquals(r, { org: { id: "foo", name: "Foo" } })
 })
 
 Deno.test("chainObjectStepsProg chains steps", () => {
-    const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(stepSpecs)
+
+    type INPUT = { data: { org_nick: string, user_id: string } }
     const input = { data: { org_nick: "foo", user_id: "100" } }
 
-    const chainEffect = chainProg(input)
+    const chainEffect = chainObjectStepsProg<INPUT>()(stepSpecs)(input)
+
     const runnable = Effect.provide(chainEffect, echoContext)
 
     const r = Effect.runSync(runnable)
@@ -126,22 +128,23 @@ Deno.test("chainObjectStepsProg chains steps", () => {
     assertEquals(r, {
         ...input,
         org: { id: "foo", name: "Foo" },
-        user: { id: "100", name: "Bar" } 
+        user: { id: "100", name: "Bar" }
     })
 })
 
 Deno.test("tupleMapObjectStepsProg maps steps over a tuple", () => {
-    const tupleMapProg =
-        tupleMapObjectStepsProg<readonly [
-            { data: { org_nick: string } },
-            { data: { user_id: string }, org: Org }]>()(stepSpecs)
+
+    // inputs are a bit contrived, to re-use the same servces as the chain op
+    type INPUT = readonly [
+        { data: { org_nick: string } },
+        { data: { user_id: string }, org: Org }]
 
     const input = [
         { data: { org_nick: "foo" } },
         { data: { user_id: "100" }, org: { id: "foo", name: "Foo" } }
     ] as const
-    
-    const tupleMapEffect = tupleMapProg(input)
+
+    const tupleMapEffect = tupleMapObjectStepsProg<INPUT>()(stepSpecs)(input)
 
     const runnable = Effect.provide(tupleMapEffect, echoContext)
 
