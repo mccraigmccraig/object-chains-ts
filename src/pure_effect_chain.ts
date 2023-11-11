@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect, Context } from "effect"
-import { ObjectStepsInputTuple, ObjectStepsValueTuple, ObjectStepsDeps, ObjectStepsErrors, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
+import { Expand, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDeps, ObjectStepsErrors, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
 // business logic is encapsulated in a pure function
 //   (in: extends Object) => [...(extends Object)[]]
@@ -66,6 +66,8 @@ export function makePureFnChain<I extends Tagged>() {
 
         return r as (i: I) => Effect.Effect<ObjectStepsDeps<InputStepSpecs> | ObjectStepsDeps<OutputStepSpecs>,
             ObjectStepsErrors<InputStepSpecs> | ObjectStepsErrors<OutputStepSpecs>,
-            ObjectStepsValueTuple<OutputStepSpecs>>
+            Expand<ChainObjectStepsReturn<InputStepSpecs, I> &
+            { [_K in I['tag']]: ObjectStepsInputTuple<OutputStepSpecs> } &
+            TupleMapObjectStepsReturn<OutputStepSpecs, ObjectStepsInputTuple<OutputStepSpecs>>>>
     }
 }
