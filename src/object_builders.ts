@@ -86,7 +86,7 @@ type ChainObjectSteps<Specs extends readonly [...any[]],
     ? Head extends ObjectStepSpec<infer K, infer _A, infer D, infer R, infer E, infer V>
     // return the final inferred pipeline
     ? readonly [...StepAcc, ObjectStepSpec<K, ObjAcc, D, R, E, V>]
-    : ["ChainObjectStepsFail", "final-A: Head extends ObjectStepSpec", Specs]
+    : readonly [...StepAcc, ["ChainObjectStepsFail-final-A: Head !extends ObjectStepSpec", Head]]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends [infer Head, ...infer Tail]
@@ -97,10 +97,10 @@ type ChainObjectSteps<Specs extends readonly [...any[]],
     ? ChainObjectSteps<Tail,
         ObjAcc & { [K in HK]: HV },
         [...StepAcc, ObjectStepSpec<HK, ObjAcc, HD, HR, HE, HV>]>
-    : ["ChainObjectStepsFail", "recurse-E: Next extends ObjectStepSpec", Specs]
-    : ["ChainObjectStepsFail", "recurse-D: Tail extends [infer Next, ...any]", Specs]
-    : ["ChainObjectStepsFail", "recurse-B: Head extends ObjectStepSpec", Specs]
-    : ["ChainObjectStepsFail", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
+    : [...StepAcc, ["ChainObjectStepsFail-recurse-E: Next !extends ObjectStepSpec", Next]]
+    : [...StepAcc, ["ChainObjectStepsFail-ecurse-D: Tail !extends [infer Next, ...any]", Tail]]
+    : [...StepAcc, ["ChainObjectStepsFail-recurse-B: Head !extends ObjectStepSpec", Head]]
+    : [...StepAcc, ["ChainObjectStepsFail-recurse-A: Specs !extends [infer Head, ...infer Tail]", Specs]]
 
 // builds a new Object type from an intersected ObjAcc type,
 // making the intellisense much cleaner
@@ -113,8 +113,8 @@ export type ChainObjectStepsReturn<Specs extends readonly [...any[]], ObjAcc> =
     ? Last extends ObjectStepSpec<infer LK, infer LA, infer _LD, infer _LR, infer _LE, infer LV>
     // final Object type adds the final step output to the final step input type
     ? Expand<LA & { [K in LK]: LV }>
-    : ["ChainObjectStepsReturnFail", "B-Last extends ObjectStepSpec", ChainObjectSteps<Specs, ObjAcc>]
-    : ["ChainObjectStepsReturnFail", "A-ChainObjectSteps<Specs, ObjAcc> extends", ChainObjectSteps<Specs, ObjAcc>]
+    : ["ChainObjectStepsReturnFail-B-Last !extends ObjectStepSpec", Last]
+    : ["ChainObjectStepsReturnFail-A-ChainObjectSteps<Specs, ObjAcc> !extends", ChainObjectSteps<Specs, ObjAcc>]
 
 // since we want to pass an initial Data type param, but to infer 
 // ObjectStepSpecs - and typescript inference is all-or-nothing, we must curry
