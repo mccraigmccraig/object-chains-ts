@@ -1,6 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
 import { invokeFxServiceFn } from "./fx_service_fn.ts"
+import { ObjectStepSpec, ObjectStepsInputTuple } from "./object_builders.ts"
 import { makePureFnChain } from "./pure_effect_chain.ts"
 
 export type Org = {
@@ -41,10 +42,6 @@ export const sendPush = invokeFxServiceFn(PushNotificationService, "sendPush")
 
 //////////////////////////////////////////////////////////////////////////////
 
-// then some computation steps...
-
-// as const is required to prevent the k from being widened to a string type
-// and to ensure the specs array is interpreted as a tuple
 const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string } }, string, OrgService, never, Org> */ =
 {
     k: "org" as const,
@@ -58,15 +55,15 @@ const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: strin
     inFn: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
     svcFn: getUserByIds
 }
-const pureSendWelcomePush = (org: Org, user: User) => {
-    return [{user_id: user.id, message: "Welcome " + user.name + " of " + org.name}]
+const pureSendWelcomePush = (d: { org: Org, user: User }) => {
+    return [{user_id: d.user.id, message: "Welcome " + d.user.name + " of " + d.org.name}] as const
 }
 
 const sendPusnNotificationStepSpec =
 {
     k: "sendPush" as const,
-    inFn: (x:any) => x,
-    svcFn: sendPush    
+    inFn: (d: { user_id: string, message: string }) => d,
+    svcFn: sendPush
 }
 
 // a simple context with an OrgService and a UserService which echo data back
@@ -88,15 +85,17 @@ Deno.test("pure effect chain", () => {
     const input: INPUT = { tag: "INPUT", data: { org_nick: "foo", user_id: "100" } }
 
     const pureChainEffect = makePureFnChain<INPUT>()(
-        [getOrgObjectStepSpec, getUserObjectStepSpec],
+        [getOrgObjectStepSpec, getUserObjectStepSpec] as const,
         pureSendWelcomePush,
-        [sendPusnNotificationStepSpec])(input)
+        [sendPusnNotificationStepSpec] as const)(input)
     
     const prog = Effect.provide(pureChainEffect, echoContext)
     const r = Effect.runSync(prog)
 
     assertEquals(r, {
         org: { id: "foo", name: "Foo" },
-        user: { id: "100", name: "Bar" }
+        user: { id: "100", name: "Bar" },
+        INPUT: undefined,
+        sendPush: "boo"
     })
 })
