@@ -105,7 +105,7 @@ type ChainObjectSteps<Specs extends readonly [...any[]],
 // builds a new Object type from an intersected ObjAcc type,
 // making the intellisense much cleaner
 // https://stackoverflow.com/questions/57683303/how-can-i-see-the-full-expanded-contract-of-a-typescript-type
-type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
+export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
 // get the final Object result type from a list of ObjectStepSpecs
 export type ChainObjectStepsReturn<Specs extends readonly [...any[]], ObjAcc> =
@@ -205,7 +205,7 @@ type TupleMapObjectSteps<Specs extends readonly [...any[]],
 // the calculation, calculating the return type looks very similar to checking
 // the step constraints, but we accumulate the return type rather than the 
 // inferred steps
-type TupleMapObjectStepsReturn<Specs extends readonly [...any[]],
+export type TupleMapObjectStepsReturn<Specs extends readonly [...any[]],
     Inputs extends readonly [...any[]],
     // the lint recommendation messes up the return type here, so ignoring it
     // deno-lint-ignore ban-types
