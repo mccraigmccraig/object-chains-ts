@@ -82,16 +82,16 @@ type ChainObjectSteps<Specs extends readonly [...any[]],
     StepAcc extends [...any[]] = []> =
 
     // case: final spec - deliver final pipeline tuple type from StepAcc
-    Specs extends [infer Head]
+    Specs extends readonly [infer Head]
     ? Head extends ObjectStepSpec<infer K, infer _A, infer D, infer R, infer E, infer V>
     // return the final inferred pipeline
     ? readonly [...StepAcc, ObjectStepSpec<K, ObjAcc, D, R, E, V>]
     : readonly [...StepAcc, ["ChainObjectStepsFail-final-A: Head !extends ObjectStepSpec", Head]]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
-    : Specs extends [infer Head, ...infer Tail]
+    : Specs extends readonly [infer Head, ...infer Tail]
     ? Head extends ObjectStepSpec<infer HK, infer _HA, infer HD, infer HR, infer HE, infer HV>
-    ? Tail extends [infer Next, ...any]
+    ? Tail extends readonly [infer Next, ...any]
     ? Next extends ObjectStepSpec<infer _NK, infer _NA, infer _ND, infer _NR, infer _NE, infer _NV>
     // recurse
     ? ChainObjectSteps<Tail,
@@ -175,7 +175,7 @@ type TupleMapObjectSteps<Specs extends readonly [...any[]],
     StepAcc extends [...any[]] = []> =
 
     // case: final spec - deliver final pipeline tuple type from StepAcc
-    Specs extends [infer Head]
+    Specs extends readonly [infer Head]
     ? Inputs extends readonly [infer HeadIn]
     ? Head extends ObjectStepSpec<infer K, HeadIn, infer D, infer R, infer E, infer V>
     // return the final inferred pipeline
@@ -184,10 +184,10 @@ type TupleMapObjectSteps<Specs extends readonly [...any[]],
     : ["TupleMapObjectStepsFail", "final-A: Inputs extends [infer HeadIn]", Specs]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
-    : Specs extends [infer Head, ...infer Tail]
+    : Specs extends readonly [infer Head, ...infer Tail]
     ? Inputs extends readonly [infer HeadIn, ...infer TailIn]
     ? Head extends ObjectStepSpec<infer HK, HeadIn, infer HD, infer HR, infer HE, infer HV>
-    ? Tail extends [infer Next, ...any]
+    ? Tail extends readonly [infer Next, ...any]
     ? TailIn extends readonly [infer NextIn, ...any]
     ? Next extends ObjectStepSpec<infer _NK, NextIn, infer _ND, infer _NR, infer _NE, infer _NV>
     // recurse
@@ -213,7 +213,7 @@ type TupleMapObjectStepsReturn<Specs extends readonly [...any[]],
     StepAcc extends [...any[]] = []> =
 
     // case: final spec - return type 
-    Specs extends [infer Head]
+    Specs extends readonly [infer Head]
     ? Inputs extends readonly [infer HeadIn]
     ? Head extends ObjectStepSpec<infer K, HeadIn, infer _D, infer _R, infer _E, infer V>
     // return the final inferred pipeline
@@ -222,10 +222,10 @@ type TupleMapObjectStepsReturn<Specs extends readonly [...any[]],
     : ["TupleMapObjectStepsReturnFail", "final-A: Inputs extends [infer HeadIn]", Specs]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
-    : Specs extends [infer Head, ...infer Tail]
+    : Specs extends readonly [infer Head, ...infer Tail]
     ? Inputs extends readonly [infer HeadIn, ...infer TailIn]
     ? Head extends ObjectStepSpec<infer HK, HeadIn, infer HD, infer HR, infer HE, infer HV>
-    ? Tail extends [infer Next, ...any]
+    ? Tail extends readonly [infer Next, ...any]
     ? TailIn extends readonly [infer NextIn, ...any]
     ? Next extends ObjectStepSpec<infer _NK, NextIn, infer _ND, infer _NR, infer _NE, infer _NV>
     // recurse
