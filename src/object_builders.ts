@@ -52,16 +52,28 @@ export function objectStepFn<Obj>() {
 type UnionFromTuple<Tuple extends readonly any[]> = Tuple[number]
 
 // get a union of all the R dependencies from a tuple of steps
-type ObjectStepDeps<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer R, infer _E, infer _V> ? R : never
-type ObjectStepsDeps<Tuple extends readonly [...any[]]> = UnionFromTuple<{
+export type ObjectStepDeps<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer R, infer _E, infer _V> ? R : never
+export type ObjectStepsDeps<Tuple extends readonly [...any[]]> = UnionFromTuple<{
     +readonly [Index in keyof Tuple]: ObjectStepDeps<Tuple[Index]>
 } & { length: Tuple['length'] }>
 
 // get a union of all the E errors from a tuple of steps
-type ObjectStepErrors<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer _R, infer E, infer _V> ? E : never
-type ObjectStepsErrors<Tuple extends readonly [...any[]]> = UnionFromTuple<{
+export type ObjectStepErrors<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer _R, infer E, infer _V> ? E : never
+export type ObjectStepsErrors<Tuple extends readonly [...any[]]> = UnionFromTuple<{
     +readonly [Index in keyof Tuple]: ObjectStepErrors<Tuple[Index]>
 } & { length: Tuple['length'] }>
+
+// get a tuple of the input types from a tuple of steps
+export type ObjectStepInput<T> = T extends ObjectStepSpec<infer _K, infer A, infer _D, infer _R, infer _E, infer _V> ? A : never
+export type ObjectStepsInputTuple<Tuple extends readonly [...any[]]> = {
+    +readonly [Index in keyof Tuple]: ObjectStepInput<Tuple[Index]>
+} & { length: Tuple['length'] }
+
+// get a tuple of the value types from a tuple of steps
+export type ObjectStepValue<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer _R, infer _E, infer V> ? V : never
+export type ObjectStepsValueTuple<Tuple extends readonly [...any[]]> = {
+    +readonly [Index in keyof Tuple]: ObjectStepValue<Tuple[Index]>
+} & { length: Tuple['length'] }
 
 // build an Object by chaining an initial value through a sequence
 // of steps, accumulating {K: V} after each step
@@ -96,7 +108,7 @@ type ChainObjectSteps<Specs extends readonly [...any[]],
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
 // get the final Object result type from a list of ObjectStepSpecs
-type ChainObjectStepsReturn<Specs extends readonly [...any[]], ObjAcc> =
+export type ChainObjectStepsReturn<Specs extends readonly [...any[]], ObjAcc> =
     ChainObjectSteps<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
     ? Last extends ObjectStepSpec<infer LK, infer LA, infer _LD, infer _LR, infer _LE, infer LV>
     // final Object type adds the final step output to the final step input type
@@ -263,7 +275,7 @@ export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
                     return { ...rObj, ...stepObj }
                 },
                     {})
-                
+
                 console.log("END TUPLE_MAP", oMap)
                 return oMap
             })
