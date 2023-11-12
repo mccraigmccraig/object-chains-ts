@@ -1,7 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
 import { invokeFxServiceFn } from "./fx_service_fn.ts"
-import { makePureFnChain } from "./pure_effect_chain.ts"
+import { wrapPureChain } from "./pure_wrapper.ts"
 
 export type Org = {
     id: string
@@ -83,7 +83,7 @@ Deno.test("pure effect chain", () => {
     type INPUT = { tag: "sendWelcomePush", data: { org_nick: string, user_id: string } }
     const input: INPUT = { tag: "sendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
 
-    const pureChainEffect = makePureFnChain<INPUT>()(
+    const pureChainEffect = wrapPureChain<INPUT>()(
         [getOrgObjectStepSpec, getUserObjectStepSpec] as const,
         pureSendWelcomePush,
         [sendPusnNotificationStepSpec] as const)(input)

@@ -38,7 +38,7 @@ export const tag = <T extends Tagged>(tag: T['tag']): Tag<T> => { return { tag }
 
 type AnyEffectFn = (i: any) => Effect.Effect<any, any, any>
 
-export function wrapPureFn<I extends Tagged>() {
+export function wrapPure<I extends Tagged>() {
     return function <InputFn extends AnyEffectFn,
         PureFn extends (pi: ReturnType<InputFn>) => Parameters<InputFn>[0],
         OutputFn extends AnyEffectFn>
@@ -49,7 +49,7 @@ export function wrapPureFn<I extends Tagged>() {
         }
 }
 
-export function makePureFnChain<I extends Tagged>() {
+export function wrapPureChain<I extends Tagged>() {
     return function <InputStepSpecs extends readonly [...any[]],
         OutputStepSpecs extends readonly [...any[]]>
         (inputStepSpecs: InputStepSpecs,
