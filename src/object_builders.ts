@@ -34,7 +34,7 @@ export function objectStepFn<Obj>() {
             console.log("CREATE OBJECT STEP FN", step.k, step)
 
             return Effect.gen(function* (_) {
-                console.log("RUN OBJECT STEP FN", step.k, step)
+                console.log("RUN OBJECT STEP FN", step.k, step, obj)
                 const d = step.inFn(obj)
                 console.log("OBJECT STEP FN d", step.k, d)
                 const v = yield* _(step.svcFn(d))
