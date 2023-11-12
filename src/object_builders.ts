@@ -51,6 +51,15 @@ export function objectStepFn<Obj>() {
 // utility type to get a Union from a Tuple of types
 type UnionFromTuple<Tuple extends readonly any[]> = Tuple[number]
 
+// builds a new Object type from an intersected ObjAcc type,
+// making the intellisense much cleaner
+// https://stackoverflow.com/questions/57683303/how-can-i-see-the-full-expanded-contract-of-a-typescript-type
+export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
+
+export type ExpandTuple<Tuple extends readonly [...any[]]> = {
+    +readonly [Index in keyof Tuple]: Expand<Tuple[Index]>
+} & { length: Tuple['length'] }
+
 // get a union of all the R dependencies from a tuple of steps
 export type ObjectStepDeps<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer R, infer _E, infer _V> ? R : never
 export type ObjectStepsDeps<Tuple extends readonly [...any[]]> = UnionFromTuple<{
@@ -101,11 +110,6 @@ type ChainObjectSteps<Specs extends readonly [...any[]],
     : [...StepAcc, ["ChainObjectStepsFail-ecurse-D: Tail !extends [infer Next, ...any]", Tail]]
     : [...StepAcc, ["ChainObjectStepsFail-recurse-B: Head !extends ObjectStepSpec", Head]]
     : [...StepAcc, ["ChainObjectStepsFail-recurse-A: Specs !extends [infer Head, ...infer Tail]", Specs]]
-
-// builds a new Object type from an intersected ObjAcc type,
-// making the intellisense much cleaner
-// https://stackoverflow.com/questions/57683303/how-can-i-see-the-full-expanded-contract-of-a-typescript-type
-export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
 // get the final Object result type from a list of ObjectStepSpecs
 export type ChainObjectStepsReturn<Specs extends readonly [...any[]], ObjAcc> =
