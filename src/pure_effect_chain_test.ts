@@ -80,8 +80,8 @@ const echoContext = Context.empty().pipe(
 
 
 Deno.test("pure effect chain", () => {
-    type INPUT = { tag: "INPUT", data: { org_nick: string, user_id: string } }
-    const input: INPUT = { tag: "INPUT", data: { org_nick: "foo", user_id: "100" } }
+    type INPUT = { tag: "sendWelcomePush", data: { org_nick: string, user_id: string } }
+    const input: INPUT = { tag: "sendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
 
     const pureChainEffect = makePureFnChain<INPUT>()(
         [getOrgObjectStepSpec, getUserObjectStepSpec] as const,
@@ -95,7 +95,8 @@ Deno.test("pure effect chain", () => {
         ...input,
         org: { id: "foo", name: "Foo" },
         user: { id: "100", name: "Bar" },
-        INPUT: [{user_id: "100", message: "Welcome Bar of Foo"}],
+        sendWelcomePush: [{user_id: "100", message: "Welcome Bar of Foo"}],
         sendPush: "push sent OK: Welcome Bar of Foo"
     })
 })
+

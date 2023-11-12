@@ -36,6 +36,19 @@ export const tag = <T extends Tagged>(tag: T['tag']): Tag<T> => { return { tag }
 // - pure-step - in:obj -> out:tuple
 // - output service-fn steps - tuple-map steps
 
+type AnyEffectFn = (i: any) => Effect.Effect<any, any, any>
+
+export function wrapPureFn<I extends Tagged>() {
+    return function <InputFn extends AnyEffectFn,
+        PureFn extends (pi: ReturnType<InputFn>) => Parameters<InputFn>[0],
+        OutputFn extends AnyEffectFn>
+        (inputFn: InputFn, pureFn: PureFn, outputFn: OutputFn) {
+        
+        return undefined as unknown as (i: I) => Effect.Effect<any, any, any>
+        
+        }
+}
+
 export function makePureFnChain<I extends Tagged>() {
     return function <InputStepSpecs extends readonly [...any[]],
         OutputStepSpecs extends readonly [...any[]]>
