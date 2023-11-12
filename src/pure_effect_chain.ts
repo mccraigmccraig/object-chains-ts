@@ -45,7 +45,7 @@ export function makePureFnChain<I extends Tagged>() {
         
         console.log("CREATE PURE_FN_CHAIN", inputStepSpecs, pureFn, outputStepSpecs)
         const inputChainProg = chainObjectStepsProg<I>()(inputStepSpecs)
-        const outputStepsProg = tupleMapObjectStepsProg<ChainObjectStepsReturn<InputStepSpecs, I> & { [_K in I['tag']]: ObjectStepsInputTuple<OutputStepSpecs> }>()(outputStepSpecs)
+        const outputStepsProg = tupleMapObjectStepsProg<ObjectStepsInputTuple<OutputStepSpecs>>()(outputStepSpecs)
 
         const r = (i: I) => {
             console.log("RUN PURE_FN_CHAIN: i", i)
@@ -54,11 +54,9 @@ export function makePureFnChain<I extends Tagged>() {
                 console.log("RUN PURE_FN_CHAIN: pi", pi)
                 const po = pureFn(pi)
                 console.log("RUN PURE_FN_CHAIN: po", po)
-                const oi = { ...pi, [i.tag]: po }
-                console.log("RUN PURE_FN_CHAIN: oi", oi)
-                const oo = yield* _(outputStepsProg(oi))
+                const oo = yield* _(outputStepsProg(po)) 
                 console.log("RUN PURE_FN_CHAIN: oo", oo)
-                const v = { ...oi, ...oo }
+                const v = { ...pi, [i.tag]: po , ...oo }
                 console.log("RUN PURE_FN_CHAIN: v", v)
                 return v
             })

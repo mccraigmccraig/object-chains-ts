@@ -93,9 +93,10 @@ Deno.test("pure effect chain", () => {
     const r = Effect.runSync(prog)
 
     assertEquals(r, {
+        ...input,
         org: { id: "foo", name: "Foo" },
         user: { id: "100", name: "Bar" },
-        INPUT: undefined,
-        sendPush: "boo"
+        INPUT: [{user_id: "100", message: "Welcome Bar of Foo"}],
+        sendPush: "push sent OK: Welcome Bar of Foo"
     })
 })
