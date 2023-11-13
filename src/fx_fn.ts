@@ -4,8 +4,16 @@ import { Effect, Context } from "effect"
 // It takes a single parameter and returns an Effect.Effect
 export type FxFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
 
+// an unparameterized FxFn
+// deno-lint-ignore no-explicit-any
+export type UFxFn = (d: any) => Effect.Effect<any, any, any>
+
+export type UFxFnValue<T extends UFxFn> = ReturnType<T> extends Effect.Effect<infer _R, infer _E, infer V>
+    ? V 
+    : never
+
 // check that S[K] is an FxFn as required
-type CheckFxFnTag<I, S, K extends keyof S> =
+type CheckServiceFxFnTag<I, S, K extends keyof S> =
     S[K] extends FxFn<infer _D, infer _R, infer _E, infer _V>
     ? Context.Tag<I, S>
     : never
@@ -25,7 +33,7 @@ type InvokeServiceFxFnParam<_I, S, K extends keyof S> =
 // makes an FxFn, by looking up an FxFn from 
 // a service and invoking it. Adds the service into R. the
 // boilerplate of fetching the service disappears
-export const invokeServiceFxFn = <I, S, K extends keyof S>(tag: CheckFxFnTag<I, S, K>, k: K): InvokeServiceFxFnResult<I, S, K> => {
+export const invokeServiceFxFn = <I, S, K extends keyof S>(tag: CheckServiceFxFnTag<I, S, K>, k: K): InvokeServiceFxFnResult<I, S, K> => {
     const rf = (d: InvokeServiceFxFnParam<I, S, K>) => {
         return Effect.gen(function* (_) {
             const svc = yield* _(tag)

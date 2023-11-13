@@ -14,7 +14,7 @@ export type FxFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
 export type FxServiceTag<I, S> = Context.Tag<I, S>
 
 // check that S[K] is an FxFn as required
-type CheckFxFnTag<I, S, K extends keyof S> =
+type CheckServiceFxFnTag<I, S, K extends keyof S> =
     S[K] extends FxFn<infer _D, infer _R, infer _E, infer _V>
     ? FxServiceTag<I, S>
     : never
@@ -33,7 +33,7 @@ type InvokeServiceFxFnParam<_I, S, K extends keyof S> =
 
 // returns a new FxFn, which looks up the FxFn
 // on a service and invokes it. Adds the service into R
-export const invokeServiceFxFn = <I, S, K extends keyof S>(tag: CheckFxFnTag<I, S, K>, k: K): InvokeServiceFxFnResult<I, S, K> => {
+export const invokeServiceFxFn = <I, S, K extends keyof S>(tag: CheckServiceFxFnTag<I, S, K>, k: K): InvokeServiceFxFnResult<I, S, K> => {
     const rf = (d: InvokeServiceFxFnParam<I, S, K>) => {
         return Effect.gen(function* (_) {
             const svc = yield* _(tag)
