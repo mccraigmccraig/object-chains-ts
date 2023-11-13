@@ -82,8 +82,8 @@ export function wrapPure<I extends Tagged>() {
 // inferring the step and program types
 export type UPureWrapperProgramBase<T> = {
     readonly tagStr: T
-    readonly program: (i: any) => any
-    [index: string]: any
+    readonly program: (i: any) => Effect.Effect<any, any, any>
+    readonly [index: string]: any
 }
 
 // a generic, but fully parameterised, type for arrays

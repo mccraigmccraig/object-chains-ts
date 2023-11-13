@@ -1,3 +1,4 @@
+import { Effect } from "effect"
 import { UnionFromTuple } from "./object_builders.ts"
 import { Tagged, UPureWrapperProgram, PureWrapperProgram, PureWrapperProgramInputTuple } from "./pure_wrapper.ts"
 
@@ -31,8 +32,8 @@ export type IndexPureWrapperProgramTuple<T extends Array<UPureWrapperProgram>> =
 }
 // showing that this does indeed index a tuple of UPureWrapperProgram
 export type X = IndexPureWrapperProgramTuple<[
-    { tagStr: "foo", program: (ev: number) => null },
-    { tagStr: "bar", program: (ev: number) => null }]>
+    { tagStr: "foo", program: (ev: number) => Effect.Effect<never,never,number> },
+    { tagStr: "bar", program: (ev: number) => Effect.Effect<never,never,number> }]>
 
 // a bit tricky ... given a union of Tagged, and a list of UPureWrapperProgram, get the 
 // return type for the handler function, which is the return type of the program
@@ -48,6 +49,9 @@ export type DistributeEventResultTypes<I extends Tagged, Progs extends [...UPure
 // of all the input types handled by the supplied UPureWrapperPrograms,
 // which uses a supplied UPureWrapperProgram to handle the input,
 // returning the same results as the supplied UPureWrapperProgram
+
+// TODO - the output type needs more work - it needs to collect
+// the deps and errors from all the programs
 export const makeHandlerProgram =
     <EventHandlerPrograms extends [...UPureWrapperProgram[]],
         Inputs extends UnionFromTuple<PureWrapperProgramInputTuple<EventHandlerPrograms>>>
