@@ -4,7 +4,7 @@ import { Effect, Context } from "effect"
 // It takes a single parameter and returns an Effect.Effect
 export type FxServiceFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
 
-// FxServiceFns live on Service interfaces, which are named by tags
+// one way to make an FxServiceFns is to fetch a fn from a tagged Service
 type FxServiceTag<I, S> = Context.Tag<I, S>
 
 // check that S[K] is an FxServiceFn as required
@@ -25,8 +25,9 @@ type InvokeFxServiceFnParam<_I, S, K extends keyof S> =
     ? D
     : never
 
-// returns a new FxServiceFn, which looks up the FxServiceFn
-// on a service and invokes it. Adds the service into R
+// makes an FxServiceFn, by looking up an FxServiceFn from 
+// a service and invoking it. Adds the service into R - the
+// boilerplate of fetching the service disappears
 export const invokeFxServiceFn = <I, S, K extends keyof S>(tag: CheckFxServiceFnTag<I, S, K>, k: K): InvokeFxServiceFnResult<I, S, K> => {
     const rf = (d: InvokeFxServiceFnParam<I, S, K>) => {
         return Effect.gen(function* (_) {
