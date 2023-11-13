@@ -81,11 +81,13 @@ export function wrapPure<I extends Tagged>() {
 // a way to get at the tag strings from the PureWrapperProgram without
 // inferring the step and program types
 export type PureWrapperProgramBase<T> = {
-    readonly eventTagStr: T
-    readonly pureFn: (pi: any) => any
+    readonly tagStr: T
     readonly program: (i: any) => any
     [index: string]: any
 }
+
+// a generic, but fully parameterised, type for arrays
+export type UPureWrapperProgram = PureWrapperProgramBase<string>
 
 // a data structure with the program for handling handling events of a type identified by the tag
 // open to extension with additional explanatory keys
@@ -94,8 +96,8 @@ export type PureWrapperProgram
         InputEffectFn extends ObjectObjectEffectFn<I, Parameters<PureFn>[0]>,
         PureFn extends (pi: any) => any,
         OutputEffectFn extends AnyObjectEffectFn<ReturnType<PureFn>>> = {
-            eventTagStr: Tag<I>['tag']
-            eventTag: Tag<I>
+            tagStr: Tag<I>['tag']
+            tag: Tag<I>
             pureFn: (pi: any) => any
             program: (i: I) => Effect.Effect<UFxFnDeps<InputEffectFn> | UFxFnDeps<OutputEffectFn>,
                 UFxFnErrors<InputEffectFn> | UFxFnErrors<OutputEffectFn>,
@@ -105,6 +107,18 @@ export type PureWrapperProgram
 
             [index: string]: any
         }
+
+export type PureWrapperProgramInput<T> = T extends PureWrapperProgram<infer I, infer _IFxFn, infer _PFn, infer _OFxFn> ? I : never
+export type PureWrapperProgramInputTuple<Tuple extends [...UPureWrapperProgram[]]> = {
+    [Index in keyof Tuple]: PureWrapperProgramInput<Tuple[Index]>
+} & { length: Tuple['length'] }
+
+export type PureWrapperProgramTag<T> = T extends PureWrapperProgram<infer _I, infer _IFxFn, infer _PFn, infer _OFxFn> ? T['eventTag'] : never
+export type PureWrapperProgramTagTuple<Tuple extends [...UPureWrapperProgram[]]> = {
+    [Index in keyof Tuple]: PureWrapperProgramTag<Tuple[Index]>
+} & { length: Tuple['length'] }
+
+export type PureWrapperProgramOutputEffect<T> = T extends PureWrapperProgram<infer _I, infer _IFxFn, infer _PFn, infer OFxFn> ? ReturnType<OFxFn> : never
 
 // make a PureWrapperProgram
 export function pureWrapperProgram<I extends Tagged>() {
@@ -117,8 +131,8 @@ export function pureWrapperProgram<I extends Tagged>() {
             outputEffectFn: OutputEffectFn)
         : PureWrapperProgram<I, InputEffectFn, PureFn, OutputEffectFn> {
         return {
-            eventTagStr: tag.tag,
-            eventTag: tag,
+            tagStr: tag.tag,
+            tag: tag,
             pureFn: pureFn,
             program: wrapPure<I>()(inputEffectFn, pureFn, outputEffectFn)
         }
@@ -157,8 +171,8 @@ export function pureWrapperChainProgram<I extends Tagged>() {
             outputStepSpecs: OutputStepSpecs) {
 
         return {
-            eventTagStr: tag.tag,
-            eventTag: tag,
+            tagStr: tag.tag,
+            tag: tag,
             pureFn: pureFn,
             program: wrapPureChain<I>()(inputStepSpecs, pureFn, outputStepSpecs),
             inputStepSpecs: inputStepSpecs,

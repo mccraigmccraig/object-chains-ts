@@ -56,7 +56,7 @@ export function objectStepFn<Obj>() {
 }
 
 // utility type to get a Union from a Tuple of types
-type UnionFromTuple<Tuple extends readonly any[]> = Tuple[number]
+export type UnionFromTuple<Tuple extends readonly any[]> = Tuple[number]
 
 // builds a new Object type from an intersected ObjAcc type,
 // making the intellisense much cleaner
