@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect } from "effect"
+import { UFxFnDeps, UFxFnErrors, UFxFnValue } from "./fx_fn.ts"
 import { Expand, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDeps, ObjectStepsErrors, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
 // business logic is encapsulated in a pure function
@@ -37,13 +38,8 @@ export const tag = <T extends Tagged>(tag: T['tag']): Tag<T> => { return { tag }
 // - output service-fn steps - tuple-map steps
 
 // no type parameters so easier to use than FxFn
-type EffectFn = (i: any) => Effect.Effect<any, any, any>
-type ObjectObjectEffectFn<I> = (i: I) => Effect.Effect<any, any, object>
+type ObjectObjectEffectFn<I extends object> = (i: I) => Effect.Effect<any, any, object>
 type TupleObjectEffectFn = (i: readonly [...object[]]) => Effect.Effect<any, any, object>
-
-type EffectFnValue<T extends EffectFn> = ReturnType<T> extends Effect.Effect<infer _R, infer _E, infer V>
-    ? V 
-    : never
 
 // wrap a pure fn with an effectful input and effectful output.
 // the pure fn takes an input constrained to be the same as the 
@@ -51,14 +47,17 @@ type EffectFnValue<T extends EffectFn> = ReturnType<T> extends Effect.Effect<inf
 // be the same as the input of the OutputFn
 export function wrapPure<I extends Tagged>() {
     return function <InputEffectFn extends ObjectObjectEffectFn<I>,
-        PureFn extends (pi: EffectFnValue<InputEffectFn>) => Parameters<OutputEffectFn>[0],
+        PureFn extends (pi: UFxFnValue<InputEffectFn>) => Parameters<OutputEffectFn>[0],
         OutputEffectFn extends TupleObjectEffectFn>
         (inputEffectFn: InputEffectFn, pureFn: PureFn, outputEffectFn: OutputEffectFn) {
 
         const r = (i: I) => {
             return Effect.gen(function* (_) {
+                console.log("WRAP PURE: i", i)
                 const pi = yield* _(inputEffectFn(i))
+                console.log("WRAP PURE: pi", pi)
                 const po = pureFn(pi as any)
+                console.log("WRAP PURE: po", po)
                 const oo = yield* _(outputEffectFn(po))
 
                 const v = {
@@ -66,14 +65,18 @@ export function wrapPure<I extends Tagged>() {
                     [i.tag]: po,
                     ...oo
                 }
+                console.log("WRAP PURE: v", v)
                 return v
             })
         }
 
-        return r as (i: Parameters<InputEffectFn>[0]) => Effect.Effect<any, any, object>
+        return r as (i: I) => Effect.Effect<UFxFnDeps<InputEffectFn> | UFxFnDeps<OutputEffectFn>,
+            UFxFnErrors<InputEffectFn> | UFxFnErrors<OutputEffectFn>,
+            Expand<UFxFnValue<InputEffectFn> &
+                { [_K in I['tag']]: ReturnType<PureFn> } &
+                UFxFnValue<OutputEffectFn>>>
     }
 }
-
 
 // wrap a pure fn with effectful inputs and outputs defined by chains of ObjectStepSpecs
 export function wrapPureChain<I extends Tagged>() {
@@ -83,24 +86,11 @@ export function wrapPureChain<I extends Tagged>() {
             pureFn: (pi: ChainObjectStepsReturn<InputStepSpecs, I>) => ObjectStepsInputTuple<OutputStepSpecs>,
             outputStepSpecs: OutputStepSpecs) {
         
-        console.log("CREATE PURE_FN_CHAIN", inputStepSpecs, pureFn, outputStepSpecs)
+        console.log("CREATE WRAP_PURE_CHAIN", inputStepSpecs, pureFn, outputStepSpecs)
         const inputChainProg = chainObjectStepsProg<I>()(inputStepSpecs)
         const outputStepsProg = tupleMapObjectStepsProg<ObjectStepsInputTuple<OutputStepSpecs>>()(outputStepSpecs)
 
-        const r = (i: I) => {
-            console.log("RUN PURE_FN_CHAIN: i", i)
-            return Effect.gen(function* (_) {
-                const pi: any = yield* _(inputChainProg(i))
-                console.log("RUN PURE_FN_CHAIN: pi", pi)
-                const po = pureFn(pi)
-                console.log("RUN PURE_FN_CHAIN: po", po)
-                const oo = yield* _(outputStepsProg(po)) 
-                console.log("RUN PURE_FN_CHAIN: oo", oo)
-                const v = { ...pi, [i.tag]: po , ...oo }
-                console.log("RUN PURE_FN_CHAIN: v", v)
-                return v
-            })
-        }
+        const r = wrapPure<I>()(inputChainProg as any, pureFn as any, outputStepsProg as any)
 
         return r as (i: I) => Effect.Effect<ObjectStepsDeps<InputStepSpecs> | ObjectStepsDeps<OutputStepSpecs>,
             ObjectStepsErrors<InputStepSpecs> | ObjectStepsErrors<OutputStepSpecs>,
