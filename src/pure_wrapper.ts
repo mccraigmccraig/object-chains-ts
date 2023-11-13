@@ -36,19 +36,46 @@ export const tag = <T extends Tagged>(tag: T['tag']): Tag<T> => { return { tag }
 // - pure-step - in:obj -> out:tuple
 // - output service-fn steps - tuple-map steps
 
-type AnyEffectFn = (i: any) => Effect.Effect<any, any, any>
+// no type parameters so easier to use than FxServiceFn
+type EffectFn = (i: any) => Effect.Effect<any, any, any>
+type ObjectObjectEffectFn<I> = (i: I) => Effect.Effect<any, any, object>
+type TupleObjectEffectFn = (i: readonly [...object[]]) => Effect.Effect<any, any, object>
 
+type EffectFnValue<T extends EffectFn> = ReturnType<T> extends Effect.Effect<infer _R, infer _E, infer V>
+    ? V 
+    : never
+
+// wrap a pure fn with an effectful input and effectful output.
+// the pure fn takes an input constrained to be the same as the 
+// output value of the InputFn, and returns an tuple output, constrained to 
+// be the same as the input of the OutputFn
 export function wrapPure<I extends Tagged>() {
-    return function <InputFn extends AnyEffectFn,
-        PureFn extends (pi: ReturnType<InputFn>) => Parameters<InputFn>[0],
-        OutputFn extends AnyEffectFn>
-        (inputFn: InputFn, pureFn: PureFn, outputFn: OutputFn) {
-        
-        return undefined as unknown as (i: I) => Effect.Effect<any, any, any>
-        
+    return function <InputEffectFn extends ObjectObjectEffectFn<I>,
+        PureFn extends (pi: EffectFnValue<InputEffectFn>) => Parameters<OutputEffectFn>[0],
+        OutputEffectFn extends TupleObjectEffectFn>
+        (inputEffectFn: InputEffectFn, pureFn: PureFn, outputEffectFn: OutputEffectFn) {
+
+        const r = (i: I) => {
+            return Effect.gen(function* (_) {
+                const pi = yield* _(inputEffectFn(i))
+                const po = pureFn(pi as any)
+                const oo = yield* _(outputEffectFn(po))
+
+                const v = {
+                    ...pi,
+                    [i.tag]: po,
+                    ...oo
+                }
+                return v
+            })
         }
+
+        return r as (i: Parameters<InputEffectFn>[0]) => Effect.Effect<any, any, object>
+    }
 }
 
+
+// wrap a pure fn with effectful inputs and outputs defined by chains of ObjectStepSpecs
 export function wrapPureChain<I extends Tagged>() {
     return function <InputStepSpecs extends readonly [...any[]],
         OutputStepSpecs extends readonly [...any[]]>
