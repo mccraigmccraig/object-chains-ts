@@ -1,45 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
-import { invokeServiceFxFn } from "./fx_fn.ts"
 import { wrapPure, wrapPureChain } from "./pure_wrapper.ts"
-
-export type Org = {
-    id: string
-    name: string
-}
-interface OrgService { readonly _: unique symbol }
-export interface OrgServiceI {
-    readonly getById: (id: string) => Effect.Effect<never, never, Org>
-    readonly getByNick: (nick: string) => Effect.Effect<never, never, Org>
-}
-export const OrgService = Context.Tag<OrgService, OrgServiceI>("OrgService")
-
-// $ExpectType FxFn<string, OrgService, never, Org>
-export const getOrgByNick = invokeServiceFxFn(OrgService, "getByNick")
-
-export type User = {
-    id: string
-    name: string
-}
-interface UserService { readonly _: unique symbol }
-// the service interface
-export interface UserServiceI {
-    readonly getByIds: (d: { org_id: string, user_id: string }) => Effect.Effect<never, never, User>
-}
-export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
-
-// $ExpectType FxFn<{org_id: string, user_id: string}, UserService, never, User>
-export const getUserByIds = invokeServiceFxFn(UserService, "getByIds")
-
-interface PushNotificationService { readonly _: unique symbol }
-export interface PushNotificationServiceI {
-    readonly sendPush: (d: {user_id: string, message: string}) => Effect.Effect<never, never, string>
-}
-export const PushNotificationService = Context.Tag<PushNotificationService, PushNotificationServiceI>("PushNotificationService")
-
-export const sendPush = invokeServiceFxFn(PushNotificationService, "sendPush")
-
-//////////////////////////////////////////////////////////////////////////////
+import {Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush} from "./test_services.ts"
 
 const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string } }, string, OrgService, never, Org> */ =
 {
@@ -54,6 +16,7 @@ const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: strin
     inFn: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
     svcFn: getUserByIds
 }
+
 const pureSendWelcomePush = (d: { org: Org, user: User }) => {
     return [{user_id: d.user.id, message: "Welcome " + d.user.name + " of " + d.org.name}] as const
 }

@@ -29,10 +29,10 @@ import { Tagged, UPureWrapperProgram, PureWrapperProgram, PureWrapperProgramInpu
 export type IndexPureWrapperProgramTuple<T extends Array<UPureWrapperProgram>> = {
     [K in T[number]['tagStr']]: Extract<T[number], { tagStr: K }>
 }
-// showing that this does index a tuple of UPureWrapperProgram
-// deno-lint-ignore no-explicit-any
-export type X = IndexPureWrapperProgramTuple<[{ tagStr: "foo", id: 10, program: (ev: any) => null },
-    { tagStr: "bar", id: 200, program: (ev: number) => null }]>
+// showing that this does indeed index a tuple of UPureWrapperProgram
+export type X = IndexPureWrapperProgramTuple<[
+    { tagStr: "foo", program: (ev: number) => null },
+    { tagStr: "bar", program: (ev: number) => null }]>
 
 // a bit tricky ... given a union of Tagged, and a list of UPureWrapperProgram, get the 
 // return type for the handler function, which is the return type of the program
@@ -41,13 +41,13 @@ export type X = IndexPureWrapperProgramTuple<[{ tagStr: "foo", id: 10, program: 
 // use a conditional type to distribute the result type over a union of Tagged
 export type DistributeEventResultTypes<I extends Tagged, Progs extends [...UPureWrapperProgram[]]> =
     IndexPureWrapperProgramTuple<Progs>[I['tag']] extends PureWrapperProgram<infer I, infer _IFxFn, infer _PFn, infer _OFxFn>
-    ? ReturnType<IndexPureWrapperProgramTuple<Progs>[I['tag']]['program']> 
+    ? ReturnType<IndexPureWrapperProgramTuple<Progs>[I['tag']]['program']>
     : never
 
 // return a function of the union 
-// of all the Event types handled by the supplied EventHandlerPrograms,
-// which uses a supplied EventHandlerProgram to handle the Event,
-// returning the same results as the supplied EventHandlerProgram
+// of all the input types handled by the supplied UPureWrapperPrograms,
+// which uses a supplied UPureWrapperProgram to handle the input,
+// returning the same results as the supplied UPureWrapperProgram
 export const makeHandlerProgram =
     <EventHandlerPrograms extends [...UPureWrapperProgram[]],
         Inputs extends UnionFromTuple<PureWrapperProgramInputTuple<EventHandlerPrograms>>>
@@ -61,8 +61,8 @@ export const makeHandlerProgram =
         return (i: Inputs) => {
             const prog = progsByEventTag[i.tag]
             if (prog != undefined) {
-                // so prog.program should be the resolved EventHandlerProgram - but 
-                // the type is dependent on the actual type of the ev
+                // so prog.program should be the resolved PureWrapperProgram - but 
+                // the type is dependent on the actual type of the input
                 console.log("multiProg: ", i)
                 return prog.program(i) as DistributeEventResultTypes<Inputs, EventHandlerPrograms>
             } else

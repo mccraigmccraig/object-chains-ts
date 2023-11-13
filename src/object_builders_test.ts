@@ -1,39 +1,9 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
-import { invokeServiceFxFn } from "./fx_fn.ts"
 import { objectStepFn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
+import { Org, OrgService, getOrgByNick, UserService, getUserByIds } from "./test_services.ts"
 
-export type Org = {
-    id: string
-    name: string
-}
-interface OrgService { readonly _: unique symbol }
-export interface OrgServiceI {
-    readonly getById: (id: string) => Effect.Effect<never, never, Org>
-    readonly getByNick: (nick: string) => Effect.Effect<never, never, Org>
-}
-export const OrgService = Context.Tag<OrgService, OrgServiceI>("OrgService")
-
-// $ExpectType FxFn<string, OrgService, never, Org>
-export const getOrgByNick = invokeServiceFxFn(OrgService, "getByNick")
-
-export type User = {
-    id: string
-    name: string
-}
-interface UserService { readonly _: unique symbol }
-// the service interface
-export interface UserServiceI {
-    readonly getByIds: (d: { org_id: string, user_id: string }) => Effect.Effect<never, never, User>
-}
-export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
-
-// $ExpectType FxFn<{org_id: string, user_id: string}, UserService, never, User>
-export const getUserByIds = invokeServiceFxFn(UserService, "getByIds")
-
-//////////////////////////////////////////////////////////////////////////////
-
-// then some computation steps...
+// some computation steps...
 
 // as const is required to prevent the k from being widened to a string type
 // and to ensure the specs array is interpreted as a tuple
