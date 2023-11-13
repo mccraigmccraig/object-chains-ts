@@ -38,17 +38,17 @@ export const tag = <T extends Tagged>(tag: T['tag']): Tag<T> => { return { tag }
 // - output service-fn steps - tuple-map steps
 
 // no type parameters so easier to use than FxFn
-type ObjectObjectEffectFn<I extends object> = (i: I) => Effect.Effect<any, any, object>
-type TupleObjectEffectFn = (i: readonly [...object[]]) => Effect.Effect<any, any, object>
+type ObjectObjectEffectFn<I extends object, V extends object> = (i: I) => Effect.Effect<any, any, V>
+type AnyObjectEffectFn<I> = (i: I) => Effect.Effect<any, any, object>
 
 // wrap a pure fn with an effectful input and effectful output.
 // the pure fn takes an input constrained to be the same as the 
 // output value of the InputFn, and returns an tuple output, constrained to 
 // be the same as the input of the OutputFn
 export function wrapPure<I extends Tagged>() {
-    return function <InputEffectFn extends ObjectObjectEffectFn<I>,
-        PureFn extends (pi: UFxFnValue<InputEffectFn>) => Parameters<OutputEffectFn>[0],
-        OutputEffectFn extends TupleObjectEffectFn>
+    return function <InputEffectFn extends ObjectObjectEffectFn<I, Parameters<PureFn>[0]>,
+        PureFn extends (pi: any) => any,
+        OutputEffectFn extends AnyObjectEffectFn<ReturnType<PureFn>>>
         (inputEffectFn: InputEffectFn, pureFn: PureFn, outputEffectFn: OutputEffectFn) {
 
         const r = (i: I) => {

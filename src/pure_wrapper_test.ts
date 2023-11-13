@@ -1,7 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect, Context, Data } from "effect"
 import { invokeServiceFxFn } from "./fx_fn.ts"
-import { wrapPureChain } from "./pure_wrapper.ts"
+import { wrapPure, wrapPureChain } from "./pure_wrapper.ts"
 
 export type Org = {
     id: string
@@ -79,7 +79,33 @@ const echoContext = Context.empty().pipe(
     })))
 
 
-Deno.test("pure effect chain", () => {
+Deno.test("wrapPureFn", () => {
+    type INPUT = { tag: "sendWelcomePush", data: { org_nick: string, user_id: string } }
+    const input: INPUT = { tag: "sendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
+
+    const inputFn = (i: INPUT) => {
+        return Effect.succeed({
+            ...i,
+            org: { id: "foo", name: "Foo" },
+            user: { id: "100", name: "Bar" } })
+    }
+
+    const outputFn = (_d: readonly [{ user_id: string, message: string }]) => {
+        return Effect.succeed({sendPush: "push sent OK: Welcome Bar of Foo"})
+    }
+
+    const prog = wrapPure<INPUT>()(inputFn, pureSendWelcomePush, outputFn)(input)
+    const r = Effect.runSync(prog)
+    assertEquals(r, {
+        ...input,
+        org: { id: "foo", name: "Foo" },
+        user: { id: "100", name: "Bar" },
+        sendWelcomePush: [{user_id: "100", message: "Welcome Bar of Foo"}],
+        sendPush: "push sent OK: Welcome Bar of Foo"
+    })
+})
+
+Deno.test("wrapPureChain", () => {
     type INPUT = { tag: "sendWelcomePush", data: { org_nick: string, user_id: string } }
     const input: INPUT = { tag: "sendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
 
