@@ -1,5 +1,5 @@
 import { assertEquals } from "assert"
-import { Effect, Context, Data } from "effect"
+import { Effect, Context } from "effect"
 import { invokeServiceFxFn } from "./fx_fn.ts"
 import { wrapPure, wrapPureChain } from "./pure_wrapper.ts"
 
@@ -126,4 +126,3 @@ Deno.test("wrapPureChain", () => {
     })
 })
 
-Data.tagged

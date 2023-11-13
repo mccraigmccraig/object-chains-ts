@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect } from "effect"
 import { UFxFnDeps, UFxFnErrors, UFxFnValue } from "./fx_fn.ts"
-import { Expand, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDeps, ObjectStepsErrors, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
+import { Expand, UObjectStepSpec, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDeps, ObjectStepsErrors, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
 // business logic is encapsulated in a pure function
 //   (in: extends Object) => [...(extends Object)[]]
@@ -78,24 +78,91 @@ export function wrapPure<I extends Tagged>() {
     }
 }
 
+// a way to get at the tag strings from the PureWrapperProgram without
+// inferring the step and program types
+export type PureWrapperProgramBase<T> = {
+    readonly eventTagStr: T
+    readonly pureFn: (pi: any) => any
+    readonly program: (i: any) => any
+    [index: string]: any
+}
+
+// a data structure with the program for handling handling events of a type identified by the tag
+// open to extension with additional explanatory keys
+export type PureWrapperProgram
+    <I extends Tagged,
+        InputEffectFn extends ObjectObjectEffectFn<I, Parameters<PureFn>[0]>,
+        PureFn extends (pi: any) => any,
+        OutputEffectFn extends AnyObjectEffectFn<ReturnType<PureFn>>> = {
+            eventTagStr: Tag<I>['tag']
+            eventTag: Tag<I>
+            pureFn: (pi: any) => any
+            program: (i: I) => Effect.Effect<UFxFnDeps<InputEffectFn> | UFxFnDeps<OutputEffectFn>,
+                UFxFnErrors<InputEffectFn> | UFxFnErrors<OutputEffectFn>,
+                Expand<UFxFnValue<InputEffectFn> &
+                    { [_K in I['tag']]: ReturnType<PureFn> } &
+                    UFxFnValue<OutputEffectFn>>>
+
+            [index: string]: any
+        }
+
+// make a PureWrapperProgram
+export function pureWrapperProgram<I extends Tagged>() {
+    return function <InputEffectFn extends ObjectObjectEffectFn<I, Parameters<PureFn>[0]>,
+        PureFn extends (pi: any) => any,
+        OutputEffectFn extends AnyObjectEffectFn<ReturnType<PureFn>>>
+        (tag: Tag<I>,
+            inputEffectFn: InputEffectFn,
+            pureFn: PureFn,
+            outputEffectFn: OutputEffectFn)
+        : PureWrapperProgram<I, InputEffectFn, PureFn, OutputEffectFn> {
+        return {
+            eventTagStr: tag.tag,
+            eventTag: tag,
+            pureFn: pureFn,
+            program: wrapPure<I>()(inputEffectFn, pureFn, outputEffectFn)
+        }
+    }
+}
+
 // wrap a pure fn with effectful inputs and outputs defined by chains of ObjectStepSpecs
 export function wrapPureChain<I extends Tagged>() {
-    return function <InputStepSpecs extends readonly [...any[]],
-        OutputStepSpecs extends readonly [...any[]]>
+    return function <InputStepSpecs extends readonly [...UObjectStepSpec[]],
+        OutputStepSpecs extends readonly [...UObjectStepSpec[]]>
         (inputStepSpecs: InputStepSpecs,
             pureFn: (pi: ChainObjectStepsReturn<InputStepSpecs, I>) => ObjectStepsInputTuple<OutputStepSpecs>,
             outputStepSpecs: OutputStepSpecs) {
-        
+
         console.log("CREATE WRAP_PURE_CHAIN", inputStepSpecs, pureFn, outputStepSpecs)
-        const inputChainProg = chainObjectStepsProg<I>()(inputStepSpecs)
-        const outputStepsProg = tupleMapObjectStepsProg<ObjectStepsInputTuple<OutputStepSpecs>>()(outputStepSpecs)
+        const inputChainProg = chainObjectStepsProg<I>()(inputStepSpecs as any)
+        const outputStepsProg = tupleMapObjectStepsProg<ObjectStepsInputTuple<OutputStepSpecs>>()(outputStepSpecs as any)
 
         const r = wrapPure<I>()(inputChainProg as any, pureFn as any, outputStepsProg as any)
 
         return r as (i: I) => Effect.Effect<ObjectStepsDeps<InputStepSpecs> | ObjectStepsDeps<OutputStepSpecs>,
             ObjectStepsErrors<InputStepSpecs> | ObjectStepsErrors<OutputStepSpecs>,
             Expand<ChainObjectStepsReturn<InputStepSpecs, I> &
-            { [_K in I['tag']]: ObjectStepsInputTuple<OutputStepSpecs> } &
-            TupleMapObjectStepsReturn<OutputStepSpecs, ObjectStepsInputTuple<OutputStepSpecs>>>>
+                { [_K in I['tag']]: ObjectStepsInputTuple<OutputStepSpecs> } &
+                TupleMapObjectStepsReturn<OutputStepSpecs, ObjectStepsInputTuple<OutputStepSpecs>>>>
+    }
+}
+
+// make a PureWrapperProgram with wrapPureChain
+export function pureWrapperChainProgram<I extends Tagged>() {
+    return function <InputStepSpecs extends readonly [...UObjectStepSpec[]],
+        OutputStepSpecs extends readonly [...UObjectStepSpec[]]>
+        (tag: Tag<I>,
+            inputStepSpecs: InputStepSpecs,
+            pureFn: (pi: ChainObjectStepsReturn<InputStepSpecs, I>) => ObjectStepsInputTuple<OutputStepSpecs>,
+            outputStepSpecs: OutputStepSpecs) {
+
+        return {
+            eventTagStr: tag.tag,
+            eventTag: tag,
+            pureFn: pureFn,
+            program: wrapPureChain<I>()(inputStepSpecs, pureFn, outputStepSpecs),
+            inputStepSpecs: inputStepSpecs,
+            outputStepSpecs: outputStepSpecs
+        }
     }
 }
