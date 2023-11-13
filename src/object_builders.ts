@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect } from "effect"
-import { FxFn } from "./fx_service_fn.ts"
+import { FxFn } from "./fx_fn.ts"
 
 // inspiration:
 // https://dev.to/ecyrbe/how-to-use-advanced-typescript-to-define-a-pipe-function-381h

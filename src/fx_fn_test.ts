@@ -1,6 +1,6 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
-import { invokeServiceFxFn } from "./fx_service_fn.ts"
+import { invokeServiceFxFn } from "./fx_fn.ts"
 
 export type Org = {
     id: string

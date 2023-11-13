@@ -1,6 +1,6 @@
 import { assertEquals } from "assert"
 import { Effect, Context, Data } from "effect"
-import { invokeServiceFxFn } from "./fx_service_fn.ts"
+import { invokeServiceFxFn } from "./fx_fn.ts"
 import { wrapPureChain } from "./pure_wrapper.ts"
 
 export type Org = {

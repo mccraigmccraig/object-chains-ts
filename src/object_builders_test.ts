@@ -1,6 +1,6 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
-import { invokeServiceFxFn } from "./fx_service_fn.ts"
+import { invokeServiceFxFn } from "./fx_fn.ts"
 import { objectStepFn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
 export type Org = {
