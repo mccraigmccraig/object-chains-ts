@@ -80,14 +80,14 @@ export function wrapPure<I extends Tagged>() {
 
 // a way to get at the tag strings from the PureWrapperProgram without
 // inferring the step and program types
-export type PureWrapperProgramBase<T> = {
+export type UPureWrapperProgramBase<T> = {
     readonly tagStr: T
     readonly program: (i: any) => any
     [index: string]: any
 }
 
 // a generic, but fully parameterised, type for arrays
-export type UPureWrapperProgram = PureWrapperProgramBase<string>
+export type UPureWrapperProgram = UPureWrapperProgramBase<string>
 
 // a data structure with the program for handling handling events of a type identified by the tag
 // open to extension with additional explanatory keys
