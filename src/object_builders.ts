@@ -27,7 +27,14 @@ export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
     readonly svcFn: FxServiceFn<D, R, E, V>
 }
 
-// returns a function of Obj which refines Obj according to the ObjectStepSpec
+// an unparameterised ObjectStepSpec we can use to "roughly" type arrays
+export type UObjectStepSpec = {
+    readonly k: string 
+    readonly inFn: (arg: any) => any 
+    readonly svcFn: (arg: any) => Effect.Effect<any, any, any>
+}
+
+// returns a function of Obj which returns an Effect of {K: V}
 export function objectStepFn<Obj>() {
     return function <K extends string, D, R, E, V>(step: ObjectStepSpec<K, Obj, D, R, E, V>) {
         return function (obj: Obj) {
@@ -86,7 +93,7 @@ export type ObjectStepsValueTuple<Tuple extends readonly [...any[]]> = {
 
 // build an Object by chaining an initial value through a sequence
 // of steps, accumulating {K: V} after each step
-type ChainObjectSteps<Specs extends readonly [...any[]],
+type ChainObjectSteps<Specs extends readonly [...UObjectStepSpec[]],
     ObjAcc,
     StepAcc extends [...any[]] = []> =
 
@@ -137,13 +144,13 @@ export type ChainObjectStepsReturn<Specs extends readonly [...any[]], ObjAcc> =
 
 export function chainObjectStepsProg<Init>() {
 
-    return function <ObjectStepSpecs extends readonly [...any[]]>
+    return function <ObjectStepSpecs extends readonly [...UObjectStepSpec[]]>
         (objectStepSpecs: ChainObjectSteps<ObjectStepSpecs, Init> extends readonly [...ObjectStepSpecs]
             ? readonly [...ObjectStepSpecs]
             : ChainObjectSteps<ObjectStepSpecs, Init>) {
 
         // i think we would need existential types to type this implementation
-        const stepFns: any[] = objectStepSpecs.map((step) => objectStepFn()(step))
+        const stepFns: any[] = objectStepSpecs.map((step) => objectStepFn()(step as any))
 
         const r = stepFns.reduce(
             (prev, stepFn) => {
@@ -174,7 +181,7 @@ export function chainObjectStepsProg<Init>() {
 
 // build an Object by independently mapping each Step over corresponding values in an Inputs tuple,
 // accumulating outputs in an Object {K: V}
-type TupleMapObjectSteps<Specs extends readonly [...any[]],
+type TupleMapObjectSteps<Specs extends readonly [...UObjectStepSpec[]],
     Inputs extends readonly [...any[]],
     StepAcc extends [...any[]] = []> =
 
@@ -209,7 +216,7 @@ type TupleMapObjectSteps<Specs extends readonly [...any[]],
 // the calculation, calculating the return type looks very similar to checking
 // the step constraints, but we accumulate the return type rather than the 
 // inferred steps
-export type TupleMapObjectStepsReturn<Specs extends readonly [...any[]],
+export type TupleMapObjectStepsReturn<Specs extends readonly [...UObjectStepSpec[]],
     Inputs extends readonly [...any[]],
     // the lint recommendation messes up the return type here, so ignoring it
     // deno-lint-ignore ban-types
@@ -257,13 +264,13 @@ export type TupleMapObjectStepsReturn<Specs extends readonly [...any[]],
 
 export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
 
-    return function <ObjectStepSpecs extends readonly [...any[]]>
+    return function <ObjectStepSpecs extends readonly [...UObjectStepSpec[]]>
 
         (objectStepSpecs: TupleMapObjectSteps<ObjectStepSpecs, Inputs> extends readonly [...ObjectStepSpecs]
             ? readonly [...ObjectStepSpecs]
             : TupleMapObjectSteps<ObjectStepSpecs, Inputs>) {
 
-        const stepFns = objectStepSpecs.map((step) => objectStepFn()(step))
+        const stepFns = objectStepSpecs.map((step) => objectStepFn()(step as any))
 
         const r = function (inputs: Inputs) {
             console.log("CREATE TUPLE_MAP EFFECT", inputs)
