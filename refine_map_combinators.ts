@@ -4,37 +4,37 @@ import { Effect, Context } from "effect"
 // inspiration:
 // https://dev.to/ecyrbe/how-to-use-advanced-typescript-to-define-a-pipe-function-381h
 
-// maps are built with a sequence of effectful functions. FxServiceFn
+// maps are built with a sequence of effectful functions. FxFn
 // is a simple effectful function interface, taking a single 
 // parameter and returning an Effect.Effect
-export type FxServiceFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
+export type FxFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
 
-// Service interfaces have 1 or more FxServiceFns which perform
+// Service interfaces have 1 or more FxFns which perform
 // the effectful computations in a step, and are named by tags
 export type FxServiceTag<I, S> = Context.Tag<I, S>
 
-// check that S[K] is an FxServiceFn as required
-type CheckFxServiceFnTag<I, S, K extends keyof S> =
-    S[K] extends FxServiceFn<infer _D, infer _R, infer _E, infer _V>
+// check that S[K] is an FxFn as required
+type CheckFxFnTag<I, S, K extends keyof S> =
+    S[K] extends FxFn<infer _D, infer _R, infer _E, infer _V>
     ? FxServiceTag<I, S>
     : never
 
-// add the service to the FxServiceFn result's R
-type InvokeFxServiceFnResult<I, S, K extends keyof S> =
-    S[K] extends FxServiceFn<infer D, infer R, infer E, infer V>
-    ? FxServiceFn<D, R | I, E, V>
+// add the service to the FxFn result's R
+type invokeServiceFxFnResult<I, S, K extends keyof S> =
+    S[K] extends FxFn<infer D, infer R, infer E, infer V>
+    ? FxFn<D, R | I, E, V>
     : never
 
-// infer the FxServiceFn data param
-type InvokeFxServiceFnParam<_I, S, K extends keyof S> =
-    S[K] extends FxServiceFn<infer D, infer _R, infer _E, infer _V>
+// infer the FxFn data param
+type invokeServiceFxFnParam<_I, S, K extends keyof S> =
+    S[K] extends FxFn<infer D, infer _R, infer _E, infer _V>
     ? D
     : never
 
-// returns a new FxServiceFn, which looks up the FxServiceFn
+// returns a new FxFn, which looks up the FxFn
 // on a service and invokes it. Adds the service into R
-export const invokeFxServiceFn = <I, S, K extends keyof S>(tag: CheckFxServiceFnTag<I, S, K>, k: K): InvokeFxServiceFnResult<I, S, K> => {
-    const rf = (d: InvokeFxServiceFnParam<I, S, K>) => {
+export const invokeServiceFxFn = <I, S, K extends keyof S>(tag: CheckFxFnTag<I, S, K>, k: K): invokeServiceFxFnResult<I, S, K> => {
+    const rf = (d: invokeServiceFxFnParam<I, S, K>) => {
         return Effect.gen(function* (_) {
             const svc = yield* _(tag)
             const fn = svc[k]
@@ -43,16 +43,16 @@ export const invokeFxServiceFn = <I, S, K extends keyof S>(tag: CheckFxServiceFn
                 const r = yield* _(fn(d))
                 return r
             } else {
-                throw new Error("no FxServiceFn: " + tag.toString() + ", " + k.toString())
+                throw new Error("no FxFn: " + tag.toString() + ", " + k.toString())
             }
         })
     }
-    return rf as InvokeFxServiceFnResult<I, S, K>
+    return rf as invokeServiceFxFnResult<I, S, K>
 }
 
 // an ObjectStepSpec defines a single Effectful step towards building an Object.
 // - inFn transforms an input A into the argument D of 
-// the FxServiceFn, and the output of the FxServiceFn V will be added to the
+// the FxFn, and the output of the FxFn V will be added to the
 // Object as {K: V}...
 // an ObjectStepSpec can be used in different ways:
 //
@@ -64,12 +64,12 @@ export const invokeFxServiceFn = <I, S, K extends keyof S>(tag: CheckFxServiceFn
 //     each step gets one value from the array of inputs and
 //     its output V gets associated with the Object at K
 export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
-    // the key at which the FxServiceFn output V will be added to the Object
+    // the key at which the FxFn output V will be added to the Object
     readonly k: K
-    // a pure function which maps the input A to the FxServiceFn input D
+    // a pure function which maps the input A to the FxFn input D
     readonly inFn: (arg: A) => D
     // an effectful function of D, producing V
-    readonly svcFn: FxServiceFn<D, R, E, V>
+    readonly svcFn: FxFn<D, R, E, V>
 }
 
 // build an Object by chaining an initial value through a sequence
@@ -230,8 +230,8 @@ export interface OrgServiceI {
 }
 export const OrgService = Context.Tag<OrgService, OrgServiceI>("OrgService")
 
-// $ExpectType FxServiceFn<string, OrgService, never, Org>
-export const getOrgByNick = invokeFxServiceFn(OrgService, "getByNick")
+// $ExpectType FxFn<string, OrgService, never, Org>
+export const getOrgByNick = invokeServiceFxFn(OrgService, "getByNick")
 
 export type User = {
     id: string
@@ -244,8 +244,8 @@ export interface UserServiceI {
 }
 export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
 
-// $ExpectType FxServiceFn<{org_id: string, user_id: string}, UserService, never, User>
-export const getUserByIds = invokeFxServiceFn(UserService, "getByIds")
+// $ExpectType FxFn<{org_id: string, user_id: string}, UserService, never, User>
+export const getUserByIds = invokeServiceFxFn(UserService, "getByIds")
 
 //////////////////////////////////////////////////////////////////////////////
 

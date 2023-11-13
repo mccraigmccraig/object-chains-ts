@@ -1,6 +1,6 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
-import { invokeFxServiceFn } from "./fx_service_fn.ts"
+import { invokeServiceFxFn } from "./fx_service_fn.ts"
 
 export type Org = {
     id: string
@@ -13,8 +13,8 @@ export interface OrgServiceI {
 }
 export const OrgService = Context.Tag<OrgService, OrgServiceI>("OrgService")
 
-// $ExpectType FxServiceFn<string, OrgService, never, Org>
-export const getOrgByNick = invokeFxServiceFn(OrgService, "getByNick")
+// $ExpectType FxFn<string, OrgService, never, Org>
+export const getOrgByNick = invokeServiceFxFn(OrgService, "getByNick")
 
 const context = Context.empty().pipe(
     Context.add(OrgService, OrgService.of({
@@ -27,7 +27,7 @@ const prog = Effect.gen(function* (_) {
     return org;
 })
 
-Deno.test("invokeFxServiceFn retrieves the service and invokes the FxServiceFn", () => {
+Deno.test("invokeServiceFxFn retrieves the service and invokes the FxFn", () => {
     // provide Service impls
     const runnable = Effect.provide(prog, context)
     // run the program

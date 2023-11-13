@@ -36,7 +36,7 @@ export const tag = <T extends Tagged>(tag: T['tag']): Tag<T> => { return { tag }
 // - pure-step - in:obj -> out:tuple
 // - output service-fn steps - tuple-map steps
 
-// no type parameters so easier to use than FxServiceFn
+// no type parameters so easier to use than FxFn
 type EffectFn = (i: any) => Effect.Effect<any, any, any>
 type ObjectObjectEffectFn<I> = (i: I) => Effect.Effect<any, any, object>
 type TupleObjectEffectFn = (i: readonly [...object[]]) => Effect.Effect<any, any, object>

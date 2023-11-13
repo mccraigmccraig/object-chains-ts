@@ -1,6 +1,6 @@
 import { assertEquals } from "assert"
 import { Effect, Context, Data } from "effect"
-import { invokeFxServiceFn } from "./fx_service_fn.ts"
+import { invokeServiceFxFn } from "./fx_service_fn.ts"
 import { wrapPureChain } from "./pure_wrapper.ts"
 
 export type Org = {
@@ -14,8 +14,8 @@ export interface OrgServiceI {
 }
 export const OrgService = Context.Tag<OrgService, OrgServiceI>("OrgService")
 
-// $ExpectType FxServiceFn<string, OrgService, never, Org>
-export const getOrgByNick = invokeFxServiceFn(OrgService, "getByNick")
+// $ExpectType FxFn<string, OrgService, never, Org>
+export const getOrgByNick = invokeServiceFxFn(OrgService, "getByNick")
 
 export type User = {
     id: string
@@ -28,8 +28,8 @@ export interface UserServiceI {
 }
 export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
 
-// $ExpectType FxServiceFn<{org_id: string, user_id: string}, UserService, never, User>
-export const getUserByIds = invokeFxServiceFn(UserService, "getByIds")
+// $ExpectType FxFn<{org_id: string, user_id: string}, UserService, never, User>
+export const getUserByIds = invokeServiceFxFn(UserService, "getByIds")
 
 interface PushNotificationService { readonly _: unique symbol }
 export interface PushNotificationServiceI {
@@ -37,7 +37,7 @@ export interface PushNotificationServiceI {
 }
 export const PushNotificationService = Context.Tag<PushNotificationService, PushNotificationServiceI>("PushNotificationService")
 
-export const sendPush = invokeFxServiceFn(PushNotificationService, "sendPush")
+export const sendPush = invokeServiceFxFn(PushNotificationService, "sendPush")
 
 //////////////////////////////////////////////////////////////////////////////
 

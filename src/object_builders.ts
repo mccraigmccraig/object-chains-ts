@@ -1,13 +1,13 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect } from "effect"
-import { FxServiceFn } from "./fx_service_fn.ts"
+import { FxFn } from "./fx_service_fn.ts"
 
 // inspiration:
 // https://dev.to/ecyrbe/how-to-use-advanced-typescript-to-define-a-pipe-function-381h
 
 // an ObjectStepSpec defines a single Effectful step towards building an Object.
 // - inFn transforms an input A into the argument D of 
-// the FxServiceFn, and the output of the FxServiceFn V will be added to the
+// the FxFn, and the output of the FxFn V will be added to the
 // Object as {K: V}...
 // an ObjectStepSpec can be used in different ways:
 //
@@ -19,12 +19,12 @@ import { FxServiceFn } from "./fx_service_fn.ts"
 //     each step gets one value from the array of inputs and
 //     its output V gets associated with the Object at K
 export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
-    // the key at which the FxServiceFn output V will be added to the Object
+    // the key at which the FxFn output V will be added to the Object
     readonly k: K
-    // a pure function which maps the input A to the FxServiceFn input D
+    // a pure function which maps the input A to the FxFn input D
     readonly inFn: (arg: A) => D
     // an effectful function of D, producing V
-    readonly svcFn: FxServiceFn<D, R, E, V>
+    readonly svcFn: FxFn<D, R, E, V>
 }
 
 // an unparameterised ObjectStepSpec we can use to "roughly" type arrays

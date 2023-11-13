@@ -1,6 +1,6 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
-import { invokeFxServiceFn } from "./fx_service_fn.ts"
+import { invokeServiceFxFn } from "./fx_service_fn.ts"
 import { objectStepFn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
 export type Org = {
@@ -14,8 +14,8 @@ export interface OrgServiceI {
 }
 export const OrgService = Context.Tag<OrgService, OrgServiceI>("OrgService")
 
-// $ExpectType FxServiceFn<string, OrgService, never, Org>
-export const getOrgByNick = invokeFxServiceFn(OrgService, "getByNick")
+// $ExpectType FxFn<string, OrgService, never, Org>
+export const getOrgByNick = invokeServiceFxFn(OrgService, "getByNick")
 
 export type User = {
     id: string
@@ -28,8 +28,8 @@ export interface UserServiceI {
 }
 export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
 
-// $ExpectType FxServiceFn<{org_id: string, user_id: string}, UserService, never, User>
-export const getUserByIds = invokeFxServiceFn(UserService, "getByIds")
+// $ExpectType FxFn<{org_id: string, user_id: string}, UserService, never, User>
+export const getUserByIds = invokeServiceFxFn(UserService, "getByIds")
 
 //////////////////////////////////////////////////////////////////////////////
 

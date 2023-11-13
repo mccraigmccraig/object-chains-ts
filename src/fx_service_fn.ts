@@ -1,35 +1,32 @@
 import { Effect, Context } from "effect"
 
-// FxServiceFn is a simple interface for an effectful computation step.
+// FxFn is a simple interface for an effectful computation step.
 // It takes a single parameter and returns an Effect.Effect
-export type FxServiceFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
+export type FxFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
 
-// one way to make an FxServiceFns is to fetch a fn from a tagged Service
-type FxServiceTag<I, S> = Context.Tag<I, S>
-
-// check that S[K] is an FxServiceFn as required
-type CheckFxServiceFnTag<I, S, K extends keyof S> =
-    S[K] extends FxServiceFn<infer _D, infer _R, infer _E, infer _V>
-    ? FxServiceTag<I, S>
+// check that S[K] is an FxFn as required
+type CheckFxFnTag<I, S, K extends keyof S> =
+    S[K] extends FxFn<infer _D, infer _R, infer _E, infer _V>
+    ? Context.Tag<I, S>
     : never
 
-// add the service to the FxServiceFn result's R
-type InvokeFxServiceFnResult<I, S, K extends keyof S> =
-    S[K] extends FxServiceFn<infer D, infer R, infer E, infer V>
-    ? FxServiceFn<D, R | I, E, V>
+// add the service to the FxFn result's R
+type invokeServiceFxFnResult<I, S, K extends keyof S> =
+    S[K] extends FxFn<infer D, infer R, infer E, infer V>
+    ? FxFn<D, R | I, E, V>
     : never
 
-// infer the FxServiceFn data param
-type InvokeFxServiceFnParam<_I, S, K extends keyof S> =
-    S[K] extends FxServiceFn<infer D, infer _R, infer _E, infer _V>
+// infer the FxFn data param
+type invokeServiceFxFnParam<_I, S, K extends keyof S> =
+    S[K] extends FxFn<infer D, infer _R, infer _E, infer _V>
     ? D
     : never
 
-// makes an FxServiceFn, by looking up an FxServiceFn from 
-// a service and invoking it. Adds the service into R - the
+// makes an FxFn, by looking up an FxFn from 
+// a service and invoking it. Adds the service into R. the
 // boilerplate of fetching the service disappears
-export const invokeFxServiceFn = <I, S, K extends keyof S>(tag: CheckFxServiceFnTag<I, S, K>, k: K): InvokeFxServiceFnResult<I, S, K> => {
-    const rf = (d: InvokeFxServiceFnParam<I, S, K>) => {
+export const invokeServiceFxFn = <I, S, K extends keyof S>(tag: CheckFxFnTag<I, S, K>, k: K): invokeServiceFxFnResult<I, S, K> => {
+    const rf = (d: invokeServiceFxFnParam<I, S, K>) => {
         return Effect.gen(function* (_) {
             const svc = yield* _(tag)
             const fn = svc[k]
@@ -38,9 +35,9 @@ export const invokeFxServiceFn = <I, S, K extends keyof S>(tag: CheckFxServiceFn
                 const r = yield* _(fn(d))
                 return r
             } else {
-                throw new Error("no FxServiceFn: " + tag.toString() + ", " + k.toString())
+                throw new Error("no FxFn: " + tag.toString() + ", " + k.toString())
             }
         })
     }
-    return rf as InvokeFxServiceFnResult<I, S, K>
+    return rf as invokeServiceFxFnResult<I, S, K>
 }
