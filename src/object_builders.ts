@@ -107,8 +107,16 @@ export type ObjectStepsValueTuple<Tuple extends readonly [...UPObjectStepSpec[]]
     +readonly [Index in keyof Tuple]: ObjectStepValue<Tuple[Index]>
 } & { length: Tuple['length'] }
 
-// build an Object by chaining an initial value through a sequence
-// of steps, accumulating {K: V} after each step
+// type a chain to build an Object by chaining an initial value through 
+// a sequence of steps, accumulating {K: V} after each step
+//
+// note we infer UCObjectStepSpec which is guaranteed to be inferrable
+// from elements of an UPObjectStepSpec[], as opposed to ObjectStepSpec,
+// which is *not* guaranteed to be inferrable from all UPObjectStepSpecs.
+// we then apply the pipeline  and internal data constraints in the 
+// types we output - this gives us:
+// 1. easy to understsand errors about constraint failure
+// 2. it's safe to use never in the else branches
 type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
     ObjAcc,
     StepAcc extends [...any[]] = []> =
@@ -119,33 +127,33 @@ type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
 
     // case: final spec - deliver final pipeline tuple type from StepAcc
     : Specs extends readonly [infer Head]
-    ? Head extends ObjectStepSpec<infer K, infer _A, infer D, infer R, infer E, infer V>
-    // return the final inferred pipeline
-    ? readonly [...StepAcc, ObjectStepSpec<K, ObjAcc, D, R, E, V>]
-    : readonly [...StepAcc, ["ChainObjectStepsFail-final-A: Head !extends ObjectStepSpec", Head]]
+    ? Head extends UCObjectStepSpec<infer K, infer _A, infer D1, infer _D2, infer R, infer E, infer V>
+    // return the final inferred pipeline - note we constrain D1==D2
+    ? readonly [...StepAcc, UCObjectStepSpec<K, ObjAcc, D1, D1, R, E, V>]
+    : never // readonly [...StepAcc, ["ChainObjectStepsFail-final-A: Head !extends ObjectStepSpec", Head]]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends readonly [infer Head, ...infer Tail]
-    ? Head extends ObjectStepSpec<infer HK, infer _HA, infer HD, infer HR, infer HE, infer HV>
+    ? Head extends UCObjectStepSpec<infer HK, infer _HA, infer HD1, infer HD2, infer HR, infer HE, infer HV>
     ? Tail extends readonly [infer Next, ...any]
-    ? Next extends ObjectStepSpec<infer _NK, infer _NA, infer _ND, infer _NR, infer _NE, infer _NV>
-    // recurse
+    ? Next extends UCObjectStepSpec<infer _NK, infer _NA, infer _ND1, infer _ND2, infer _NR, infer _NE, infer _NV>
+    // recurse - note constraint HD1==HD2
     ? ChainObjectSteps<Tail,
         ObjAcc & { [K in HK]: HV },
-        [...StepAcc, ObjectStepSpec<HK, ObjAcc, HD, HR, HE, HV>]>
-    : [...StepAcc, ["ChainObjectStepsFail-recurse-E: Next !extends ObjectStepSpec", Next]]
-    : [...StepAcc, ["ChainObjectStepsFail-ecurse-D: Tail !extends [infer Next, ...any]", Tail]]
-    : [...StepAcc, ["ChainObjectStepsFail-recurse-B: Head !extends ObjectStepSpec", Head]]
-    : [...StepAcc, ["ChainObjectStepsFail-recurse-A: Specs !extends [infer Head, ...infer Tail]", Specs]]
+        [...StepAcc, UCObjectStepSpec<HK, ObjAcc, HD1, HD1, HR, HE, HV>]>
+    : never // [...StepAcc, ["ChainObjectStepsFail-recurse-E: Next !extends ObjectStepSpec", Next]]
+    : never // [...StepAcc, ["ChainObjectStepsFail-ecurse-D: Tail !extends [infer Next, ...any]", Tail]]
+    : never // [...StepAcc, ["ChainObjectStepsFail-recurse-B: Head !extends ObjectStepSpec", Head]]
+    : never // [...StepAcc, ["ChainObjectStepsFail-recurse-A: Specs !extends [infer Head, ...infer Tail]", Specs]]
 
 // get the final Object result type from a list of ObjectStepSpecs
 export type ChainObjectStepsReturn<Specs extends readonly [...UPObjectStepSpec[]], ObjAcc> =
     ChainObjectSteps<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
-    ? Last extends ObjectStepSpec<infer LK, infer LA, infer _LD, infer _LR, infer _LE, infer LV>
+    ? Last extends UCObjectStepSpec<infer LK, infer LA, infer _LD1, infer _LD2, infer _LR, infer _LE, infer LV>
     // final Object type adds the final step output to the final step input type
     ? Expand<LA & { [K in LK]: LV }>
-    : ["ChainObjectStepsReturnFail-B-Last !extends ObjectStepSpec", Last]
-    : ["ChainObjectStepsReturnFail-A-ChainObjectSteps<Specs, ObjAcc> !extends", ChainObjectSteps<Specs, ObjAcc>]
+    : never // ["ChainObjectStepsReturnFail-B-Last !extends ObjectStepSpec", Last]
+    : never // ["ChainObjectStepsReturnFail-A-ChainObjectSteps<Specs, ObjAcc> !extends", ChainObjectSteps<Specs, ObjAcc>]
 
 // since we want to pass an initial Data type param, but to infer 
 // ObjectStepSpecs - and typescript inference is all-or-nothing, we must curry
@@ -164,10 +172,10 @@ export type ChainObjectStepsReturn<Specs extends readonly [...UPObjectStepSpec[]
 
 export function chainObjectStepsProg<Init>() {
 
-    return function <ObjectStepSpecs extends readonly [...UPObjectStepSpec[]]>
-        (objectStepSpecs: ChainObjectSteps<ObjectStepSpecs, Init> extends readonly [...ObjectStepSpecs]
-            ? readonly [...ObjectStepSpecs]
-            : ChainObjectSteps<ObjectStepSpecs, Init>) {
+    return function <Specs extends readonly [...UPObjectStepSpec[]]>
+        (objectStepSpecs: ChainObjectSteps<Specs, Init> extends readonly [...Specs]
+            ? readonly [...Specs]
+            : ChainObjectSteps<Specs, Init>) {
 
         // i think we would need existential types to type this implementation
         const stepFns: any[] = objectStepSpecs.map((step) => objectStepFn()(step as any))
@@ -192,7 +200,9 @@ export function chainObjectStepsProg<Init>() {
             // start with the no-steps fn
             (obj: Init) => Effect.succeed(obj))
 
-        return r as (obj: Init) => Effect.Effect<ObjectStepsDepsU<ObjectStepSpecs>, ObjectStepsErrorsU<ObjectStepSpecs>, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
+        return r as (obj: Init) => Effect.Effect<ObjectStepsDepsU<Specs>,
+            ObjectStepsErrorsU<Specs>,
+            ChainObjectStepsReturn<Specs, Init>>
     }
 }
 
