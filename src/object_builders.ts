@@ -97,8 +97,12 @@ type ChainObjectSteps<Specs extends readonly [...UObjectStepSpec[]],
     ObjAcc,
     StepAcc extends [...any[]] = []> =
 
+    // case: empty specs
+    Specs extends readonly []
+    ? readonly [...StepAcc]
+
     // case: final spec - deliver final pipeline tuple type from StepAcc
-    Specs extends readonly [infer Head]
+    : Specs extends readonly [infer Head]
     ? Head extends ObjectStepSpec<infer K, infer _A, infer D, infer R, infer E, infer V>
     // return the final inferred pipeline
     ? readonly [...StepAcc, ObjectStepSpec<K, ObjAcc, D, R, E, V>]
@@ -119,7 +123,7 @@ type ChainObjectSteps<Specs extends readonly [...UObjectStepSpec[]],
     : [...StepAcc, ["ChainObjectStepsFail-recurse-A: Specs !extends [infer Head, ...infer Tail]", Specs]]
 
 // get the final Object result type from a list of ObjectStepSpecs
-export type ChainObjectStepsReturn<Specs extends readonly [...any[]], ObjAcc> =
+export type ChainObjectStepsReturn<Specs extends readonly [...UObjectStepSpec[]], ObjAcc> =
     ChainObjectSteps<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
     ? Last extends ObjectStepSpec<infer LK, infer LA, infer _LD, infer _LR, infer _LE, infer LV>
     // final Object type adds the final step output to the final step input type
@@ -185,8 +189,12 @@ type TupleMapObjectSteps<Specs extends readonly [...UObjectStepSpec[]],
     Inputs extends readonly [...any[]],
     StepAcc extends [...any[]] = []> =
 
+    // case: empty specs
+    Specs extends readonly []
+    ? readonly [...StepAcc]
+
     // case: final spec - deliver final pipeline tuple type from StepAcc
-    Specs extends readonly [infer Head]
+    : Specs extends readonly [infer Head]
     ? Inputs extends readonly [infer HeadIn]
     ? Head extends ObjectStepSpec<infer K, HeadIn, infer D, infer R, infer E, infer V>
     // return the final inferred pipeline
