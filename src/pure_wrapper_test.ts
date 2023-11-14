@@ -1,5 +1,6 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
+import { chainObjectStepsProg } from "./object_builders.ts"
 import { wrapPure, wrapPureChain } from "./pure_wrapper.ts"
 import {Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush} from "./test_services.ts"
 
@@ -71,14 +72,15 @@ Deno.test("wrapPureFn", () => {
 Deno.test("wrapPureChain", () => {
     type INPUT = { tag: "sendWelcomePush", data: { org_nick: string, user_id: string } }
     const input: INPUT = { tag: "sendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
-
-    const pureChainEffect = wrapPureChain<INPUT>()(
+    
+    const pureChainProg = wrapPureChain<INPUT>()(
         [getOrgObjectStepSpec, getUserObjectStepSpec] as const,
         pureSendWelcomePush,
-        [sendPusnNotificationStepSpec] as const)(input)
+        [sendPusnNotificationStepSpec] as const)
     
-    const prog = Effect.provide(pureChainEffect, echoContext)
-    const r = Effect.runSync(prog)
+    const pureChainEffect = pureChainProg(input)
+    const runnable = Effect.provide(pureChainEffect, echoContext)
+    const r = Effect.runSync(runnable)
 
     assertEquals(r, {
         ...input,

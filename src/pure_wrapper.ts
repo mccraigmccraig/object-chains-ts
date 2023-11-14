@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect } from "effect"
 import { UFxFnDeps, UFxFnErrors, UFxFnValue } from "./fx_fn.ts"
-import { Expand, UnionFromTuple, UObjectStepSpec, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDeps, ObjectStepsErrors, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
+import { Expand, UnionFromTuple, UObjectStepSpec, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
 // business logic is encapsulated in a pure function
 //   (in: extends Object) => [...(extends Object)[]]
@@ -163,8 +163,8 @@ export function wrapPureChain<I extends Tagged>() {
 
         const r = wrapPure<I>()(inputChainProg as any, pureFn as any, outputStepsProg as any)
 
-        return r as (i: I) => Effect.Effect<ObjectStepsDeps<InputStepSpecs> | ObjectStepsDeps<OutputStepSpecs>,
-            ObjectStepsErrors<InputStepSpecs> | ObjectStepsErrors<OutputStepSpecs>,
+        return r as (i: I) => Effect.Effect<ObjectStepsDepsU<InputStepSpecs> | ObjectStepsDepsU<OutputStepSpecs>,
+            ObjectStepsErrorsU<InputStepSpecs> | ObjectStepsErrorsU<OutputStepSpecs>,
             Expand<ChainObjectStepsReturn<InputStepSpecs, I> &
                 { [_K in I['tag']]: ObjectStepsInputTuple<OutputStepSpecs> } &
                 TupleMapObjectStepsReturn<OutputStepSpecs, ObjectStepsInputTuple<OutputStepSpecs>>>>

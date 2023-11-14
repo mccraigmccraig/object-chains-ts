@@ -69,25 +69,25 @@ export type ExpandTuple<Tuple extends readonly [...any[]]> = {
 
 // get a union of all the R dependencies from a tuple of steps
 export type ObjectStepDeps<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer R, infer _E, infer _V> ? R : never
-export type ObjectStepsDepsU<Tuple extends readonly [...any[]]> = UnionFromTuple<{
+export type ObjectStepsDepsU<Tuple extends readonly [...UObjectStepSpec[]]> = UnionFromTuple<{
     +readonly [Index in keyof Tuple]: ObjectStepDeps<Tuple[Index]>
 } & { length: Tuple['length'] }>
 
 // get a union of all the E errors from a tuple of steps
 export type ObjectStepErrors<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer _R, infer E, infer _V> ? E : never
-export type ObjectStepsErrorsU<Tuple extends readonly [...any[]]> = UnionFromTuple<{
+export type ObjectStepsErrorsU<Tuple extends readonly [...UObjectStepSpec[]]> = UnionFromTuple<{
     +readonly [Index in keyof Tuple]: ObjectStepErrors<Tuple[Index]>
 } & { length: Tuple['length'] }>
 
 // get a tuple of the input types from a tuple of steps
 export type ObjectStepInput<T> = T extends ObjectStepSpec<infer _K, infer A, infer _D, infer _R, infer _E, infer _V> ? A : never
-export type ObjectStepsInputTuple<Tuple extends readonly [...any[]]> = {
+export type ObjectStepsInputTuple<Tuple extends readonly [...UObjectStepSpec[]]> = {
     +readonly [Index in keyof Tuple]: ObjectStepInput<Tuple[Index]>
 } & { length: Tuple['length'] }
 
 // get a tuple of the value types from a tuple of steps
 export type ObjectStepValue<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer _R, infer _E, infer V> ? V : never
-export type ObjectStepsValueTuple<Tuple extends readonly [...any[]]> = {
+export type ObjectStepsValueTuple<Tuple extends readonly [...UObjectStepSpec[]]> = {
     +readonly [Index in keyof Tuple]: ObjectStepValue<Tuple[Index]>
 } & { length: Tuple['length'] }
 
