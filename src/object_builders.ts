@@ -298,11 +298,11 @@ export type TupleMapObjectStepsReturn<Specs extends readonly [...UPObjectStepSpe
 
 export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
 
-    return function <ObjectStepSpecs extends readonly [...UPObjectStepSpec[]]>
+    return function <Specs extends readonly [...UPObjectStepSpec[]]>
 
-        (objectStepSpecs: TupleMapObjectSteps<ObjectStepSpecs, Inputs> extends readonly [...ObjectStepSpecs]
-            ? readonly [...ObjectStepSpecs]
-            : TupleMapObjectSteps<ObjectStepSpecs, Inputs>) {
+        (objectStepSpecs: TupleMapObjectSteps<Specs, Inputs> extends readonly [...Specs]
+            ? readonly [...Specs]
+            : TupleMapObjectSteps<Specs, Inputs>) {
 
         const stepFns = objectStepSpecs.map((step) => objectStepFn()(step as any))
 
@@ -326,12 +326,8 @@ export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
             })
         }
 
-        return r as (inputs: Inputs) => Effect.Effect<ObjectStepsDepsU<ObjectStepSpecs>, ObjectStepsErrorsU<ObjectStepSpecs>, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
+        return r as (inputs: Inputs) => Effect.Effect<ObjectStepsDepsU<Specs>,
+            ObjectStepsErrorsU<Specs>,
+            TupleMapObjectStepsReturn<Specs, Inputs>>
     }
 }
-
-
-// next: 
-// - combinators to build sequences of ObjectStepSpecs (maybe not at this level - i think 
-//   the data-oriented approach is fine at this low level, and combinators can consume/emit
-//   data structures)
