@@ -8,29 +8,38 @@ import { Expand, UnionFromTuple, UPObjectStepSpec, ObjectStepsInputTuple, TupleM
 // business logic is encapsulated in a pure function
 //   (in: extends Object) => [...(extends Object)[]]
 // a (chain of) effectful input steps build the in: Object, and 
-// a (chain of) effectful output steps process the output tuple
+// a tuple of effectful output steps process the output tuple
 
 // so chain has:
 // [(Input) => Effect<R,E,PureInput>,
 //  (PureInput) => PureOutput,
 //  (PureOutput) => Effect<R,E,Output>]
 
-// but that's too abstract ... we are going to use the object_builders for
-// the input and output chains...
-//
-// Input is an Object with a tag: ,
-// input steps extend the Input Object
-// the PureInput is the accumulation of the Input with all the input steps
-// the tag: is used to associate the PureOutput on the Object
-// output steps extend the Input Object
-// the result is the accumulation of the PureInput with the PureOutput and
-// all the output steps
+// the PureInput is an Object built up by the InputFxFn
+// the pure function accepts that input
+// ... so far so good ...
+// after that it's not so good - the pure function returns something 
+// which gets associated on the Object at the I['tag'] and then 
+// the pure-output is fed to the OutputFxFns, which yields an Object
+// which is merged on to the accumulator
 
+// this is not great 
+// - the OutputFxFns only see one element from the pure-output and nothing of the accumulator
+// - there is no scope for no effectful output e.g. where all the effectful processing is
+//   input-side and the pure-fn formats a response
 
-// maybe we have different sorts of steps
-// - input service-fn steps - chain steps
-// - pure-step - in:obj -> out:tuple
-// - output service-fn steps - tuple-map steps
+// would ideally like the OutputFxFns to get the pure-output and the accumulated context.
+// maybe have the pure-fn output an Object at it's I['tag'] key ... and use the inFn on 
+// the OutputFxFns to select data for the output services ...
+// 
+// this gives the OutputFxFns much more flexibility (and symmetry)... but how would the inFns
+// know where to select from if the pure-output is at the I['tag'] key, which they know
+// nothing about ? could:
+// - use a fixed key for the pure-output object (yeuch), 
+// - pass multiple params (pure - output object?) (yeuch)
+// - do nothing an let the inFn include the key ... hmmm ... could be ok
+// so... the output stage becomes another chain over the output step specs, just 
+// like the input
 
 // no type parameters so easier to use than FxFn
 type ObjectObjectEffectFn<I extends object, V extends object> = (i: I) => Effect.Effect<any, any, V>
