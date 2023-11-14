@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect } from "effect"
+import { Tagged, Tag } from "./tagged.ts"
 import { UFxFnDeps, UFxFnErrors, UFxFnValue } from "./fx_fn.ts"
 import { Expand, UnionFromTuple, UPObjectStepSpec, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
@@ -24,13 +25,6 @@ import { Expand, UnionFromTuple, UPObjectStepSpec, ObjectStepsInputTuple, TupleM
 // the result is the accumulation of the PureInput with the PureOutput and
 // all the output steps
 
-export interface Tagged { readonly tag: string }
-export type Tag<T extends Tagged> = { readonly tag: T['tag'] }
-
-// build a tag value for an Tagged type,
-// forcing the tag param to match the Tagged.tag string
-// const aTag = tag<ATagged>("ATagged")
-export const tag = <T extends Tagged>(tag: T['tag']): Tag<T> => { return { tag } }
 
 // maybe we have different sorts of steps
 // - input service-fn steps - chain steps

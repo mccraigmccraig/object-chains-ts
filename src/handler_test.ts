@@ -2,7 +2,8 @@ import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
 import { ObjectStepSpec } from "./object_builders.ts"
 import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
-import { tag, pureWrapperProgram, pureWrapperChainProgram } from "./pure_wrapper.ts"
+import { tag } from "./tagged.ts"
+import { pureWrapperProgram, pureWrapperChainProgram } from "./pure_wrapper.ts"
 import { makeHandlerProgram } from "./handler.ts"
 
 //////////////////// some steps //////////////////////////////////

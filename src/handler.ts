@@ -1,6 +1,7 @@
 import { Effect } from "effect"
 import { UnionFromTuple } from "./object_builders.ts"
-import { Tagged, UPPureWrapperProgram, PureWrapperProgramsInputTuple } from "./pure_wrapper.ts"
+import { Tagged } from "./tagged.ts"
+import { UPPureWrapperProgram, PureWrapperProgramsInputTuple } from "./pure_wrapper.ts"
 
 // to type the multi-chain handler, need something like 
 // a conditional type which will look up return types from the program map object
