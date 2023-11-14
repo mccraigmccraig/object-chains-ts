@@ -87,16 +87,16 @@ export type PureWrapperProgram
         InputEffectFn extends ObjectObjectEffectFn<I, Parameters<PureFn>[0]>,
         PureFn extends (pi: any) => any,
         OutputEffectFn extends AnyObjectEffectFn<ReturnType<PureFn>>> = {
-            tagStr: Tag<I>['tag']
-            tag: Tag<I>
-            pureFn: (pi: any) => any
-            program: (i: I) => Effect.Effect<UPFxFnDeps<InputEffectFn> | UPFxFnDeps<OutputEffectFn>,
+            readonly tagStr: Tag<I>['tag']
+            readonly tag: Tag<I>
+            readonly pureFn: (pi: any) => any
+            readonly program: (i: I) => Effect.Effect<UPFxFnDeps<InputEffectFn> | UPFxFnDeps<OutputEffectFn>,
                 UPFxFnErrors<InputEffectFn> | UPFxFnErrors<OutputEffectFn>,
                 Expand<UPFxFnValue<InputEffectFn> &
                     { [_K in I['tag']]: ReturnType<PureFn> } &
                     UPFxFnValue<OutputEffectFn>>>
 
-            [index: string]: any
+            readonly [index: string]: any
         }
 
 export type PureWrapperProgramInput<T> = T extends PureWrapperProgram<infer I, infer _IFxFn, infer _PFn, infer _OFxFn> ? I : never
