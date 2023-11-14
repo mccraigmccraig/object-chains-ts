@@ -84,25 +84,25 @@ export type ExpandTuple<Tuple extends readonly [...any[]]> = {
 } & { length: Tuple['length'] }
 
 // get a union of all the R dependencies from a tuple of steps
-export type ObjectStepDeps<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer R, infer _E, infer _V> ? R : never
+export type ObjectStepDeps<T extends UPObjectStepSpec> = T extends UCObjectStepSpec<infer _K, infer _A, infer _D1, infer _D2, infer R, infer _E, infer _V> ? R : never
 export type ObjectStepsDepsU<Tuple extends readonly [...UPObjectStepSpec[]]> = UnionFromTuple<{
     +readonly [Index in keyof Tuple]: ObjectStepDeps<Tuple[Index]>
 } & { length: Tuple['length'] }>
 
 // get a union of all the E errors from a tuple of steps
-export type ObjectStepErrors<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer _R, infer E, infer _V> ? E : never
+export type ObjectStepErrors<T extends UPObjectStepSpec> = T extends UCObjectStepSpec<infer _K, infer _A, infer _D1, infer _D2, infer _R, infer E, infer _V> ? E : never
 export type ObjectStepsErrorsU<Tuple extends readonly [...UPObjectStepSpec[]]> = UnionFromTuple<{
     +readonly [Index in keyof Tuple]: ObjectStepErrors<Tuple[Index]>
 } & { length: Tuple['length'] }>
 
 // get a tuple of the input types from a tuple of steps
-export type ObjectStepInput<T> = T extends ObjectStepSpec<infer _K, infer A, infer _D, infer _R, infer _E, infer _V> ? A : never
+export type ObjectStepInput<T extends UPObjectStepSpec> = T extends UCObjectStepSpec<infer _K, infer A, infer _D1, infer _D2, infer _R, infer _E, infer _V> ? A : never
 export type ObjectStepsInputTuple<Tuple extends readonly [...UPObjectStepSpec[]]> = {
     +readonly [Index in keyof Tuple]: ObjectStepInput<Tuple[Index]>
 } & { length: Tuple['length'] }
 
 // get a tuple of the value types from a tuple of steps
-export type ObjectStepValue<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer _R, infer _E, infer V> ? V : never
+export type ObjectStepValue<T extends UPObjectStepSpec> = T extends UCObjectStepSpec<infer _K, infer _A, infer _D1, infer _D2, infer _R, infer _E, infer V> ? V : never
 export type ObjectStepsValueTuple<Tuple extends readonly [...UPObjectStepSpec[]]> = {
     +readonly [Index in keyof Tuple]: ObjectStepValue<Tuple[Index]>
 } & { length: Tuple['length'] }
@@ -119,7 +119,7 @@ export type ObjectStepsValueTuple<Tuple extends readonly [...UPObjectStepSpec[]]
 // 2. it's safe to use never in the else branches
 type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
     ObjAcc,
-    StepAcc extends [...any[]] = []> =
+    StepAcc extends [...UPObjectStepSpec[]] = []> =
 
     // case: empty specs
     Specs extends readonly []
@@ -213,7 +213,7 @@ export function chainObjectStepsProg<Init>() {
 // accumulating outputs in an Object {K: V}
 type TupleMapObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
     Inputs extends readonly [...any[]],
-    StepAcc extends [...any[]] = []> =
+    StepAcc extends [...UPObjectStepSpec[]] = []> =
 
     // case: empty specs
     Specs extends readonly []
@@ -255,7 +255,7 @@ export type TupleMapObjectStepsReturn<Specs extends readonly [...UPObjectStepSpe
     // the lint recommendation messes up the return type here, so ignoring it
     // deno-lint-ignore ban-types
     ObjAcc = {},
-    StepAcc extends [...any[]] = []> =
+    StepAcc extends [...UPObjectStepSpec[]] = []> =
 
     // case: final spec - return type 
     Specs extends readonly [infer Head]
