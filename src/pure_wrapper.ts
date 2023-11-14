@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect } from "effect"
 import { UFxFnDeps, UFxFnErrors, UFxFnValue } from "./fx_fn.ts"
-import { Expand, UnionFromTuple, UObjectStepSpec, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
+import { Expand, UnionFromTuple, UPObjectStepSpec, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
 // business logic is encapsulated in a pure function
 //   (in: extends Object) => [...(extends Object)[]]
@@ -151,8 +151,8 @@ export function pureWrapperProgram<I extends Tagged>() {
 
 // wrap a pure fn with effectful inputs and outputs defined by chains of ObjectStepSpecs
 export function wrapPureChain<I extends Tagged>() {
-    return function <InputStepSpecs extends readonly [...UObjectStepSpec[]],
-        OutputStepSpecs extends readonly [...UObjectStepSpec[]]>
+    return function <InputStepSpecs extends readonly [...UPObjectStepSpec[]],
+        OutputStepSpecs extends readonly [...UPObjectStepSpec[]]>
         (inputStepSpecs: InputStepSpecs,
             pureFn: (pi: ChainObjectStepsReturn<InputStepSpecs, I>) => ObjectStepsInputTuple<OutputStepSpecs>,
             outputStepSpecs: OutputStepSpecs) {
@@ -173,8 +173,8 @@ export function wrapPureChain<I extends Tagged>() {
 
 // make a PureWrapperProgram with wrapPureChain
 export function pureWrapperChainProgram<I extends Tagged>() {
-    return function <InputStepSpecs extends readonly [...UObjectStepSpec[]],
-        OutputStepSpecs extends readonly [...UObjectStepSpec[]]>
+    return function <InputStepSpecs extends readonly [...UPObjectStepSpec[]],
+        OutputStepSpecs extends readonly [...UPObjectStepSpec[]]>
         (tag: Tag<I>,
             inputStepSpecs: InputStepSpecs,
             pureFn: (pi: ChainObjectStepsReturn<InputStepSpecs, I>) => ObjectStepsInputTuple<OutputStepSpecs>,
