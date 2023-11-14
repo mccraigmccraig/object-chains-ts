@@ -45,8 +45,8 @@ export type UCObjectStepSpec<K extends string, A, D1, D2, R, E, V> = {
 
 // an unparameterised ObjectStepSpec we can use to "roughly" type arrays
 export type UPObjectStepSpec = {
-    readonly k: string 
-    readonly inFn: (arg: any) => any 
+    readonly k: string
+    readonly inFn: (arg: any) => any
     readonly fxFn: (arg: any) => Effect.Effect<any, any, any>
 }
 

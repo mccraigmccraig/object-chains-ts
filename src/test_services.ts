@@ -39,7 +39,7 @@ export const getUserByIds = invokeServiceFxFn(UserService, "getByIds")
 
 interface PushNotificationService { readonly _: unique symbol }
 export interface PushNotificationServiceI {
-    readonly sendPush: (d: {user_id: string, message: string}) => Effect.Effect<never, never, string>
+    readonly sendPush: (d: { user_id: string, message: string }) => Effect.Effect<never, never, string>
 }
 export const PushNotificationService = Context.Tag<PushNotificationService, PushNotificationServiceI>("PushNotificationService")
 

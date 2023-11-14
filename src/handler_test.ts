@@ -41,11 +41,11 @@ export const sendPusnNotificationStepSpec =
 type GetOrgInput = { tag: "GetOrg", data: { org_nick: string } }
 const GetOrgInputTag = tag<GetOrgInput>("GetOrg")
 
-const formatOrgOutputStepSpec: ObjectStepSpec<"apiResponse", Org, Org, never, never, {org: Org}> = 
+const formatOrgOutputStepSpec: ObjectStepSpec<"apiResponse", Org, Org, never, never, { org: Org }> =
 {
     k: "apiResponse" as const,
     inFn: (d: Org) => d,
-    fxFn: (d: Org) => Effect.succeed({org: d})
+    fxFn: (d: Org) => Effect.succeed({ org: d })
 }
 
 const getOrgProg = pureWrapperChainProgram<GetOrgInput>()(
@@ -63,11 +63,12 @@ const sendWelcomePushInputFn = (i: SendWelcomePushInput) => {
     return Effect.succeed({
         ...i,
         org: { id: "foo", name: "Foo" },
-        user: { id: "100", name: "Bar" } })
+        user: { id: "100", name: "Bar" }
+    })
 }
 
 const sendWelcomePushOutputFn = (d: readonly [{ user_id: string, message: string }]) => {
-    return Effect.succeed({sendPush: "push sent OK: " + d[0].user_id.toString() + ", " + d[0].message})
+    return Effect.succeed({ sendPush: "push sent OK: " + d[0].user_id.toString() + ", " + d[0].message })
 }
 
 const sendWelcomePushProg = pureWrapperProgram<SendWelcomePushInput>()(SendWelcomePushInputTag,
@@ -86,7 +87,7 @@ const echoContext = Context.empty().pipe(
         getByIds: (d: { org_id: string, user_id: string }) => Effect.succeed({ id: d.user_id, name: "Bar" })
     })),
     Context.add(PushNotificationService, PushNotificationService.of({
-        sendPush: (d: {user_id: string, message: string}) => Effect.succeed("push sent OK: " + d.message)
+        sendPush: (d: { user_id: string, message: string }) => Effect.succeed("push sent OK: " + d.message)
     })))
 
 ////////////////////////// handler ///////////////////////////////////
@@ -96,9 +97,9 @@ const programs = [getOrgProg, sendWelcomePushProg]
 const handlerProgram = makeHandlerProgram(programs)
 
 Deno.test("makeHandlerProgram", () => {
-    const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo"} }
-//    const sendWelcomePushInput: SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
-    
+    const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }
+    //    const sendWelcomePushInput: SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
+
     const handlerEffect = handlerProgram(getOrgInput)
     const runnable = Effect.provide(handlerEffect, echoContext)
     const r = Effect.runSync(runnable)
@@ -107,7 +108,7 @@ Deno.test("makeHandlerProgram", () => {
         {
             ...getOrgInput,
             org: { id: "foo", name: "Foo" },
-            GetOrg: [{id: "foo", name: "Foo"}],
-            apiResponse: {org: {id: "foo", name: "Foo"}}
+            GetOrg: [{ id: "foo", name: "Foo" }],
+            apiResponse: { org: { id: "foo", name: "Foo" } }
         })
 })

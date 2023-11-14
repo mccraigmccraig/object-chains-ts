@@ -1,6 +1,6 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
-import {OrgService, getOrgByNick} from "./test_services.ts"
+import { OrgService, getOrgByNick } from "./test_services.ts"
 
 
 const context = Context.empty().pipe(

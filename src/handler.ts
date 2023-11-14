@@ -33,10 +33,10 @@ export type IndexPureWrapperProgramTuple<T extends Array<UPPureWrapperProgram>> 
 }
 // showing that this does indeed index a tuple of UPPureWrapperProgram
 export type X = IndexPureWrapperProgramTuple<[
-    { tagStr: "foo", program: (ev: number) => Effect.Effect<never,never,number> },
-    { tagStr: "bar", program: (ev: number) => Effect.Effect<never,never,number> }]>
+    { tagStr: "foo", program: (ev: number) => Effect.Effect<never, never, number> },
+    { tagStr: "bar", program: (ev: number) => Effect.Effect<never, never, number> }]>
 
-export type ProgramDeps<T extends UPPureWrapperProgram> = ReturnType<T['program']> extends Effect.Effect<infer R, infer _E, infer _V> 
+export type ProgramDeps<T extends UPPureWrapperProgram> = ReturnType<T['program']> extends Effect.Effect<infer R, infer _E, infer _V>
     ? R
     : never
 
@@ -44,14 +44,14 @@ export type ProgramsDepsU<Tuple extends readonly [...UPPureWrapperProgram[]]> = 
     +readonly [Index in keyof Tuple]: ProgramDeps<Tuple[Index]>
 } & { length: Tuple['length'] }>
 
-export type ProgramErrors<T extends UPPureWrapperProgram> = ReturnType<T['program']> extends Effect.Effect<infer _R, infer E, infer _V> 
+export type ProgramErrors<T extends UPPureWrapperProgram> = ReturnType<T['program']> extends Effect.Effect<infer _R, infer E, infer _V>
     ? E
     : never
-    export type ProgramsErrorsU<Tuple extends readonly [...UPPureWrapperProgram[]]> = UnionFromTuple<{
-        +readonly [Index in keyof Tuple]: ProgramErrors<Tuple[Index]>
-    } & { length: Tuple['length'] }>
-    
-export type ProgramValue<T extends UPPureWrapperProgram> = ReturnType<T['program']> extends Effect.Effect<infer _R, infer _E, infer V> 
+export type ProgramsErrorsU<Tuple extends readonly [...UPPureWrapperProgram[]]> = UnionFromTuple<{
+    +readonly [Index in keyof Tuple]: ProgramErrors<Tuple[Index]>
+} & { length: Tuple['length'] }>
+
+export type ProgramValue<T extends UPPureWrapperProgram> = ReturnType<T['program']> extends Effect.Effect<infer _R, infer _E, infer V>
     ? V
     : never
 

@@ -15,7 +15,7 @@ export type UFxFnErrors<T extends UFxFn> = ReturnType<T> extends Effect.Effect<i
     ? E
     : never
 export type UFxFnValue<T extends UFxFn> = ReturnType<T> extends Effect.Effect<infer _R, infer _E, infer V>
-    ? V 
+    ? V
     : never
 
 // check that S[K] is an FxFn as required

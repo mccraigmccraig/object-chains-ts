@@ -1,7 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
 import { wrapPure, wrapPureChain } from "./pure_wrapper.ts"
-import {Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush} from "./test_services.ts"
+import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
 
 const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string } }, string, OrgService, never, Org> */ =
 {
@@ -18,7 +18,7 @@ const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: strin
 }
 
 const pureSendWelcomePush = (d: { org: Org, user: User }) => {
-    return [{user_id: d.user.id, message: "Welcome " + d.user.name + " of " + d.org.name}] as const
+    return [{ user_id: d.user.id, message: "Welcome " + d.user.name + " of " + d.org.name }] as const
 }
 
 const sendPusnNotificationStepSpec =
@@ -38,7 +38,7 @@ const echoContext = Context.empty().pipe(
         getByIds: (d: { org_id: string, user_id: string }) => Effect.succeed({ id: d.user_id, name: "Bar" })
     })),
     Context.add(PushNotificationService, PushNotificationService.of({
-        sendPush: (d: {user_id: string, message: string}) => Effect.succeed("push sent OK: " + d.message)
+        sendPush: (d: { user_id: string, message: string }) => Effect.succeed("push sent OK: " + d.message)
     })))
 
 Deno.test("wrapPureFn", () => {
@@ -49,11 +49,12 @@ Deno.test("wrapPureFn", () => {
         return Effect.succeed({
             ...i,
             org: { id: "foo", name: "Foo" },
-            user: { id: "100", name: "Bar" } })
+            user: { id: "100", name: "Bar" }
+        })
     }
 
     const outputFn = (_d: readonly [{ user_id: string, message: string }]) => {
-        return Effect.succeed({sendPush: "push sent OK: Welcome Bar of Foo"})
+        return Effect.succeed({ sendPush: "push sent OK: Welcome Bar of Foo" })
     }
 
     const prog = wrapPure<INPUT>()(inputFn, pureSendWelcomePush, outputFn)(input)
@@ -62,7 +63,7 @@ Deno.test("wrapPureFn", () => {
         ...input,
         org: { id: "foo", name: "Foo" },
         user: { id: "100", name: "Bar" },
-        sendWelcomePush: [{user_id: "100", message: "Welcome Bar of Foo"}],
+        sendWelcomePush: [{ user_id: "100", message: "Welcome Bar of Foo" }],
         sendPush: "push sent OK: Welcome Bar of Foo"
     })
 })
@@ -70,12 +71,12 @@ Deno.test("wrapPureFn", () => {
 Deno.test("wrapPureChain", () => {
     type INPUT = { tag: "sendWelcomePush", data: { org_nick: string, user_id: string } }
     const input: INPUT = { tag: "sendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
-    
+
     const pureChainProg = wrapPureChain<INPUT>()(
         [getOrgObjectStepSpec, getUserObjectStepSpec] as const,
         pureSendWelcomePush,
         [sendPusnNotificationStepSpec] as const)
-    
+
     const pureChainEffect = pureChainProg(input)
     const runnable = Effect.provide(pureChainEffect, echoContext)
     const r = Effect.runSync(runnable)
@@ -84,7 +85,7 @@ Deno.test("wrapPureChain", () => {
         ...input,
         org: { id: "foo", name: "Foo" },
         user: { id: "100", name: "Bar" },
-        sendWelcomePush: [{user_id: "100", message: "Welcome Bar of Foo"}],
+        sendWelcomePush: [{ user_id: "100", message: "Welcome Bar of Foo" }],
         sendPush: "push sent OK: Welcome Bar of Foo"
     })
 })
