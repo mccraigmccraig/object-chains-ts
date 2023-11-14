@@ -6,15 +6,15 @@ export type FxFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
 
 // an unparameterized FxFn
 // deno-lint-ignore no-explicit-any
-export type UFxFn = (d: any) => Effect.Effect<any, any, any>
+export type UPFxFn = (d: any) => Effect.Effect<any, any, any>
 
-export type UFxFnDeps<T extends UFxFn> = ReturnType<T> extends Effect.Effect<infer R, infer _E, infer _V>
+export type UPFxFnDeps<T extends UPFxFn> = ReturnType<T> extends Effect.Effect<infer R, infer _E, infer _V>
     ? R
     : never
-export type UFxFnErrors<T extends UFxFn> = ReturnType<T> extends Effect.Effect<infer _R, infer E, infer _V>
+export type UPFxFnErrors<T extends UPFxFn> = ReturnType<T> extends Effect.Effect<infer _R, infer E, infer _V>
     ? E
     : never
-export type UFxFnValue<T extends UFxFn> = ReturnType<T> extends Effect.Effect<infer _R, infer _E, infer V>
+export type UPFxFnValue<T extends UPFxFn> = ReturnType<T> extends Effect.Effect<infer _R, infer _E, infer V>
     ? V
     : never
 

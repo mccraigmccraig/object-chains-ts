@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect } from "effect"
 import { Tagged, Tag } from "./tagged.ts"
-import { UFxFnDeps, UFxFnErrors, UFxFnValue } from "./fx_fn.ts"
+import { UPFxFnDeps, UPFxFnErrors, UPFxFnValue } from "./fx_fn.ts"
 import { Expand, UnionFromTuple, UPObjectStepSpec, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
 // business logic is encapsulated in a pure function
@@ -64,11 +64,11 @@ export function wrapPure<I extends Tagged>() {
             })
         }
 
-        return r as (i: I) => Effect.Effect<UFxFnDeps<InputEffectFn> | UFxFnDeps<OutputEffectFn>,
-            UFxFnErrors<InputEffectFn> | UFxFnErrors<OutputEffectFn>,
-            Expand<UFxFnValue<InputEffectFn> &
+        return r as (i: I) => Effect.Effect<UPFxFnDeps<InputEffectFn> | UPFxFnDeps<OutputEffectFn>,
+            UPFxFnErrors<InputEffectFn> | UPFxFnErrors<OutputEffectFn>,
+            Expand<UPFxFnValue<InputEffectFn> &
                 { [_K in I['tag']]: ReturnType<PureFn> } &
-                UFxFnValue<OutputEffectFn>>>
+                UPFxFnValue<OutputEffectFn>>>
     }
 }
 
@@ -93,11 +93,11 @@ export type PureWrapperProgram
             tagStr: Tag<I>['tag']
             tag: Tag<I>
             pureFn: (pi: any) => any
-            program: (i: I) => Effect.Effect<UFxFnDeps<InputEffectFn> | UFxFnDeps<OutputEffectFn>,
-                UFxFnErrors<InputEffectFn> | UFxFnErrors<OutputEffectFn>,
-                Expand<UFxFnValue<InputEffectFn> &
+            program: (i: I) => Effect.Effect<UPFxFnDeps<InputEffectFn> | UPFxFnDeps<OutputEffectFn>,
+                UPFxFnErrors<InputEffectFn> | UPFxFnErrors<OutputEffectFn>,
+                Expand<UPFxFnValue<InputEffectFn> &
                     { [_K in I['tag']]: ReturnType<PureFn> } &
-                    UFxFnValue<OutputEffectFn>>>
+                    UPFxFnValue<OutputEffectFn>>>
 
             [index: string]: any
         }
