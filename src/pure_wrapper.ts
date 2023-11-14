@@ -40,6 +40,12 @@ import { Expand, UnionFromTuple, UPObjectStepSpec, ObjectStepsInputTuple, TupleM
 // - do nothing an let the inFn include the key ... hmmm ... could be ok
 // so... the output stage becomes another chain over the output step specs, just 
 // like the input
+//
+// ... ok so each stage adds one or more keys to the object... there could be just inputs
+// or a mix of any set of input/pure/output stages - and each step accumulates a new 
+// key in the map
+//
+// sounds like we have symmetry and composition
 
 // no type parameters so easier to use than FxFn
 type ObjectObjectEffectFn<I extends object, V extends object> = (i: I) => Effect.Effect<any, any, V>
