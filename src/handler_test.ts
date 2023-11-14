@@ -71,7 +71,8 @@ const sendWelcomePushOutputFn = (d: readonly [{ user_id: string, message: string
     return Effect.succeed({ sendPush: "push sent OK: " + d[0].user_id.toString() + ", " + d[0].message })
 }
 
-const sendWelcomePushProg = pureWrapperProgram<SendWelcomePushInput>()(SendWelcomePushInputTag,
+const sendWelcomePushProg = pureWrapperProgram<SendWelcomePushInput>()(
+    SendWelcomePushInputTag,
     sendWelcomePushInputFn,
     pureSendWelcomePush,
     sendWelcomePushOutputFn)
