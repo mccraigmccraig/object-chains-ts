@@ -127,20 +127,20 @@ type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
 
     // case: final spec - deliver final pipeline tuple type from StepAcc
     : Specs extends readonly [infer Head]
-    ? Head extends UCObjectStepSpec<infer K, infer _A, infer D1, infer _D2, infer R, infer E, infer V>
+    ? Head extends UCObjectStepSpec<infer K, infer _A, infer _D1, infer D2, infer R, infer E, infer V>
     // return the final inferred pipeline - note we constrain D1==D2
-    ? readonly [...StepAcc, UCObjectStepSpec<K, ObjAcc, D1, D1, R, E, V>]
+    ? readonly [...StepAcc, UCObjectStepSpec<K, ObjAcc, D2, D2, R, E, V>]
     : never // readonly [...StepAcc, ["ChainObjectStepsFail-final-A: Head !extends ObjectStepSpec", Head]]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends readonly [infer Head, ...infer Tail]
-    ? Head extends UCObjectStepSpec<infer HK, infer _HA, infer HD1, infer HD2, infer HR, infer HE, infer HV>
+    ? Head extends UCObjectStepSpec<infer HK, infer _HA, infer _HD1, infer HD2, infer HR, infer HE, infer HV>
     ? Tail extends readonly [infer Next, ...any]
     ? Next extends UCObjectStepSpec<infer _NK, infer _NA, infer _ND1, infer _ND2, infer _NR, infer _NE, infer _NV>
     // recurse - note constraint HD1==HD2
     ? ChainObjectSteps<Tail,
         ObjAcc & { [K in HK]: HV },
-        [...StepAcc, UCObjectStepSpec<HK, ObjAcc, HD1, HD1, HR, HE, HV>]>
+        [...StepAcc, UCObjectStepSpec<HK, ObjAcc, HD2, HD2, HR, HE, HV>]>
     : never // [...StepAcc, ["ChainObjectStepsFail-recurse-E: Next !extends ObjectStepSpec", Next]]
     : never // [...StepAcc, ["ChainObjectStepsFail-ecurse-D: Tail !extends [infer Next, ...any]", Tail]]
     : never // [...StepAcc, ["ChainObjectStepsFail-recurse-B: Head !extends ObjectStepSpec", Head]]
@@ -222,29 +222,29 @@ type TupleMapObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
     // case: final spec - deliver final pipeline tuple type from StepAcc
     : Specs extends readonly [infer Head]
     ? Inputs extends readonly [infer HeadIn]
-    ? Head extends ObjectStepSpec<infer K, HeadIn, infer D, infer R, infer E, infer V>
+    ? Head extends UCObjectStepSpec<infer K, HeadIn, infer _D1, infer D2, infer R, infer E, infer V>
     // return the final inferred pipeline
-    ? readonly [...StepAcc, ObjectStepSpec<K, HeadIn, D, R, E, V>]
-    : ["TupleMapObjectStepsFail", "final-B: Head extends ObjectStepSpec", Specs]
-    : ["TupleMapObjectStepsFail", "final-A: Inputs extends [infer HeadIn]", Specs]
+    ? readonly [...StepAcc, UCObjectStepSpec<K, HeadIn, D2, D2, R, E, V>]
+    : never // ["TupleMapObjectStepsFail", "final-B: Head extends ObjectStepSpec", Specs]
+    : never // ["TupleMapObjectStepsFail", "final-A: Inputs extends [infer HeadIn]", Specs]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends readonly [infer Head, ...infer Tail]
     ? Inputs extends readonly [infer HeadIn, ...infer TailIn]
-    ? Head extends ObjectStepSpec<infer HK, HeadIn, infer HD, infer HR, infer HE, infer HV>
+    ? Head extends UCObjectStepSpec<infer HK, HeadIn, infer _HD1, infer HD2, infer HR, infer HE, infer HV>
     ? Tail extends readonly [infer Next, ...any]
     ? TailIn extends readonly [infer NextIn, ...any]
-    ? Next extends ObjectStepSpec<infer _NK, NextIn, infer _ND, infer _NR, infer _NE, infer _NV>
+    ? Next extends UCObjectStepSpec<infer _NK, NextIn, infer _ND1, infer _ND2, infer _NR, infer _NE, infer _NV>
     // recurse
     ? TupleMapObjectSteps<Tail,
         TailIn,
-        [...StepAcc, ObjectStepSpec<HK, HeadIn, HD, HR, HE, HV>]>
-    : ["TupleMapObjectStepsFail", "recurse-G: Next extends ObjectStepSpec", Specs]
-    : ["TupleMapObjectStepsFail", "recurse-F: TailIn extends [infer NextIn, ...any]", Specs]
-    : ["TupleMapObjectStepsFail", "recurse-E: Tail extends [infer Next, ...any]", Specs]
-    : ["TupleMapObjectStepsFail", "recurse-C: Head extends ObjectStepSpec", Specs]
-    : ["TupleMapObjectStepsFail", "recurse-B: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
-    : ["TupleMapObjectStepsFail", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
+        [...StepAcc, UCObjectStepSpec<HK, HeadIn, HD2, HD2, HR, HE, HV>]>
+    : never // ["TupleMapObjectStepsFail", "recurse-G: Next extends ObjectStepSpec", Specs]
+    : never // ["TupleMapObjectStepsFail", "recurse-F: TailIn extends [infer NextIn, ...any]", Specs]
+    : never // ["TupleMapObjectStepsFail", "recurse-E: Tail extends [infer Next, ...any]", Specs]
+    : never // ["TupleMapObjectStepsFail", "recurse-C: Head extends ObjectStepSpec", Specs]
+    : never // ["TupleMapObjectStepsFail", "recurse-B: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
+    : never // ["TupleMapObjectStepsFail", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
 
 // calculate the return type ... since the array type is not chained through
 // the calculation, calculating the return type looks very similar to checking
@@ -260,30 +260,30 @@ export type TupleMapObjectStepsReturn<Specs extends readonly [...UPObjectStepSpe
     // case: final spec - return type 
     Specs extends readonly [infer Head]
     ? Inputs extends readonly [infer HeadIn]
-    ? Head extends ObjectStepSpec<infer K, HeadIn, infer _D, infer _R, infer _E, infer V>
+    ? Head extends UCObjectStepSpec<infer K, HeadIn, infer _D1, infer _D2, infer _R, infer _E, infer V>
     // return the final inferred pipeline
     ? Expand<ObjAcc & { [KK in K]: V }>
-    : ["TupleMapObjectStepsReturnFail", "final-B: Head extends ObjectStepSpec", Specs]
-    : ["TupleMapObjectStepsReturnFail", "final-A: Inputs extends [infer HeadIn]", Specs]
+    : never // ["TupleMapObjectStepsReturnFail", "final-B: Head extends ObjectStepSpec", Specs]
+    : never // ["TupleMapObjectStepsReturnFail", "final-A: Inputs extends [infer HeadIn]", Specs]
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends readonly [infer Head, ...infer Tail]
     ? Inputs extends readonly [infer HeadIn, ...infer TailIn]
-    ? Head extends ObjectStepSpec<infer HK, HeadIn, infer HD, infer HR, infer HE, infer HV>
+    ? Head extends UCObjectStepSpec<infer HK, HeadIn, infer _HD1, infer HD2, infer HR, infer HE, infer HV>
     ? Tail extends readonly [infer Next, ...any]
     ? TailIn extends readonly [infer NextIn, ...any]
-    ? Next extends ObjectStepSpec<infer _NK, NextIn, infer _ND, infer _NR, infer _NE, infer _NV>
+    ? Next extends UCObjectStepSpec<infer _NK, NextIn, infer _ND1, infer _ND1, infer _NR, infer _NE, infer _NV>
     // recurse
     ? TupleMapObjectStepsReturn<Tail,
         TailIn,
         ObjAcc & { [K in HK]: HV },
-        [...StepAcc, ObjectStepSpec<HK, HeadIn, HD, HR, HE, HV>]>
-    : ["TupleMapObjectStepsReturnFail", "recurse-G: Next extends ObjectStepSpec", Specs]
-    : ["TupleMapObjectStepsReturnFail", "recurse-F: TailIn extends [infer NextIn, ...any]", Specs]
-    : ["TupleMapObjectStepsReturnFail", "recurse-E: Tail extends [infer Next, ...any]", Specs]
-    : ["TupleMapObjectStepsReturnFail", "recurse-C: Head extends ObjectStepSpec", Specs]
-    : ["TupleMapObjectStepsReturnFail", "recurse-B: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
-    : ["TupleMapObjectStepsReturnFail", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
+        [...StepAcc, UCObjectStepSpec<HK, HeadIn, HD2, HD2, HR, HE, HV>]>
+    : never // ["TupleMapObjectStepsReturnFail", "recurse-G: Next extends ObjectStepSpec", Specs]
+    : never // ["TupleMapObjectStepsReturnFail", "recurse-F: TailIn extends [infer NextIn, ...any]", Specs]
+    : never // ["TupleMapObjectStepsReturnFail", "recurse-E: Tail extends [infer Next, ...any]", Specs]
+    : never // ["TupleMapObjectStepsReturnFail", "recurse-C: Head extends ObjectStepSpec", Specs]
+    : never // ["TupleMapObjectStepsReturnFail", "recurse-B: Inputs extends [infer HeadIn, ...infer TailIn]", Specs]
+    : never // ["TupleMapObjectStepsReturnFail", "recurse-A: Specs extends [infer Head, ...infer Tail]", Specs]
 
 // once again, want to provide the Inputs type, but infer the ObjectStepSpecs type,
 // so we have to curry
