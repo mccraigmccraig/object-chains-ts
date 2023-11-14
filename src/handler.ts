@@ -1,6 +1,6 @@
 import { Effect } from "effect"
 import { UnionFromTuple } from "./object_builders.ts"
-import { Tagged, UPureWrapperProgram, PureWrapperProgram, PureWrapperProgramsInputTuple } from "./pure_wrapper.ts"
+import { Tagged, UPureWrapperProgram, PureWrapperProgramsInputTuple } from "./pure_wrapper.ts"
 
 // to type the multi-chain handler, need something like 
 // a conditional type which will look up return types from the program map object
@@ -35,32 +35,46 @@ export type X = IndexPureWrapperProgramTuple<[
     { tagStr: "foo", program: (ev: number) => Effect.Effect<never,never,number> },
     { tagStr: "bar", program: (ev: number) => Effect.Effect<never,never,number> }]>
 
-// a bit tricky ... given a union of Tagged, and a list of UPureWrapperProgram, get the 
-// return type for the handler function, which is the return type of the program
-// whose tag matches the event
+export type ProgramDeps<T extends UPureWrapperProgram> = ReturnType<T['program']> extends Effect.Effect<infer R, infer _E, infer _V> 
+    ? R
+    : never
 
-// use a conditional type to distribute the result type over a union of Tagged
-export type DistributeEventResultTypes<I extends Tagged, Progs extends [...UPureWrapperProgram[]]> =
-    IndexPureWrapperProgramTuple<Progs>[I['tag']] extends PureWrapperProgram<infer I, infer _IFxFn, infer _PFn, infer _OFxFn>
-    ? ReturnType<IndexPureWrapperProgramTuple<Progs>[I['tag']]['program']>
+export type ProgramsDepsU<Tuple extends readonly [...UPureWrapperProgram[]]> = UnionFromTuple<{
+    +readonly [Index in keyof Tuple]: ProgramDeps<Tuple[Index]>
+} & { length: Tuple['length'] }>
+
+export type ProgramErrors<T extends UPureWrapperProgram> = ReturnType<T['program']> extends Effect.Effect<infer _R, infer E, infer _V> 
+    ? E
+    : never
+    export type ProgramsErrorsU<Tuple extends readonly [...UPureWrapperProgram[]]> = UnionFromTuple<{
+        +readonly [Index in keyof Tuple]: ProgramErrors<Tuple[Index]>
+    } & { length: Tuple['length'] }>
+    
+export type ProgramValue<T extends UPureWrapperProgram> = ReturnType<T['program']> extends Effect.Effect<infer _R, infer _E, infer V> 
+    ? V
+    : never
+
+// not obvious - the conditional type distribute the value type over a union of Taggeds, resulting in a union of values!
+// https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
+export type DistributeProgramValueTypes<I extends Tagged, Progs extends [...UPureWrapperProgram[]]> =
+    IndexPureWrapperProgramTuple<Progs>[I['tag']] extends UPureWrapperProgram
+    ? ProgramValue<IndexPureWrapperProgramTuple<Progs>[I['tag']]>
     : never
 
 // return a function of the union 
 // of all the input types handled by the supplied UPureWrapperPrograms,
 // which uses a supplied UPureWrapperProgram to handle the input,
 // returning the same results as the supplied UPureWrapperProgram
-
-
-// TODO - the output type needs more work - it needs to collect
-// the deps and errors from all the programs
 export const makeHandlerProgram =
-    <EventHandlerPrograms extends [...UPureWrapperProgram[]],
-        Inputs extends UnionFromTuple<PureWrapperProgramsInputTuple<EventHandlerPrograms>>>
-        (eventHandlerPrograms: [...EventHandlerPrograms]):
-        (i: Inputs) => DistributeEventResultTypes<Inputs, EventHandlerPrograms> => {
+    <Programs extends [...UPureWrapperProgram[]],
+        Inputs extends UnionFromTuple<PureWrapperProgramsInputTuple<Programs>>>
+        (eventHandlerPrograms: [...Programs]):
+        (i: Inputs) => Effect.Effect<ProgramsDepsU<Programs>,
+            ProgramsErrorsU<Programs>,
+            DistributeProgramValueTypes<Inputs, Programs>> => {
 
         const progsByEventTag = eventHandlerPrograms.reduce(
-            (m, p) => { m[p.eventTagStr] = p; return m },
+            (m, p) => { m[p.tagStr] = p; return m },
             {} as { [index: string]: UPureWrapperProgram })
 
         return (i: Inputs) => {
@@ -69,7 +83,9 @@ export const makeHandlerProgram =
                 // so prog.program should be the resolved PureWrapperProgram - but 
                 // the type is dependent on the actual type of the input
                 console.log("multiProg: ", i)
-                return prog.program(i) as DistributeEventResultTypes<Inputs, EventHandlerPrograms>
+                return prog.program(i) as Effect.Effect<ProgramsDepsU<Programs>,
+                    ProgramsErrorsU<Programs>,
+                    DistributeProgramValueTypes<Inputs, Programs>>
             } else
                 throw "NoProgram for tag: " + i.tag
         }
