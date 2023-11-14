@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { Effect } from "effect"
 import { UFxFnDeps, UFxFnErrors, UFxFnValue } from "./fx_fn.ts"
-import { Expand, UObjectStepSpec, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDeps, ObjectStepsErrors, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
+import { Expand, UnionFromTuple, UObjectStepSpec, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDeps, ObjectStepsErrors, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
 // business logic is encapsulated in a pure function
 //   (in: extends Object) => [...(extends Object)[]]
@@ -109,16 +109,26 @@ export type PureWrapperProgram
         }
 
 export type PureWrapperProgramInput<T> = T extends PureWrapperProgram<infer I, infer _IFxFn, infer _PFn, infer _OFxFn> ? I : never
-export type PureWrapperProgramInputTuple<Tuple extends [...UPureWrapperProgram[]]> = {
+export type PureWrapperProgramsInputTuple<Tuple extends [...UPureWrapperProgram[]]> = {
     [Index in keyof Tuple]: PureWrapperProgramInput<Tuple[Index]>
 } & { length: Tuple['length'] }
 
 export type PureWrapperProgramTag<T> = T extends PureWrapperProgram<infer _I, infer _IFxFn, infer _PFn, infer _OFxFn> ? T['eventTag'] : never
-export type PureWrapperProgramTagTuple<Tuple extends [...UPureWrapperProgram[]]> = {
+export type PureWrapperProgramsTagTuple<Tuple extends [...UPureWrapperProgram[]]> = {
     [Index in keyof Tuple]: PureWrapperProgramTag<Tuple[Index]>
 } & { length: Tuple['length'] }
 
 export type PureWrapperProgramOutputEffect<T> = T extends PureWrapperProgram<infer _I, infer _IFxFn, infer _PFn, infer OFxFn> ? ReturnType<OFxFn> : never
+
+export type PureWrapperProgramDeps<T> = PureWrapperProgramOutputEffect<T> extends Effect.Effect<infer R, infer _E, infer _V> ? R : never
+export type PureWrapperProgramsDepsU<Tuple extends [...UPureWrapperProgram[]]> = UnionFromTuple<{
+    [Index in keyof Tuple]: PureWrapperProgramDeps<Tuple[Index]>
+} & { length: Tuple['length'] }>
+
+export type PureWrapperProgramErrors<T> = PureWrapperProgramOutputEffect<T> extends Effect.Effect<infer _R, infer E, infer _V> ? E : never
+export type PureWrapperProgramsErrorsU<Tuple extends [...UPureWrapperProgram[]]> = UnionFromTuple<{
+    [Index in keyof Tuple]: PureWrapperProgramErrors<Tuple[Index]>
+} & { length: Tuple['length'] }>
 
 // make a PureWrapperProgram
 export function pureWrapperProgram<I extends Tagged>() {

@@ -69,13 +69,13 @@ export type ExpandTuple<Tuple extends readonly [...any[]]> = {
 
 // get a union of all the R dependencies from a tuple of steps
 export type ObjectStepDeps<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer R, infer _E, infer _V> ? R : never
-export type ObjectStepsDeps<Tuple extends readonly [...any[]]> = UnionFromTuple<{
+export type ObjectStepsDepsU<Tuple extends readonly [...any[]]> = UnionFromTuple<{
     +readonly [Index in keyof Tuple]: ObjectStepDeps<Tuple[Index]>
 } & { length: Tuple['length'] }>
 
 // get a union of all the E errors from a tuple of steps
 export type ObjectStepErrors<T> = T extends ObjectStepSpec<infer _K, infer _A, infer _D, infer _R, infer E, infer _V> ? E : never
-export type ObjectStepsErrors<Tuple extends readonly [...any[]]> = UnionFromTuple<{
+export type ObjectStepsErrorsU<Tuple extends readonly [...any[]]> = UnionFromTuple<{
     +readonly [Index in keyof Tuple]: ObjectStepErrors<Tuple[Index]>
 } & { length: Tuple['length'] }>
 
@@ -172,7 +172,7 @@ export function chainObjectStepsProg<Init>() {
             // start with the no-steps fn
             (obj: Init) => Effect.succeed(obj))
 
-        return r as (obj: Init) => Effect.Effect<ObjectStepsDeps<ObjectStepSpecs>, ObjectStepsErrors<ObjectStepSpecs>, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
+        return r as (obj: Init) => Effect.Effect<ObjectStepsDepsU<ObjectStepSpecs>, ObjectStepsErrorsU<ObjectStepSpecs>, ChainObjectStepsReturn<ObjectStepSpecs, Init>>
     }
 }
 
@@ -292,7 +292,7 @@ export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
             })
         }
 
-        return r as (inputs: Inputs) => Effect.Effect<ObjectStepsDeps<ObjectStepSpecs>, ObjectStepsErrors<ObjectStepSpecs>, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
+        return r as (inputs: Inputs) => Effect.Effect<ObjectStepsDepsU<ObjectStepSpecs>, ObjectStepsErrorsU<ObjectStepSpecs>, TupleMapObjectStepsReturn<ObjectStepSpecs, Inputs>>
     }
 }
 

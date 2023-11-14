@@ -1,6 +1,6 @@
 import { Effect } from "effect"
 import { UnionFromTuple } from "./object_builders.ts"
-import { Tagged, UPureWrapperProgram, PureWrapperProgram, PureWrapperProgramInputTuple } from "./pure_wrapper.ts"
+import { Tagged, UPureWrapperProgram, PureWrapperProgram, PureWrapperProgramsInputTuple } from "./pure_wrapper.ts"
 
 // to type the multi-chain handler, need something like 
 // a conditional type which will look up return types from the program map object
@@ -50,11 +50,12 @@ export type DistributeEventResultTypes<I extends Tagged, Progs extends [...UPure
 // which uses a supplied UPureWrapperProgram to handle the input,
 // returning the same results as the supplied UPureWrapperProgram
 
+
 // TODO - the output type needs more work - it needs to collect
 // the deps and errors from all the programs
 export const makeHandlerProgram =
     <EventHandlerPrograms extends [...UPureWrapperProgram[]],
-        Inputs extends UnionFromTuple<PureWrapperProgramInputTuple<EventHandlerPrograms>>>
+        Inputs extends UnionFromTuple<PureWrapperProgramsInputTuple<EventHandlerPrograms>>>
         (eventHandlerPrograms: [...EventHandlerPrograms]):
         (i: Inputs) => DistributeEventResultTypes<Inputs, EventHandlerPrograms> => {
 
