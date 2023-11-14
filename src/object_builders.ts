@@ -117,7 +117,7 @@ export type ObjectStepsValueTuple<Tuple extends readonly [...UPObjectStepSpec[]]
 // types we output - this gives us:
 // 1. easy to understsand errors about constraint failure
 // 2. it's safe to use never in the else branches
-type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
+export type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
     ObjAcc,
     StepAcc extends [...UPObjectStepSpec[]] = []> =
 
@@ -211,7 +211,7 @@ export function chainObjectStepsProg<Init>() {
 
 // build an Object by independently mapping each Step over corresponding values in an Inputs tuple,
 // accumulating outputs in an Object {K: V}
-type TupleMapObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
+export type TupleMapObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
     Inputs extends readonly [...any[]],
     StepAcc extends [...UPObjectStepSpec[]] = []> =
 

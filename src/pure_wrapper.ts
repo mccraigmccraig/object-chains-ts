@@ -2,6 +2,7 @@
 import { Effect } from "effect"
 import { Tagged, Tag } from "./tagged.ts"
 import { UPFxFnDeps, UPFxFnErrors, UPFxFnValue } from "./fx_fn.ts"
+import { ChainObjectSteps, TupleMapObjectSteps } from "./object_builders.ts"
 import { Expand, UnionFromTuple, UPObjectStepSpec, ObjectStepsInputTuple, TupleMapObjectStepsReturn, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
 
 // business logic is encapsulated in a pure function
@@ -144,9 +145,18 @@ export function pureWrapperProgram<I extends Tagged>() {
 export function wrapPureChain<I extends Tagged>() {
     return function <InputStepSpecs extends readonly [...UPObjectStepSpec[]],
         OutputStepSpecs extends readonly [...UPObjectStepSpec[]]>
-        (inputStepSpecs: InputStepSpecs,
+
+        // this trick type-checks the param against the specs and stage constraints
+        (inputStepSpecs: ChainObjectSteps<InputStepSpecs, I> extends readonly [...InputStepSpecs]
+            ? readonly [...InputStepSpecs]
+            : ChainObjectSteps<InputStepSpecs, I>,
+
             pureFn: (pi: ChainObjectStepsReturn<InputStepSpecs, I>) => ObjectStepsInputTuple<OutputStepSpecs>,
-            outputStepSpecs: OutputStepSpecs) {
+
+            // same trick
+            outputStepSpecs: TupleMapObjectSteps<OutputStepSpecs, ObjectStepsInputTuple<OutputStepSpecs>> extends readonly [...OutputStepSpecs]
+                ? readonly [...OutputStepSpecs]
+                : TupleMapObjectSteps<OutputStepSpecs, ObjectStepsInputTuple<OutputStepSpecs>>) {
 
         console.log("CREATE WRAP_PURE_CHAIN", inputStepSpecs, pureFn, outputStepSpecs)
         const inputChainProg = chainObjectStepsProg<I>()(inputStepSpecs as any)
@@ -166,10 +176,18 @@ export function wrapPureChain<I extends Tagged>() {
 export function pureWrapperChainProgram<I extends Tagged>() {
     return function <InputStepSpecs extends readonly [...UPObjectStepSpec[]],
         OutputStepSpecs extends readonly [...UPObjectStepSpec[]]>
+
         (tag: Tag<I>,
-            inputStepSpecs: InputStepSpecs,
+
+            inputStepSpecs: ChainObjectSteps<InputStepSpecs, I> extends readonly [...InputStepSpecs]
+                ? readonly [...InputStepSpecs]
+                : ChainObjectSteps<InputStepSpecs, I>,
+
             pureFn: (pi: ChainObjectStepsReturn<InputStepSpecs, I>) => ObjectStepsInputTuple<OutputStepSpecs>,
-            outputStepSpecs: OutputStepSpecs) {
+
+            outputStepSpecs: TupleMapObjectSteps<OutputStepSpecs, ObjectStepsInputTuple<OutputStepSpecs>> extends readonly [...OutputStepSpecs]
+                ? readonly [...OutputStepSpecs]
+                : TupleMapObjectSteps<OutputStepSpecs, ObjectStepsInputTuple<OutputStepSpecs>>) {
 
         return {
             tagStr: tag.tag,
