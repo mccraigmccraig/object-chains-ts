@@ -27,6 +27,22 @@ export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
     readonly svcFn: FxFn<D, R, E, V>
 }
 
+// THOUGHT: maybe want an unconstrained ObjectStepSpec - UCObjectStepSpec - where the two uses of D are
+// represented as separate type parameters - so that an element from a UObjectStepSpec[] can *always* 
+// be parsed as an UnObjectStepSpec and we can enforce the D1=D2 constraint by rewriting the type...
+// the advantage would be that we don't get any hard-to-read type errors, instead we just get (good) 
+// boring "D2 is not assignable to D1" kinda errors, and we can also use never in all the else branches
+// because we know every UObjectStepSpec is always inferrable as a UCObjectStepSpec
+
+export type UCObjectStepSpec<K extends string, A, D1, D2, R, E, V> = {
+    // the key at which the FxFn output V will be added to the Object
+    readonly k: K
+    // a pure function which maps the input A to the FxFn input D
+    readonly inFn: (arg: A) => D1
+    // an effectful function of D, producing V
+    readonly svcFn: FxFn<D2, R, E, V>
+}
+
 // an unparameterised ObjectStepSpec we can use to "roughly" type arrays
 export type UObjectStepSpec = {
     readonly k: string 
