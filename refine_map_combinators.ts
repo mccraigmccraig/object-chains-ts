@@ -69,7 +69,7 @@ export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
     // a pure function which maps the input A to the FxFn input D
     readonly inFn: (arg: A) => D
     // an effectful function of D, producing V
-    readonly svcFn: FxFn<D, R, E, V>
+    readonly fxFn: FxFn<D, R, E, V>
 }
 
 // build an Object by chaining an initial value through a sequence
@@ -257,14 +257,14 @@ const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string
 {
     k: "org" as const,
     inFn: (d: { data: { org_nick: string } }) => d.data.org_nick,
-    svcFn: getOrgByNick
+    fxFn: getOrgByNick
 }
 const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: string }, org: Org }, {org_id: string, user_id: string}, UserService, never, User> */ =
 {
     k: "user" as const,
     // note that this fn depends on the output of an OrgServiceI.getBy* step
     inFn: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
-    svcFn: getUserByIds
+    fxFn: getUserByIds
 }
 export const stepSpecs = [
     getOrgObjectStepSpec,

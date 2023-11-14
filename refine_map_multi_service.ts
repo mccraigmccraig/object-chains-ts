@@ -37,7 +37,7 @@ export type ObjectStepSpec<K extends string, A, D, I, S, FK extends keyof S> =
         readonly f: (arg: A) => D
         // a service interface and the key of an FxFn
         readonly svc: FxServiceTag<I, S>
-        readonly svcFn: FK
+        readonly fxFn: FK
     }
 
 // build an Object by chaining an initial value through a sequence
@@ -238,7 +238,7 @@ const getOrgObjectStepSpec =
     k: "org" as const,
     f: (d: { data: { org_nick: string } }) => d.data.org_nick,
     svc: OrgService,
-    svcFn: "getByNick" as const
+    fxFn: "getByNick" as const
 }
 const getUserObjectStepSpec =
 {
@@ -246,7 +246,7 @@ const getUserObjectStepSpec =
     // note that this fn depends on the output of an OrgServiceI.getBy* step
     f: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
     svc: UserService,
-    svcFn: "getByIds" as const
+    fxFn: "getByIds" as const
 }
 export const stepSpecs = [
     getOrgObjectStepSpec,

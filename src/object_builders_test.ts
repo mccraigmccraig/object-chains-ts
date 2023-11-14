@@ -11,14 +11,14 @@ const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string
 {
     k: "org" as const,
     inFn: (d: { data: { org_nick: string } }) => d.data.org_nick,
-    svcFn: getOrgByNick
+    fxFn: getOrgByNick
 }
 const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: string }, org: Org }, {org_id: string, user_id: string}, UserService, never, User> */ =
 {
     k: "user" as const,
     // note that this fn depends on the output of an OrgServiceI.getBy* step
     inFn: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
-    svcFn: getUserByIds
+    fxFn: getUserByIds
 }
 export const stepSpecs = [
     getOrgObjectStepSpec,

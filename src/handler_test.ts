@@ -11,14 +11,14 @@ export const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick:
 {
     k: "org" as const,
     inFn: (d: { data: { org_nick: string } }) => d.data.org_nick,
-    svcFn: getOrgByNick
+    fxFn: getOrgByNick
 }
 export const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: string }, org: Org }, {org_id: string, user_id: string}, UserService, never, User> */ =
 {
     k: "user" as const,
     // note that this fn depends on the output of an OrgServiceI.getBy* step
     inFn: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
-    svcFn: getUserByIds
+    fxFn: getUserByIds
 }
 
 export const pureSendWelcomePush = (d: { org: Org, user: User }) => {
@@ -32,7 +32,7 @@ export const sendPusnNotificationStepSpec =
 {
     k: "sendPush" as const,
     inFn: (d: { user_id: string, message: string }) => d,
-    svcFn: sendPush
+    fxFn: sendPush
 }
 
 //////////////////////// getOrg
@@ -44,7 +44,7 @@ const formatOrgOutputStepSpec: ObjectStepSpec<"apiResponse", Org, Org, never, ne
 {
     k: "apiResponse" as const,
     inFn: (d: Org) => d,
-    svcFn: (d: Org) => Effect.succeed({org: d})
+    fxFn: (d: Org) => Effect.succeed({org: d})
 }
 
 const getOrgProg = pureWrapperChainProgram<GetOrgInput>()(

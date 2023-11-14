@@ -24,7 +24,7 @@ export type ObjectStepSpec<K extends string, A, D, R, E, V> = {
     // a pure function which maps the input A to the FxFn input D
     readonly inFn: (arg: A) => D
     // an effectful function of D, producing V
-    readonly svcFn: FxFn<D, R, E, V>
+    readonly fxFn: FxFn<D, R, E, V>
 }
 
 // THOUGHT: maybe want an unconstrained ObjectStepSpec - UCObjectStepSpec - where the two uses of D are
@@ -40,14 +40,14 @@ export type UCObjectStepSpec<K extends string, A, D1, D2, R, E, V> = {
     // a pure function which maps the input A to the FxFn input D
     readonly inFn: (arg: A) => D1
     // an effectful function of D, producing V
-    readonly svcFn: FxFn<D2, R, E, V>
+    readonly fxFn: FxFn<D2, R, E, V>
 }
 
 // an unparameterised ObjectStepSpec we can use to "roughly" type arrays
 export type UPObjectStepSpec = {
     readonly k: string 
     readonly inFn: (arg: any) => any 
-    readonly svcFn: (arg: any) => Effect.Effect<any, any, any>
+    readonly fxFn: (arg: any) => Effect.Effect<any, any, any>
 }
 
 // returns a function of Obj which returns an Effect of {K: V}
@@ -60,7 +60,7 @@ export function objectStepFn<Obj>() {
                 console.log("RUN OBJECT STEP FN", step.k, step, obj)
                 const d = step.inFn(obj)
                 console.log("OBJECT STEP FN d", step.k, d)
-                const v = yield* _(step.svcFn(d))
+                const v = yield* _(step.fxFn(d))
                 console.log("OBJECT STEP FN v", step.k, v)
                 // new key gets typed as a string without the cast
                 const r = { [step.k]: v } as { [_K in K]: V }
