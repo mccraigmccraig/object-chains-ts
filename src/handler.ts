@@ -25,17 +25,6 @@ import { UPPureWrapperProgram, PureWrapperProgramsInputTuple } from "./pure_wrap
 //        union-of-errors-of-programs,
 //        union-of-output-types-of-programs>
 
-
-// this indexes a tuple by the element's eventTagStr property
-// https://stackoverflow.com/questions/54599480/typescript-tuple-type-to-object-type  
-export type IndexPureWrapperProgramTuple<T extends Array<UPPureWrapperProgram>> = {
-    [K in T[number]['tagStr']]: Extract<T[number], { tagStr: K }>
-}
-// showing that this does indeed index a tuple of UPPureWrapperProgram
-export type X = IndexPureWrapperProgramTuple<[
-    { tagStr: "foo", program: (ev: number) => Effect.Effect<never, never, number> },
-    { tagStr: "bar", program: (ev: number) => Effect.Effect<never, never, number> }]>
-
 export type ProgramDeps<T extends UPPureWrapperProgram> = ReturnType<T['program']> extends Effect.Effect<infer R, infer _E, infer _V>
     ? R
     : never
@@ -54,6 +43,16 @@ export type ProgramsErrorsU<Tuple extends readonly [...UPPureWrapperProgram[]]> 
 export type ProgramValue<T extends UPPureWrapperProgram> = ReturnType<T['program']> extends Effect.Effect<infer _R, infer _E, infer V>
     ? V
     : never
+
+// this indexes a tuple by the element's tagStr property
+// https://stackoverflow.com/questions/54599480/typescript-tuple-type-to-object-type  
+export type IndexPureWrapperProgramTuple<T extends Array<UPPureWrapperProgram>> = {
+    [K in T[number]['tagStr']]: Extract<T[number], { tagStr: K }>
+}
+// showing that this does indeed index a tuple of UPPureWrapperProgram
+export type X = IndexPureWrapperProgramTuple<[
+    { tagStr: "foo", program: (ev: number) => Effect.Effect<never, never, number> },
+    { tagStr: "bar", program: (ev: number) => Effect.Effect<never, never, number> }]>
 
 // not obvious - the conditional type distribute the value type over a union of Taggeds, resulting in a union of values!
 // https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
