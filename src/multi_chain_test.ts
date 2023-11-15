@@ -7,13 +7,13 @@ import { multiChain } from "./multi_chain.ts"
 
 //////////////////// some steps //////////////////////////////////
 
-export const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string } }, string, OrgService, never, Org> */ =
+const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string } }, string, OrgService, never, Org> */ =
 {
     k: "org" as const,
     inFn: (d: { data: { org_nick: string } }) => d.data.org_nick,
     fxFn: getOrgByNick
 }
-export const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: string }, org: Org }, {org_id: string, user_id: string}, UserService, never, User> */ =
+const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: string }, org: Org }, {org_id: string, user_id: string}, UserService, never, User> */ =
 {
     k: "user" as const,
     // note that this fn depends on the output of an OrgServiceI.getBy* step
@@ -21,14 +21,14 @@ export const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id
     fxFn: getUserByIds
 }
 
-export const pureFormatWelcomePushStepSpec = {
+const pureFormatWelcomePushStepSpec = {
     k: "formatWelcomePush" as const,
     pureFn: (d: { org: Org, user: User }) => {
         return "Welcome " + d.user.name + " of " + d.org.name
     }
 }
 
-export const sendPusnNotificationStepSpec =
+const sendPusnNotificationStepSpec =
 {
     k: "sendPush" as const,
     inFn: (d: { user: User, formatWelcomePush: string }) => {
@@ -114,6 +114,5 @@ Deno.test("makeHandlerProgram", () => {
         user: { id: "100", name: "Bar" },
         formatWelcomePush: "Welcome Bar of Foo",
         sendPush: "push sent OK: Welcome Bar of Foo"
-    }
-    )
+    })
 })
