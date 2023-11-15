@@ -33,17 +33,17 @@ export type ObjectChainsInputU<Tuple extends readonly [...UPObjectChain[]]> = Un
     
 
 // build an ObjectChain from Steps
-export function objectChain<Obj extends Tagged>() {
+export function objectChain<Input extends Tagged>() {
     return function <Steps extends readonly [...UPObjectStepSpec[]]>
-        (tag: Tag<Obj>,
-            steps: ChainObjectSteps<Steps, Obj> extends readonly [...Steps] ? readonly [...Steps] : ChainObjectSteps<Steps, Obj>) {
+        (tag: Tag<Input>,
+            steps: ChainObjectSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ChainObjectSteps<Steps, Input>) {
 
         return {
             tag: tag,
             tagStr: tag.tag,
             steps: steps,
             program: chainObjectStepsProg<Obj>()(steps)
-        } as ObjectChain<Obj, Steps>
+        } as ObjectChain<Input, Steps>
     }
 }
 
@@ -51,8 +51,8 @@ export function addSteps<Obj extends Tagged,
     Steps extends readonly [...UPObjectStepSpec[]],
     AdditionalSteps extends readonly [...UPObjectStepSpec[]]>
     (chain: ObjectChain<Obj, Steps>,
-        additionalSteps: ChainObjectSteps<AdditionalSteps, ChainObjectStepsReturn<Steps, Obj>> extends readonly [...AdditionalSteps[]]
-            ? readonly [...AdditionalSteps[]]
+        additionalSteps: ChainObjectSteps<AdditionalSteps, ChainObjectStepsReturn<Steps, Obj>> extends readonly [...AdditionalSteps]
+            ? readonly [...AdditionalSteps]
             : ChainObjectSteps<AdditionalSteps, ChainObjectStepsReturn<Steps, Obj>>) {
 
     const newSteps = [...chain.steps, ...additionalSteps] as const
