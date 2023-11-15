@@ -3,7 +3,8 @@ import { Tagged, Tag } from "./tagged.ts"
 import { ChainObjectSteps } from "./object_builders.ts"
 import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg } from "./object_builders.ts"
 
-// an ObjectChain defines a series of steps to build an Object
+// an ObjectChain is a datastructure defining a series of steps to build an Object.
+// it can be built in a single step with objectChain, or iteratively with addSteps
 export type ObjectChain<Obj extends Tagged,
     Steps extends [...UPObjectStepSpec[]]> = {
         readonly tag: Tag<Obj>

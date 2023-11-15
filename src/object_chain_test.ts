@@ -51,19 +51,36 @@ const echoContext = Context.empty().pipe(
         sendPush: (d: { user_id: string, message: string }) => Effect.succeed("push sent OK: " + d.message)
     })))
 
-Deno.test("objectChain", () => {
-    type Input = { tag: "sendPushNotification", data: { org_nick: string, user_id: string } }
-    const InputTag = tag<Input>("sendPushNotification")
+Deno.test("empty objectChain returns input", () => {
+    type DoNothing = { readonly tag: "doNothing" }
+    const DoNothingTag = tag<DoNothing>("doNothing")
+
+    const steps = [] as const
+    const prog = objectChain<DoNothing>()(DoNothingTag, steps)
+
+    const input = { tag: "doNothing" as const}
+    const effect = prog.program(input)
+    const r = Effect.runSync(effect)
+
+    assertEquals(r, {tag: "doNothing"})
+})
+
+Deno.test("objectChain mixes fx and pure steps", () => {
+    type SendPushNotification = {
+        readonly tag: "sendPushNotification",
+        readonly data: { org_nick: string, user_id: string }
+    }
+    const SendPushNotificationTag = tag<SendPushNotification>("sendPushNotification")
 
     const steps = [getOrgObjectStepSpec,
         getUserObjectStepSpec,
         pureFormatPushNotificationStepSpec,
         sendPusnNotificationStepSpec] as const
 
-    const prog = objectChain<Input>()(InputTag, steps)
+    const prog = objectChain<SendPushNotification>()(SendPushNotificationTag, steps)
 
-    const input: Input = {
-        tag: "sendPushNotification",
+    const input: SendPushNotification = {
+        tag: "sendPushNotification" as const,
         data: {org_nick: "foo", user_id: "bar"}
     }
     const effect = prog.program(input)
