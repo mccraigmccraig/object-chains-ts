@@ -1,9 +1,9 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
 import { ObjectStepSpec } from "./object_builders.ts"
-import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
+import { Org, User, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
 import { tag } from "./tagged.ts"
-import { pureWrapperProgram, pureWrapperChainProgram } from "./pure_wrapper.ts"
+import { UPObjectChain, ObjectChainsInputTuple, objectChain } from "./object_chain.ts"
 import { makeHandlerProgram } from "./handler.ts"
 
 //////////////////// some steps //////////////////////////////////
@@ -22,17 +22,19 @@ export const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id
     fxFn: getUserByIds
 }
 
-export const pureSendWelcomePush = (d: { org: Org, user: User }) => {
-    return [{
-        user_id: d.user.id,
-        message: "Welcome " + d.user.name + " of " + d.org.name
-    }] as const
+export const pureFormatWelcomePushStepSpec = {
+    k: "formatWelcomePush" as const,
+    pureFn: (d: { org: Org, user: User }) => {
+        return "Welcome " + d.user.name + " of " + d.org.name
+    }
 }
 
 export const sendPusnNotificationStepSpec =
 {
     k: "sendPush" as const,
-    inFn: (d: { user_id: string, message: string }) => d,
+    inFn: (d: { user: User, formatWelcomePush: string }) => {
+        return { user_id: d.user.id, message: d.formatWelcomePush }
+    },
     fxFn: sendPush
 }
 
@@ -41,41 +43,30 @@ export const sendPusnNotificationStepSpec =
 type GetOrgInput = { tag: "GetOrg", data: { org_nick: string } }
 const GetOrgInputTag = tag<GetOrgInput>("GetOrg")
 
-const formatOrgOutputStepSpec: ObjectStepSpec<"apiResponse", Org, Org, never, never, { org: Org }> =
+const formatOrgOutputStepSpec /* : ObjectStepSpec<"apiResponse", Org, Org, never, never, { org: Org }> */ =
 {
     k: "apiResponse" as const,
-    inFn: (d: Org) => d,
+    inFn: (d: { org: Org }) => d.org,
     fxFn: (d: Org) => Effect.succeed({ org: d })
 }
 
-const getOrgProg = pureWrapperChainProgram<GetOrgInput>()(
+const getOrgProg = objectChain<GetOrgInput>()(
     GetOrgInputTag,
-    [getOrgObjectStepSpec] as const,
-    (d: { org: Org }) => [d.org] as const,
-    [formatOrgOutputStepSpec] as const)
+    [getOrgObjectStepSpec,
+        formatOrgOutputStepSpec
+    ] as const)
 
 //////////////////////// sendWelcomePush
 
 type SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: string, user_id: string } }
 const SendWelcomePushInputTag = tag<SendWelcomePushInput>("SendWelcomePush")
 
-const sendWelcomePushInputFn = (i: SendWelcomePushInput) => {
-    return Effect.succeed({
-        ...i,
-        org: { id: "foo", name: "Foo" },
-        user: { id: "100", name: "Bar" }
-    })
-}
-
-const sendWelcomePushOutputFn = (d: readonly [{ user_id: string, message: string }]) => {
-    return Effect.succeed({ sendPush: "push sent OK: " + d[0].user_id.toString() + ", " + d[0].message })
-}
-
-const sendWelcomePushProg = pureWrapperProgram<SendWelcomePushInput>()(
+const sendWelcomePushProg = objectChain<SendWelcomePushInput>()(
     SendWelcomePushInputTag,
-    sendWelcomePushInputFn,
-    pureSendWelcomePush,
-    sendWelcomePushOutputFn)
+    [getOrgObjectStepSpec,
+        getUserObjectStepSpec,
+        pureFormatWelcomePushStepSpec,
+        sendPusnNotificationStepSpec] as const)
 
 
 // a simple context with an OrgService and a UserService which echo data back
@@ -93,23 +84,33 @@ const echoContext = Context.empty().pipe(
 
 ////////////////////////// handler ///////////////////////////////////
 
-const programs = [getOrgProg, sendWelcomePushProg]
+const programs = [getOrgProg, sendWelcomePushProg] as const
 
 const handlerProgram = makeHandlerProgram(programs)
 
 Deno.test("makeHandlerProgram", () => {
     const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }
-    //    const sendWelcomePushInput: SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
+    const getOrgHandlerEffect = handlerProgram(getOrgInput)
+    const getOrgRunnable = Effect.provide(getOrgHandlerEffect, echoContext)
+    const getOrgResult = Effect.runSync(getOrgRunnable)
 
-    const handlerEffect = handlerProgram(getOrgInput)
-    const runnable = Effect.provide(handlerEffect, echoContext)
-    const r = Effect.runSync(runnable)
-
-    assertEquals(r,
-        {
+    assertEquals(getOrgResult, {
             ...getOrgInput,
             org: { id: "foo", name: "Foo" },
-            GetOrg: [{ id: "foo", name: "Foo" }],
             apiResponse: { org: { id: "foo", name: "Foo" } }
         })
+    
+    const sendWelcomePushInput: SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
+    const sendWelcomePushEffect = handlerProgram(sendWelcomePushInput)
+    const sendWelcomePushRunnable = Effect.provide(sendWelcomePushEffect, echoContext)
+    const sendWelcomePushResult = Effect.runSync(sendWelcomePushRunnable)
+
+    assertEquals(sendWelcomePushResult, {
+        ...sendWelcomePushInput,
+        org: { id: "foo", name: "Foo" },
+        user: { id: "100", name: "Bar" },
+        formatWelcomePush: "Welcome Bar of Foo",
+        sendPush: "push sent OK: Welcome Bar of Foo"
+        }
+    )
 })
