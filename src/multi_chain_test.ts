@@ -96,11 +96,11 @@ Deno.test("makeHandlerProgram", () => {
     const getOrgResult = Effect.runSync(getOrgRunnable)
 
     assertEquals(getOrgResult, {
-            ...getOrgInput,
-            org: { id: "foo", name: "Foo" },
-            apiResponse: { org: { id: "foo", name: "Foo" } }
-        })
-    
+        ...getOrgInput,
+        org: { id: "foo", name: "Foo" },
+        apiResponse: { org: { id: "foo", name: "Foo" } }
+    })
+
     const sendWelcomePushInput: SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
 
     // note the inferred Effect value type selects the output of the sendWelcomePush chain
@@ -114,6 +114,6 @@ Deno.test("makeHandlerProgram", () => {
         user: { id: "100", name: "Bar" },
         formatWelcomePush: "Welcome Bar of Foo",
         sendPush: "push sent OK: Welcome Bar of Foo"
-        }
+    }
     )
 })
