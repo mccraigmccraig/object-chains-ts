@@ -66,30 +66,26 @@ export type DistributeObjectChainValueTypes<I extends Tagged, Chains extends rea
 // which uses a supplied UPPureWrapperProgram to handle the input,
 // returning the same results as the supplied UPPureWrapperProgram
 //
-// would be nice if the output-type could be restricted based on the input type
-export const multiChain =
-    <Chains extends readonly [...UPObjectChain[]]>
+// the Effect result type will be narrowed to the union member corresponding
+// to the input type when the input is supplied
+export function multiChain<Chains extends readonly [...UPObjectChain[]]>
 
-        (eventHandlerPrograms: readonly [...Chains]):
+    (eventHandlerPrograms: readonly [...Chains]) {
 
-        <Input extends ObjectChainsInputU<Chains>>(i: Input) => Effect.Effect<ProgramsDepsU<Chains>,
-            ProgramsErrorsU<Chains>,
-            Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>> => {
+    const progsByEventTag = eventHandlerPrograms.reduce(
+        (m, p) => { m[p.tagStr] = p; return m },
+        {} as { [index: string]: UPObjectChain })
 
-        const progsByEventTag = eventHandlerPrograms.reduce(
-            (m, p) => { m[p.tagStr] = p; return m },
-            {} as { [index: string]: UPObjectChain })
-
-        return <Input extends ObjectChainsInputU<Chains>>(i: Input) => {
-            const prog = progsByEventTag[i.tag]
-            if (prog != undefined) {
-                // so prog.program should be the resolved PureWrapperProgram - but 
-                // the type is dependent on the actual type of the input
-                console.log("multiProg: ", i)
-                return prog.program(i) as Effect.Effect<ProgramsDepsU<Chains>,
-                    ProgramsErrorsU<Chains>,
-                    Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
-            } else
-                throw "NoProgram for tag: " + i.tag
-        }
+    return <Input extends ObjectChainsInputU<Chains>>(i: Input) => {
+        const prog = progsByEventTag[i.tag]
+        if (prog != undefined) {
+            // so prog.program should be the resolved PureWrapperProgram - but 
+            // the type is dependent on the actual type of the input
+            console.log("multiProg: ", i)
+            return prog.program(i) as Effect.Effect<ProgramsDepsU<Chains>,
+                ProgramsErrorsU<Chains>,
+                Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
+        } else
+            throw "NoProgram for tag: " + i.tag
     }
+}
