@@ -7,14 +7,12 @@ import { multiChainProgram, multiChain, addChains } from "./multi_chain.ts"
 
 //////////////////// some steps //////////////////////////////////
 
-const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string } }, string, OrgService, never, Org> */ =
-{
+const getOrgObjectStepSpec = {
     k: "org" as const,
     inFn: (d: { data: { org_nick: string } }) => d.data.org_nick,
     fxFn: getOrgByNick
 }
-const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: string }, org: Org }, {org_id: string, user_id: string}, UserService, never, User> */ =
-{
+const getUserObjectStepSpec = {
     k: "user" as const,
     // note that this fn depends on the output of an OrgServiceI.getBy* step
     inFn: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
@@ -28,8 +26,7 @@ const pureFormatWelcomePushStepSpec = {
     }
 }
 
-const sendPusnNotificationStepSpec =
-{
+const sendPusnNotificationStepSpec = {
     k: "sendPush" as const,
     inFn: (d: { user: User, formatWelcomePush: string }) => {
         return { user_id: d.user.id, message: d.formatWelcomePush }
@@ -37,22 +34,21 @@ const sendPusnNotificationStepSpec =
     fxFn: sendPush
 }
 
+const pureFormatOrgOutputStepSpec = {
+    k: "apiResponse" as const,
+    pureFn: (d: { org: Org }) => { return { org: d.org } }
+}
+
 //////////////////////// getOrg chain
 
 type GetOrgInput = { tag: "GetOrg", data: { org_nick: string } }
 const GetOrgInputTag = tag<GetOrgInput>("GetOrg")
 
-const formatOrgOutputStepSpec /* : ObjectStepSpec<"apiResponse", Org, Org, never, never, { org: Org }> */ =
-{
-    k: "apiResponse" as const,
-    inFn: (d: { org: Org }) => d.org,
-    fxFn: (d: Org) => Effect.succeed({ org: d })
-}
 
 const getOrgProg = objectChain<GetOrgInput>()(
     GetOrgInputTag,
     [getOrgObjectStepSpec,
-        formatOrgOutputStepSpec
+        pureFormatOrgOutputStepSpec
     ] as const)
 
 //////////////////////// sendWelcomePush chain
@@ -87,7 +83,7 @@ const programs = [getOrgProg, sendWelcomePushProg] as const
 
 const prog = multiChainProgram(programs)
 
-Deno.test("multiChainProgram", () => {
+Deno.test("multiChainProgram runs chains", () => {
     const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }
 
     // note the inferred Effect value type selects the output of the getOrg chain
@@ -117,7 +113,7 @@ Deno.test("multiChainProgram", () => {
     })
 })
 
-Deno.test("multiChain", () => {
+Deno.test("multiChain runs chains", () => {
     const mc = multiChain(programs)
 
     const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }
@@ -134,7 +130,7 @@ Deno.test("multiChain", () => {
     })
 })
 
-Deno.test("addChains", () => {
+Deno.test("addChains adds to a multiChain", () => {
     const emptyMultiChain = multiChain([])
     const mc = addChains(emptyMultiChain, programs)
 
