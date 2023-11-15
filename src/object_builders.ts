@@ -91,9 +91,9 @@ export type ConcreteObjectStepSpec<T extends UPObjectStepSpec> =
 // the effect returned when a step is run
 export type ObjectStepFnReturnEffect<Spec> =
     Spec extends PureObjectStepSpec<infer K, infer _A, infer V>
-    ? Effect.Effect<never, never, { [_K in K]: V }>
+    ? Effect.Effect<never, never, { readonly [_K in K]: V }>
     : Spec extends FxObjectStepSpec<infer K, infer _A, infer _D, infer R, infer E, infer V>
-    ? Effect.Effect<R, E, { [_K in K]: V }>
+    ? Effect.Effect<R, E, { readonly [_K in K]: V }>
     : never
 
 // returns a function of Obj which runs a single step, returning {K: V}
@@ -127,7 +127,7 @@ export type UnionFromTuple<Tuple extends readonly any[]> = Tuple[number]
 // builds a new Object type from an intersected ObjAcc type,
 // making the intellisense much cleaner
 // https://stackoverflow.com/questions/57683303/how-can-i-see-the-full-expanded-contract-of-a-typescript-type
-export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
+export type Expand<T> = T extends infer O ? { readonly [K in keyof O]: O[K] } : never;
 
 export type ExpandTuple<Tuple extends readonly [...any[]]> = {
     +readonly [Index in keyof Tuple]: Expand<Tuple[Index]>
@@ -207,11 +207,11 @@ export type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
     ? Head extends UCFxObjectStepSpec<infer HK, infer _HA, infer _HD1, infer HD2, infer HR, infer HE, infer HV>
     // recurse - note constraint HD1==HD2
     ? ChainObjectSteps<Tail,
-        ObjAcc & { [K in HK]: HV },
+        ObjAcc & { readonly [_K in HK]: HV },
         [...StepAcc, UCFxObjectStepSpec<HK, ObjAcc, HD2, HD2, HR, HE, HV>]>
     : Head extends UCPureObjectStepSpec<infer HK, infer _HA, infer HV>
     ? ChainObjectSteps<Tail,
-        ObjAcc & { [K in HK]: HV },
+        ObjAcc & { readonly [_K in HK]: HV },
         [...StepAcc, UCPureObjectStepSpec<HK, ObjAcc, HV>]>
     : never // [...StepAcc, ["ChainObjectStepsFail-recurse-E: Head !extends UCPureObjectStepSpec"]]
     : never // [...StepAcc, ["ChainObjectStepsFail-ecurse-D: Next extends UCObjectStepSpec"]]
@@ -225,7 +225,7 @@ export type ChainObjectStepsReturn<Specs extends readonly [...UPObjectStepSpec[]
     : ChainObjectSteps<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
     ? Last extends UCObjectStepSpec<infer LK, infer LA, infer _LD1, infer _LD2, infer _LR, infer _LE, infer LV>
     // final Object type adds the final step output to the final step input type
-    ? Expand<LA & { [K in LK]: LV }>
+    ? Expand<LA & { readonly [_K in LK]: LV }>
     : never // ["ChainObjectStepsReturnFail-B-Last !extends UCObjectStepSpec", Last]
     : never // ["ChainObjectStepsReturnFail-A-ChainObjectSteps<Specs, ObjAcc> !extends", ChainObjectSteps<Specs, ObjAcc>]
 
@@ -332,9 +332,9 @@ export type TupleMapObjectStepsReturn<Specs extends readonly [...UPObjectStepSpe
     ? Inputs extends readonly [infer HeadIn]
     ? Head extends UCFxObjectStepSpec<infer K, infer _A, infer _D1, infer _D2, infer _R, infer _E, infer V>
     // return the final inferred pipeline
-    ? Expand<ObjAcc & { [KK in K]: V }>
+    ? Expand<ObjAcc & { readonly [_K in K]: V }>
     : Head extends UCPureObjectStepSpec<infer K, infer _A, infer V>
-    ? Expand<ObjAcc & { [KK in K]: V }>
+    ? Expand<ObjAcc & { readonly [_K in K]: V }>
     : never // ["TupleMapObjectStepsReturnFail", "final-B: Head extends ObjectStepSpec", Specs]
     : never // ["TupleMapObjectStepsReturnFail", "final-A: Inputs extends [infer HeadIn]", Specs]
 
@@ -348,12 +348,12 @@ export type TupleMapObjectStepsReturn<Specs extends readonly [...UPObjectStepSpe
     // recurse
     ? TupleMapObjectStepsReturn<Tail,
         TailIn,
-        ObjAcc & { [K in HK]: HV },
+        ObjAcc & { readonly [_K in HK]: HV },
         [...StepAcc, UCFxObjectStepSpec<HK, HeadIn, HD2, HD2, HR, HE, HV>]>
     : Head extends UCPureObjectStepSpec<infer HK, infer _A, infer HV>
     ? TupleMapObjectStepsReturn<Tail,
         TailIn,
-        ObjAcc & { [K in HK]: HV },
+        ObjAcc & { readonly [_K in HK]: HV },
         [...StepAcc, UCPureObjectStepSpec<HK, HeadIn, HV>]>
     : never // ["TupleMapObjectStepsReturnFail", "recurse-G: Head extends UCPureObjectStepSpec"]
     : never // ["TupleMapObjectStepsReturnFail", "recurse-F: Next extends UCObjectStepSpec"]
