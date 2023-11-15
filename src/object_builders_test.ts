@@ -29,7 +29,8 @@ const formatUserStepSpec =
 
 export const stepSpecs = [
     getOrgObjectStepSpec,
-    getUserObjectStepSpec
+    getUserObjectStepSpec,
+    formatUserStepSpec
 ] as const
 
 
@@ -82,7 +83,8 @@ Deno.test("chainObjectStepsProg chains steps", () => {
     assertEquals(r, {
         ...input,
         org: { id: "foo", name: "Foo" },
-        user: { id: "100", name: "Bar" }
+        user: { id: "100", name: "Bar" },
+        formatUser: "User: Bar @ Foo"
     })
 })
 
@@ -91,11 +93,13 @@ Deno.test("tupleMapObjectStepsProg maps steps over a tuple", () => {
     // inputs are a bit contrived, to re-use the same servces as the chain op
     type INPUT = readonly [
         { data: { org_nick: string } },
-        { data: { user_id: string }, org: Org }]
+        { data: { user_id: string }, org: Org },
+        { org: Org, user: User}]
 
     const input = [
         { data: { org_nick: "foo" } },
-        { data: { user_id: "100" }, org: { id: "foo", name: "Foo" } }
+        { data: { user_id: "100" }, org: { id: "foo", name: "Foo" } },
+        {org: { id: "foo", name: "Foo" }, user: { id: "100", name: "Bar" }}
     ] as const
 
     const tupleMapEffect = tupleMapObjectStepsProg<INPUT>()(stepSpecs)(input)
@@ -106,7 +110,8 @@ Deno.test("tupleMapObjectStepsProg maps steps over a tuple", () => {
 
     assertEquals(r, {
         org: { id: "foo", name: "Foo" },
-        user: { id: "100", name: "Bar" }
+        user: { id: "100", name: "Bar" },
+        formatUser: "User: Bar @ Foo"
     })
 })
 
