@@ -1,7 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
 import { objectStepFn, chainObjectStepsProg, tupleMapObjectStepsProg } from "./object_builders.ts"
-import { Org, OrgService, getOrgByNick, UserService, getUserByIds } from "./test_services.ts"
+import { Org, User, OrgService, getOrgByNick, UserService, getUserByIds } from "./test_services.ts"
 
 // some computation steps...
 
@@ -20,46 +20,17 @@ const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: strin
     inFn: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
     fxFn: getUserByIds
 }
+
+const formatUserStepSpec = 
+{
+    k: "formatUser" as const,
+    pureFn: (d: {org: Org, user: User}) => "User: " + d.user.name + " @ " + d.org.name
+}
+
 export const stepSpecs = [
     getOrgObjectStepSpec,
     getUserObjectStepSpec
 ] as const
-
-// and finally, the object builder programs... 
-
-// a program to build an Object by chaining the accumulating Object through the steps
-//
-// $ExpectType const chainProg: (arg: {
-//     data: {
-//         org_nick: string;
-//         user_id: string;
-//     };
-// }) => Effect.Effect<never, never, {
-//     data: {
-//         org_nick: string;
-//         user_id: string;
-//     };
-//     org: Org;
-//     user: User;
-// }>
-export const chainProg = chainObjectStepsProg<{ data: { org_nick: string, user_id: string } }>()(stepSpecs)
-
-// a program to build an Object by mapping each step over it's corresponding input value
-//
-// $ExpectType const tupleProg: (inputs: [{
-//     data: {
-//         org_nick: string;
-//     };
-// }, {
-//     data: {
-//         user_id: string;
-//     };
-//     org: Org;
-// }]) => Effect.Effect<never, never, {
-//     org: Org;
-//     user: User;
-// }>
-export const tupleProg = tupleMapObjectStepsProg<[{ data: { org_nick: string } }, { data: { user_id: string }, org: Org }]>()(stepSpecs)
 
 
 // a simple context with an OrgService and a UserService which echo data back
@@ -73,7 +44,7 @@ const echoContext = Context.empty().pipe(
     })))
 
 
-Deno.test("objectStepFn runs a step", () => {
+Deno.test("objectStepFn runs an Fx step", () => {
     const stepFn = objectStepFn<{ data: { org_nick: string } }>()(getOrgObjectStepSpec)
 
     const input = { data: { org_nick: "foo" } }
@@ -82,6 +53,19 @@ Deno.test("objectStepFn runs a step", () => {
     const r = Effect.runSync(runnable)
 
     assertEquals(r, { org: { id: "foo", name: "Foo" } })
+})
+
+Deno.test("objectStepFn runs a pure step", () => {
+    const stepFn = objectStepFn<{ org: Org, user: User }>()(formatUserStepSpec)
+
+    const input = {
+        org: { id: "foo", name: "Foo" },
+        user: { id: "100", name: "Bar" }
+}
+    const stepEffect = stepFn(input)
+    const r = Effect.runSync(stepEffect)
+
+    assertEquals(r, { formatUser: "User: Bar @ Foo" })
 })
 
 Deno.test("chainObjectStepsProg chains steps", () => {

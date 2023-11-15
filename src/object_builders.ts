@@ -71,12 +71,34 @@ export type UPPureObjectStepSpec = {
     readonly pureFn: (arg: any) => any
 }
 
+// the unparameterised type we will type all step tuples with
 export type UPObjectStepSpec = UPPureObjectStepSpec | UPFxObjectStepSpec
+
+//////////////////////// step fn //////////////////////////////////////
+
+// cast an UPObjectStepSpec down to its concrete type
+export type ConcreteObjectStepSpec<T extends UPObjectStepSpec> =
+    T extends PureObjectStepSpec<infer K, infer A, infer V>
+    ? PureObjectStepSpec<K, A, V>
+    : T extends UCFxObjectStepSpec<infer K, infer A, infer _D1, infer D2, infer R, infer E, infer V>
+    // also apply the D1==D2 constraint
+    ? UCFxObjectStepSpec<K, A, D2, D2, R, E, V>
+    : never
+
+// the effect returned when a step is run
+export type ObjectStepFnReturnEffect<Spec> =
+    Spec extends PureObjectStepSpec<infer K, infer _A, infer V>
+    ? Effect.Effect<never, never, { [_K in K]: V }>
+    : Spec extends FxObjectStepSpec<infer K, infer _A, infer _D, infer R, infer E, infer V>
+    ? Effect.Effect<R, E, { [_K in K]: V }>
+    : never
 
 // returns a function of Obj which runs a single step, returning {K: V}
 // exactly how that {K: V} is combined with Obj is left to the caller
 export function objectStepFn<Obj>() {
-    return function <K extends string, D, R, E, V>(step: ObjectStepSpec<K, Obj, D, R, E, V>) {
+    return function <Step extends UPObjectStepSpec>
+        (step: ConcreteObjectStepSpec<Step> extends Step ? Step : ConcreteObjectStepSpec<Step>) {
+        
         return function (obj: Obj) {
 
             console.log("CREATE OBJECT STEP FN", step.k, step)
@@ -91,7 +113,7 @@ export function objectStepFn<Obj>() {
                 const r = { [step.k]: v } as { [_K in K]: V }
                 console.log("END OBJECT STEP FN r", step.k, r)
                 return r
-            })
+            }) as ObjectStepFnReturnEffect<Step>
         }
     }
 }
