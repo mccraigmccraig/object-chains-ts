@@ -55,7 +55,10 @@ export type UCObjectStepSpec<K extends string, A, D1, D2, R, E, V> = UCPureObjec
 
 ////////////////////// UnParameterised steps ///////////////////////////
 
-// UnParameterised steps can be used to roughly type tuples of steps
+// UnParameterised steps can be used to roughly type tuples of steps, 
+// and we can guarantee that the conditional inferences on the 
+// UnParameterised types will always reach a non-never leaf node,
+// which may then deliver a sensible error to the user
 
 export type UPFxObjectStepSpec = {
     // the key at which the FxFn output V will be added to the Object
