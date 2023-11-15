@@ -76,6 +76,9 @@ export function multiChain<Chains extends readonly [...UPObjectChain[]]>
         (m, p) => { m[p.tagStr] = p; return m },
         {} as { [index: string]: UPObjectChain })
 
+    // by putting the Input inference site on the returned function, 
+    // we can use Extract to select the value type of the Effect 
+    // corresponding to the value type of the chain selected by the input
     return <Input extends ObjectChainsInputU<Chains>>(i: Input) => {
         const prog = progsByEventTag[i.tag]
         if (prog != undefined) {
