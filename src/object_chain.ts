@@ -5,14 +5,14 @@ import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStep
 
 // an ObjectChain is a datastructure defining a series of steps to build an Object.
 // it can be built in a single step with objectChain, or iteratively with addSteps
-export type ObjectChain<Obj extends Tagged,
+export type ObjectChain<Input extends Tagged,
     Steps extends readonly [...UPObjectStepSpec[]]> = {
-        readonly tag: Tag<Obj>
-        readonly tagStr: Obj['tag']
-        readonly steps: ChainObjectSteps<Steps, Obj> extends readonly [...Steps] ? readonly [...Steps] : ChainObjectSteps<Steps, Obj>
-        readonly program: (obj: Obj) => Effect.Effect<ObjectStepsDepsU<Steps>,
+        readonly tag: Tag<Input>
+        readonly tagStr: Input['tag']
+        readonly steps: ChainObjectSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ChainObjectSteps<Steps, Input>
+        readonly program: (i: Input) => Effect.Effect<ObjectStepsDepsU<Steps>,
             ObjectStepsErrorsU<Steps>,
-            ChainObjectStepsReturn<Steps, Obj>>
+            ChainObjectStepsReturn<Steps, Input>>
     }
 
 // an unparameterised version of ObjectChain for typing tuples
@@ -20,7 +20,7 @@ export type UPObjectChain = {
     readonly tagStr: string
     readonly steps: readonly [...UPObjectStepSpec[]]
     // deno-lint-ignore no-explicit-any
-    readonly program: (obj: any) => Effect.Effect<any, any, any>
+    readonly program: (i: any) => Effect.Effect<any, any, any>
 }
 
 export type ObjectChainInput<T extends UPObjectChain> =
@@ -42,21 +42,21 @@ export function objectChain<Input extends Tagged>() {
             tag: tag,
             tagStr: tag.tag,
             steps: steps,
-            program: chainObjectStepsProg<Obj>()(steps)
+            program: chainObjectStepsProg<Input>()(steps)
         } as ObjectChain<Input, Steps>
     }
 }
 
-export function addSteps<Obj extends Tagged,
+export function addSteps<Input extends Tagged,
     Steps extends readonly [...UPObjectStepSpec[]],
     AdditionalSteps extends readonly [...UPObjectStepSpec[]]>
-    (chain: ObjectChain<Obj, Steps>,
-        additionalSteps: ChainObjectSteps<AdditionalSteps, ChainObjectStepsReturn<Steps, Obj>> extends readonly [...AdditionalSteps]
+    (chain: ObjectChain<Input, Steps>,
+        additionalSteps: ChainObjectSteps<AdditionalSteps, ChainObjectStepsReturn<Steps, Input>> extends readonly [...AdditionalSteps]
             ? readonly [...AdditionalSteps]
-            : ChainObjectSteps<AdditionalSteps, ChainObjectStepsReturn<Steps, Obj>>) {
+            : ChainObjectSteps<AdditionalSteps, ChainObjectStepsReturn<Steps, Input>>) {
 
     const newSteps = [...chain.steps, ...additionalSteps] as const
 
     // deno-lint-ignore no-explicit-any
-    return objectChain<Obj>()(chain.tag, newSteps as any) as ObjectChain<Obj, readonly [...Steps, ...AdditionalSteps]>
+    return objectChain<Input>()(chain.tag, newSteps as any) as ObjectChain<Input, readonly [...Steps, ...AdditionalSteps]>
 }
