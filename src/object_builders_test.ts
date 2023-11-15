@@ -73,7 +73,7 @@ const echoContext = Context.empty().pipe(
     })))
 
 
-Deno.test("buildObjectStepFn runs a step", () => {
+Deno.test("objectStepFn runs a step", () => {
     const stepFn = objectStepFn<{ data: { org_nick: string } }>()(getOrgObjectStepSpec)
 
     const input = { data: { org_nick: "foo" } }
