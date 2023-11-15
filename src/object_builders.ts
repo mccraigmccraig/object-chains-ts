@@ -110,7 +110,7 @@ export function objectStepFn<Obj>() {
 
                 console.log("OBJECT STEP FN v", step.k, v)
 
-                const r = { [step.k]: v } as { [_K in K]: V }
+                const r = { [step.k]: v }
                 console.log("END OBJECT STEP FN r", step.k, r)
                 return r
             }) as ObjectStepFnReturnEffect<Step>
