@@ -85,12 +85,12 @@ const echoContext = Context.empty().pipe(
 
 const programs = [getOrgProg, sendWelcomePushProg] as const
 
-const handlerProgram = multiChain(programs)
+const multiChainProgram = multiChain(programs)
 
 Deno.test("makeHandlerProgram", () => {
     const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }
-    const getOrgHandlerEffect = handlerProgram(getOrgInput)
-    const getOrgRunnable = Effect.provide(getOrgHandlerEffect, echoContext)
+    const getOrgEffect = multiChainProgram(getOrgInput)
+    const getOrgRunnable = Effect.provide(getOrgEffect, echoContext)
     const getOrgResult = Effect.runSync(getOrgRunnable)
 
     assertEquals(getOrgResult, {
@@ -100,7 +100,7 @@ Deno.test("makeHandlerProgram", () => {
         })
     
     const sendWelcomePushInput: SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
-    const sendWelcomePushEffect = handlerProgram(sendWelcomePushInput)
+    const sendWelcomePushEffect = multiChainProgram(sendWelcomePushInput)
     const sendWelcomePushRunnable = Effect.provide(sendWelcomePushEffect, echoContext)
     const sendWelcomePushResult = Effect.runSync(sendWelcomePushRunnable)
 

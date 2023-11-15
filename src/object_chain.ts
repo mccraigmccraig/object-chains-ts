@@ -1,6 +1,6 @@
 import { Effect } from "effect"
 import { Tagged, Tag } from "./tagged.ts"
-import { ChainObjectSteps } from "./object_builders.ts"
+import { UnionFromTuple, ChainObjectSteps } from "./object_builders.ts"
 import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg } from "./object_builders.ts"
 
 // an ObjectChain is a datastructure defining a series of steps to build an Object.
@@ -27,9 +27,9 @@ export type ObjectChainInput<T extends UPObjectChain> =
     T extends ObjectChain<infer Input, infer _Steps>
     ? Input 
     : never
-export type ObjectChainsInputTuple<Tuple extends readonly [...UPObjectChain[]]> = {
+export type ObjectChainsInputU<Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
     +readonly [Index in keyof Tuple]: ObjectChainInput<Tuple[Index]>
-} & { length: Tuple['length'] }
+} & { length: Tuple['length'] }>
     
 
 // build an ObjectChain from Steps

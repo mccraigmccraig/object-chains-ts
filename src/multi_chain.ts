@@ -1,7 +1,7 @@
 import { Effect } from "effect"
 import { UnionFromTuple } from "./object_builders.ts"
 import { Tagged } from "./tagged.ts"
-import { UPObjectChain, ObjectChainsInputTuple } from "./object_chain.ts"
+import { UPObjectChain, ObjectChainsInputU } from "./object_chain.ts"
 
 // to type the multi-chain handler, need something like 
 // a conditional type which will look up return types from the program map object
@@ -65,19 +65,22 @@ export type DistributeObjectChainValueTypes<I extends Tagged, Chains extends rea
 // of all the input types handled by the supplied UPPureWrapperPrograms,
 // which uses a supplied UPPureWrapperProgram to handle the input,
 // returning the same results as the supplied UPPureWrapperProgram
+//
+// would be nice if the output-type could be restricted based on the input type
 export const multiChain =
-    <Chains extends readonly [...UPObjectChain[]],
-        Inputs extends UnionFromTuple<ObjectChainsInputTuple<Chains>>>
+    <Chains extends readonly [...UPObjectChain[]]>
+
         (eventHandlerPrograms: readonly [...Chains]):
-        (i: Inputs) => Effect.Effect<ProgramsDepsU<Chains>,
+
+        <Input extends ObjectChainsInputU<Chains>>(i: Input) => Effect.Effect<ProgramsDepsU<Chains>,
             ProgramsErrorsU<Chains>,
-            DistributeObjectChainValueTypes<Inputs, Chains>> => {
+            Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>> => {
 
         const progsByEventTag = eventHandlerPrograms.reduce(
             (m, p) => { m[p.tagStr] = p; return m },
             {} as { [index: string]: UPObjectChain })
 
-        return (i: Inputs) => {
+        return <Input extends ObjectChainsInputU<Chains>>(i: Input) => {
             const prog = progsByEventTag[i.tag]
             if (prog != undefined) {
                 // so prog.program should be the resolved PureWrapperProgram - but 
@@ -85,7 +88,7 @@ export const multiChain =
                 console.log("multiProg: ", i)
                 return prog.program(i) as Effect.Effect<ProgramsDepsU<Chains>,
                     ProgramsErrorsU<Chains>,
-                    DistributeObjectChainValueTypes<Inputs, Chains>>
+                    Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
             } else
                 throw "NoProgram for tag: " + i.tag
         }
