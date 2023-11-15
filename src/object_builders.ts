@@ -12,6 +12,12 @@ import { FxFn, UPFxFn } from "./fx_fn.ts"
 //
 // pure steps use a single pureFn while effectful steps use a 
 // pure inFn to extract an argument for an FxFn
+
+////////////////// Parameterised and Constrained steps ///////////////////////
+
+// these are the natural steps, but are awkward to work with 
+// when using conditional types over arrays
+
 export type FxObjectStepSpec<K extends string, A, D, R, E, V> = {
     // the key at which the FxFn output V will be added to the Object
     readonly k: K
@@ -21,8 +27,19 @@ export type FxObjectStepSpec<K extends string, A, D, R, E, V> = {
     readonly fxFn: FxFn<D, R, E, V>
 }
 
-// an unconstrained effectful step - for guaranteed successful conditional
-// inference from UP array 
+// a pure step
+export type PureObjectStepSpec<K extends string, A, V> = {
+    readonly k: K
+    readonly pureFn: (arg: A) => V
+}
+
+export type ObjectStepSpec<K extends string, A, D, R, E, V> = PureObjectStepSpec<K, A, V> | FxObjectStepSpec<K, A, D, R, E, V>
+
+////////////////////// UnConstrained steps ///////////////////////////
+
+// UnConstrainted steps allow for guaranteed-successful conditional 
+// inference from an array of the UnParameterised steps
+
 export type UCFxObjectStepSpec<K extends string, A, D1, D2, R, E, V> = {
     // the key at which the FxFn output V will be added to the Object
     readonly k: K
@@ -32,7 +49,14 @@ export type UCFxObjectStepSpec<K extends string, A, D1, D2, R, E, V> = {
     readonly fxFn: FxFn<D2, R, E, V>
 }
 
-// an unparameterised effectful step - for arrays
+export type UCPureObjectStepSpec<K extends string, A, V> = PureObjectStepSpec<K, A, V>
+
+export type UCObjectStepSpec<K extends string, A, D1, D2, R, E, V> = UCPureObjectStepSpec<K, A, V> | UCFxObjectStepSpec<K, A, D1, D2, R, E, V>
+
+////////////////////// UnParameterised steps ///////////////////////////
+
+// UnParameterised steps can be used to roughly type tuples of steps
+
 export type UPFxObjectStepSpec = {
     // the key at which the FxFn output V will be added to the Object
     readonly k: string
@@ -42,28 +66,15 @@ export type UPFxObjectStepSpec = {
     readonly fxFn: UPFxFn
 }
 
-// a pure step
-export type PureObjectStepSpec<K extends string, A, V> = {
-    readonly k: K
-    readonly pureFn: (arg: A) => V
-}
-
-// pure step has no internal constraints
-export type UCPureObjectStepSpec<K extends string, A, V> = PureObjectStepSpec<K, A, V>
-
-// an unparameterised pure step - for arrays
 export type UPPureObjectStepSpec = {
     readonly k: string
     readonly pureFn: (arg: any) => any
 }
 
-// combining the Pure and Fx flavours of ObjectStepSpec
-export type ObjectStepSpec<K extends string, A, D, R, E, V> = PureObjectStepSpec<K, A, V> | FxObjectStepSpec<K, A, D, R, E, V>
-export type UCObjectStepSpec<K extends string, A, D1, D2, R, E, V> = UCPureObjectStepSpec<K, A, V> | UCFxObjectStepSpec<K, A, D1, D2, R, E, V>
 export type UPObjectStepSpec = UPPureObjectStepSpec | UPFxObjectStepSpec
 
-// returns a function of Obj runs a single step, returning 
-// Obj with a new key {K: V}
+// returns a function of Obj which runs a single step, returning {K: V}
+// exactly how that {K: V} is combined with Obj is left to the caller
 export function objectStepFn<Obj>() {
     return function <K extends string, D, R, E, V>(step: ObjectStepSpec<K, Obj, D, R, E, V>) {
         return function (obj: Obj) {
@@ -139,13 +150,14 @@ export type ObjectStepsValueTuple<Tuple extends readonly [...UPObjectStepSpec[]]
 // goal is to *always* hit one of the non-never branches
 //
 // to this end we infer UCObjectStepSpec/UCFxObjectStepSpec/UCPureObjectStepSpec
-//  which is guaranteed to be inferrable
-// from elements of an UPObjectStepSpec[] (as opposed to ObjectStepSpec,
-// which is *not* guaranteed to be inferrable from all UPObjectStepSpecs).
+// which is guaranteed to be inferrable
+// from elements of an UPObjectStepSpec[] (as opposed to FxObjectStepSpec,
+// which is *not* guaranteed to be inferrable from all UPObjectStepSpecs
+// because of the constraints).
 // we then apply the pipeline  and internal data constraints in the 
 // types we output - this gives us:
 // 1. easy to understsand errors about constraint failure
-// 2. it's safe to use never in the else branches
+// 2. it's safe to use never in the else branches. they will not be hit
 export type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
     ObjAcc,
     StepAcc extends [...UPObjectStepSpec[]] = []> =

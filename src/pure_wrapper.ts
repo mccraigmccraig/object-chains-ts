@@ -46,6 +46,11 @@ import { Expand, UnionFromTuple, UPObjectStepSpec, ObjectStepsInputTuple, TupleM
 // key in the map
 //
 // sounds like we have symmetry and composition
+//
+// so need a datastructure ... 
+// ds: {tag, steps}
+// fn: addStep(ds, step) -> ds
+// each step adds a new key to the map... pure steps are just another sort of step
 
 // no type parameters so easier to use than FxFn
 type ObjectObjectEffectFn<I extends object, V extends object> = (i: I) => Effect.Effect<any, any, V>
