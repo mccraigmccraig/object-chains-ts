@@ -69,6 +69,15 @@ Deno.test("objectStepFn runs a pure step", () => {
     assertEquals(r, { formatUser: "User: Bar @ Foo" })
 })
 
+Deno.test("chainObjectStepsProg empty chain", () => {
+    type DoNothing = { data: { org_nick: string } }
+    const doNothing = { data: { org_nick: "foo" } }
+    
+    const chainEffect = chainObjectStepsProg<DoNothing>()([])(doNothing)
+    const r = Effect.runSync(chainEffect)
+    assertEquals(r, doNothing)
+})
+
 Deno.test("chainObjectStepsProg chains steps", () => {
 
     type INPUT = { data: { org_nick: string, user_id: string } }

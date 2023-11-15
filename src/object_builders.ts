@@ -220,7 +220,9 @@ export type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
 
 // get the final Object result type from a list of ObjectStepSpecs
 export type ChainObjectStepsReturn<Specs extends readonly [...UPObjectStepSpec[]], ObjAcc> =
-    ChainObjectSteps<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
+    Specs extends readonly []
+    ? ObjAcc // empty specs returns the input
+    : ChainObjectSteps<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
     ? Last extends UCObjectStepSpec<infer LK, infer LA, infer _LD1, infer _LD2, infer _LR, infer _LE, infer LV>
     // final Object type adds the final step output to the final step input type
     ? Expand<LA & { [K in LK]: LV }>
