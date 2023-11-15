@@ -3,7 +3,7 @@ import { Effect, Context } from "effect"
 import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
 import { tag } from "./tagged.ts"
 import { objectChain } from "./object_chain.ts"
-import { makeHandlerProgram } from "./handler.ts"
+import { multiChain } from "./multi_chain.ts"
 
 //////////////////// some steps //////////////////////////////////
 
@@ -85,7 +85,7 @@ const echoContext = Context.empty().pipe(
 
 const programs = [getOrgProg, sendWelcomePushProg] as const
 
-const handlerProgram = makeHandlerProgram(programs)
+const handlerProgram = multiChain(programs)
 
 Deno.test("makeHandlerProgram", () => {
     const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }

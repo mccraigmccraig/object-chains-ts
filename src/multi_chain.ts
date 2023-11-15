@@ -65,7 +65,7 @@ export type DistributeObjectChainValueTypes<I extends Tagged, Chains extends rea
 // of all the input types handled by the supplied UPPureWrapperPrograms,
 // which uses a supplied UPPureWrapperProgram to handle the input,
 // returning the same results as the supplied UPPureWrapperProgram
-export const makeHandlerProgram =
+export const multiChain =
     <Chains extends readonly [...UPObjectChain[]],
         Inputs extends UnionFromTuple<ObjectChainsInputTuple<Chains>>>
         (eventHandlerPrograms: readonly [...Chains]):
