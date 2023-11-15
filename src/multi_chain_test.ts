@@ -3,7 +3,7 @@ import { Effect, Context } from "effect"
 import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
 import { tag } from "./tagged.ts"
 import { objectChain } from "./object_chain.ts"
-import { multiChain } from "./multi_chain.ts"
+import { multiChainProgram, multiChain, addChains } from "./multi_chain.ts"
 
 //////////////////// some steps //////////////////////////////////
 
@@ -85,13 +85,13 @@ const echoContext = Context.empty().pipe(
 
 const programs = [getOrgProg, sendWelcomePushProg] as const
 
-const multiChainProgram = multiChain(programs)
+const prog = multiChainProgram(programs)
 
-Deno.test("makeHandlerProgram", () => {
+Deno.test("multiChainProgram", () => {
     const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }
 
     // note the inferred Effect value type selects the output of the getOrg chain
-    const getOrgEffect = multiChainProgram(getOrgInput)
+    const getOrgEffect = prog(getOrgInput)
     const getOrgRunnable = Effect.provide(getOrgEffect, echoContext)
     const getOrgResult = Effect.runSync(getOrgRunnable)
 
@@ -104,7 +104,7 @@ Deno.test("makeHandlerProgram", () => {
     const sendWelcomePushInput: SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
 
     // note the inferred Effect value type selects the output of the sendWelcomePush chain
-    const sendWelcomePushEffect = multiChainProgram(sendWelcomePushInput)
+    const sendWelcomePushEffect = prog(sendWelcomePushInput)
     const sendWelcomePushRunnable = Effect.provide(sendWelcomePushEffect, echoContext)
     const sendWelcomePushResult = Effect.runSync(sendWelcomePushRunnable)
 
@@ -114,5 +114,40 @@ Deno.test("makeHandlerProgram", () => {
         user: { id: "100", name: "Bar" },
         formatWelcomePush: "Welcome Bar of Foo",
         sendPush: "push sent OK: Welcome Bar of Foo"
+    })
+})
+
+Deno.test("multiChain", () => {
+    const mc = multiChain(programs)
+
+    const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }
+
+    // note the inferred Effect value type selects the output of the getOrg chain
+    const getOrgEffect = mc.program(getOrgInput)
+    const getOrgRunnable = Effect.provide(getOrgEffect, echoContext)
+    const getOrgResult = Effect.runSync(getOrgRunnable)
+
+    assertEquals(getOrgResult, {
+        ...getOrgInput,
+        org: { id: "foo", name: "Foo" },
+        apiResponse: { org: { id: "foo", name: "Foo" } }
+    })
+})
+
+Deno.test("addChains", () => {
+    const emptyMultiChain = multiChain([])
+    const mc = addChains(emptyMultiChain, programs)
+
+    const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }
+
+    // note the inferred Effect value type selects the output of the getOrg chain
+    const getOrgEffect = mc.program(getOrgInput)
+    const getOrgRunnable = Effect.provide(getOrgEffect, echoContext)
+    const getOrgResult = Effect.runSync(getOrgRunnable)
+
+    assertEquals(getOrgResult, {
+        ...getOrgInput,
+        org: { id: "foo", name: "Foo" },
+        apiResponse: { org: { id: "foo", name: "Foo" } }
     })
 })

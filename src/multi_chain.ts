@@ -3,27 +3,6 @@ import { UnionFromTuple } from "./object_builders.ts"
 import { Tagged } from "./tagged.ts"
 import { UPObjectChain, ObjectChainsInputU } from "./object_chain.ts"
 
-// to type the multi-chain handler, need something like 
-// a conditional type which will look up return types from the program map object
-
-// takes a list of EventHandlerPrograms and builds a new program which handles any of the events
-// handled by the individual programs
-// {
-//   // get output types for any tag
-//   eventPrograms: {eventTag: program}
-//   program: (ev) => Effect...  
-// }
-//  the event type input to the program will be the union of all the handled event types,
-// while the Effect types will be chosen based on the type of the event - basically the type 
-// of the individual handler program for that event
-// 
-// maybe want a MultiEventHandlerProgram type capturing the above ... and
-// which would be composable
-//
-// the returned program will have type:
-// Effect<union-of-requirements-of-programs,
-//        union-of-errors-of-programs,
-//        union-of-output-types-of-programs>
 
 export type ProgramDeps<T extends UPObjectChain> = ReturnType<T['program']> extends Effect.Effect<infer R, infer _E, infer _V>
     ? R
@@ -68,11 +47,11 @@ export type DistributeObjectChainValueTypes<I extends Tagged, Chains extends rea
 //
 // the Effect result type will be narrowed to the union member corresponding
 // to the input type when the input is supplied
-export function multiChain<Chains extends readonly [...UPObjectChain[]]>
+export function multiChainProgram<Chains extends readonly [...UPObjectChain[]]>
 
-    (eventHandlerPrograms: readonly [...Chains]) {
+    (chains: readonly [...Chains]) {
 
-    const progsByEventTag = eventHandlerPrograms.reduce(
+    const progsByEventTag = chains.reduce(
         (m, p) => { m[p.tagStr] = p; return m },
         {} as { [index: string]: UPObjectChain })
 
@@ -91,4 +70,28 @@ export function multiChain<Chains extends readonly [...UPObjectChain[]]>
         } else
             throw "NoProgram for tag: " + i.tag
     }
+}
+
+export type MultiChain<Chains extends readonly [...UPObjectChain[]]> = {
+    readonly chains: Chains
+    readonly program: <Input extends ObjectChainsInputU<Chains>>(i: Input) => Effect.Effect<ProgramsDepsU<Chains>,
+        ProgramsErrorsU<Chains>,
+        Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
+}
+
+export function multiChain<Chains extends readonly [...UPObjectChain[]]>
+    (chains: Chains) {
+    
+    return {
+        chains: chains,
+        program: multiChainProgram(chains)
+    } as MultiChain<Chains>
+}
+
+export function addChains<Chains extends readonly [...UPObjectChain[]],
+    AdditionalChains extends readonly [...UPObjectChain[]]>
+    (mc: MultiChain<Chains>,
+        additionalChains: AdditionalChains) {
+
+    return multiChain([...mc.chains, ...additionalChains])
 }
