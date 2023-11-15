@@ -1,7 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
 import { tag } from "./tagged.ts"
-import { objectChain } from "./object_chain.ts"
+import { objectChain, addSteps } from "./object_chain.ts"
 import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
 
 const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string } }, string, OrgService, never, Org> */ =
@@ -65,19 +65,20 @@ Deno.test("empty objectChain returns input", () => {
     assertEquals(r, {tag: "doNothing"})
 })
 
+type SendPushNotification = {
+    readonly tag: "sendPushNotification",
+    readonly data: { org_nick: string, user_id: string }
+}
+const SendPushNotificationTag = tag<SendPushNotification>("sendPushNotification")
+
+const sendPushNotificationSteps = [getOrgObjectStepSpec,
+    getUserObjectStepSpec,
+    pureFormatPushNotificationStepSpec,
+    sendPusnNotificationStepSpec] as const
+
 Deno.test("objectChain mixes fx and pure steps", () => {
-    type SendPushNotification = {
-        readonly tag: "sendPushNotification",
-        readonly data: { org_nick: string, user_id: string }
-    }
-    const SendPushNotificationTag = tag<SendPushNotification>("sendPushNotification")
 
-    const steps = [getOrgObjectStepSpec,
-        getUserObjectStepSpec,
-        pureFormatPushNotificationStepSpec,
-        sendPusnNotificationStepSpec] as const
-
-    const prog = objectChain<SendPushNotification>()(SendPushNotificationTag, steps)
+    const prog = objectChain<SendPushNotification>()(SendPushNotificationTag, sendPushNotificationSteps)
 
     const input: SendPushNotification = {
         tag: "sendPushNotification" as const,
@@ -94,5 +95,28 @@ Deno.test("objectChain mixes fx and pure steps", () => {
         formatPushNotification: "Welcome Bar of Foo",
         sendPush: "push sent OK: Welcome Bar of Foo"
     })
+})
 
+Deno.test("addSteps lets you add steps", () => {
+    const input: SendPushNotification = {
+        tag: "sendPushNotification" as const,
+        data: { org_nick: "foo", user_id: "bar" }
+    }
+
+    const emptyProg = objectChain<SendPushNotification>()(SendPushNotificationTag, [])
+    const emptyEffect = emptyProg.program(input)
+    const emptyResult = Effect.runSync(emptyEffect)
+    assertEquals(emptyResult, input)
+
+    const sendPushProg = addSteps(emptyProg, sendPushNotificationSteps)
+    const sendPushProgEffect = sendPushProg.program(input)
+    const sendPushProgRunnable = Effect.provide(sendPushProgEffect, echoContext)
+    const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
+    assertEquals(sendPushProgResult, {
+        ...input,
+        org: { id: "foo", name: "Foo" },
+        user: { id: "bar", name: "Bar" },
+        formatPushNotification: "Welcome Bar of Foo",
+        sendPush: "push sent OK: Welcome Bar of Foo"
+    })
 })
