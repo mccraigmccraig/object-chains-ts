@@ -37,7 +37,7 @@ export const sendPusnNotificationStepSpec =
     fxFn: sendPush
 }
 
-//////////////////////// getOrg
+//////////////////////// getOrg chain
 
 type GetOrgInput = { tag: "GetOrg", data: { org_nick: string } }
 const GetOrgInputTag = tag<GetOrgInput>("GetOrg")
@@ -55,7 +55,7 @@ const getOrgProg = objectChain<GetOrgInput>()(
         formatOrgOutputStepSpec
     ] as const)
 
-//////////////////////// sendWelcomePush
+//////////////////////// sendWelcomePush chain
 
 type SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: string, user_id: string } }
 const SendWelcomePushInputTag = tag<SendWelcomePushInput>("SendWelcomePush")
@@ -81,7 +81,7 @@ const echoContext = Context.empty().pipe(
         sendPush: (d: { user_id: string, message: string }) => Effect.succeed("push sent OK: " + d.message)
     })))
 
-////////////////////////// handler ///////////////////////////////////
+////////////////////////// multiChain for getOrg and sendWelcomePush
 
 const programs = [getOrgProg, sendWelcomePushProg] as const
 
@@ -89,6 +89,8 @@ const multiChainProgram = multiChain(programs)
 
 Deno.test("makeHandlerProgram", () => {
     const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }
+
+    // note the inferred Effect value type selects the output of the getOrg chain
     const getOrgEffect = multiChainProgram(getOrgInput)
     const getOrgRunnable = Effect.provide(getOrgEffect, echoContext)
     const getOrgResult = Effect.runSync(getOrgRunnable)
@@ -100,6 +102,8 @@ Deno.test("makeHandlerProgram", () => {
         })
     
     const sendWelcomePushInput: SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
+
+    // note the inferred Effect value type selects the output of the sendWelcomePush chain
     const sendWelcomePushEffect = multiChainProgram(sendWelcomePushInput)
     const sendWelcomePushRunnable = Effect.provide(sendWelcomePushEffect, echoContext)
     const sendWelcomePushResult = Effect.runSync(sendWelcomePushRunnable)
