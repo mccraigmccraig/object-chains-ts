@@ -62,6 +62,14 @@ export function addSteps<Input extends Tagged,
     return objectChain<Input>()(chain.tag, newSteps as any) as ObjectChain<Input, readonly [...Steps, ...AdditionalSteps]>
 }
 
+////////////////////////////////// recursion support //////////////////////////////
+
+// idea is that a chain will have an associated service, and we use the 
+// Tag<Input> of the chain to identify the service in a Context.Tag ... 
+// then we can create an FxFn using the Context.Tag which can be used
+// as a computation step to recurse or run any other chain as a computation
+// step
+
 // a type for a service which can run an ObjectChain
 export type ObjectChainService<Input extends Tagged, R, E, V extends Tagged> = {
     readonly buildObject: (i: Input) => Effect.Effect<R, E, V>
@@ -72,18 +80,40 @@ export type ObjectChainServiceTag<Input extends Tagged, R, E, V extends Tagged> 
 
 export type RunObjectChainFxFn<Input extends Tagged, R, E, V extends Tagged> = FxFn<Input, R, E, V>
 
+
+// get a Context.Tag for an ObjectChainService
+export function objectChainServiceContextTag
+    <Input extends Tagged,
+        Steps extends readonly [...UPObjectStepSpec[]],
+        Chain extends ObjectChain<Input, Steps>>
+    (_chain: Chain) {
+
+    return Context.Tag<Tag<Input>,
+        ObjectChainService<Input,
+            ObjectStepsDepsU<Steps>,
+            ObjectStepsErrorsU<Steps>,
+            ChainObjectStepsReturn<Steps, Input>>>()
+}
+
+
 // make an ObjectChainService impl with given Id which will run an ObjectChain for a particular Input
 // ooo - maybe the Context.Tag Id type should also be the Tagged type - would be a nice symmetry
 // and avoid boilerplate
 export function makeObjectChainServiceImpl
     <Input extends Tagged,
         Steps extends readonly [...UPObjectStepSpec[]],
-        Chain extends ObjectChain<Input, Steps>,
-        R, E, V extends Tagged>
-    (_contextTag: ObjectChainServiceTag<Input, R, E, V>,
-        _chain: Chain) {
-    return undefined as unknown as ObjectChainService<Input, R, E, V>
+        Chain extends ObjectChain<Input, Steps>>
+    (chain: Chain) {
+    
+    const service = {
+         buildObject: (i: Input) => {
+            return chain.program(i)
+        }
+    } as ObjectChainService<Input, ObjectStepsDepsU<Steps>, ObjectStepsErrorsU<Steps>, ChainObjectStepsReturn<Steps, Input>>
+    
+    return service
 }
+
 
 // provide an implementation of the ObjectChainService for this chain
 // to an Effect
@@ -91,17 +121,38 @@ export function provideObjectChainServiceImpl
     <Input extends Tagged,
         Steps extends readonly [...UPObjectStepSpec[]],
         Chain extends ObjectChain<Input, Steps>,
-        R, E, V extends Tagged>
-    (effect: Effect.Effect<any, any, any>,
-        contextTag: ObjectChainServiceTag<Input, R, E, V>,
+        InR, InE, InV>
+
+    (effect: Effect.Effect<InR, InE, InV>,
+        contextTag: ObjectChainServiceTag<Input,
+            ObjectStepsDepsU<Steps>,
+            ObjectStepsErrorsU<Steps>,
+            ChainObjectStepsReturn<Steps, Input>>,
         chain: Chain) {
 
-    return Effect.provideService(effect, contextTag, makeObjectChainServiceImpl(contextTag, chain as any))
+    const svc = makeObjectChainServiceImpl(chain) as
+        ObjectChainService<Input,
+            ObjectStepsDepsU<Steps>,
+            ObjectStepsErrorsU<Steps>,
+            ChainObjectStepsReturn<Steps, Input>>
+
+    return Effect.provideService(effect, contextTag, svc)
 }
 
-
 export function runObjectChainFxFn
-    <ContextTag extends ObjectChainServiceTag<Input, R, E, V>, Input extends Tagged, R, E, V extends Tagged>
-    (_tag: ContextTag) {
-    return undefined as unknown as Effect.Effect<R, E, V>
+    <ContextTag extends ObjectChainServiceTag<Input, R, E, V>,
+        Input extends Tagged,
+        R,
+        E,
+        V extends Tagged>
+    
+    (tag: ContextTag) {
+
+    return (i: Input) => {
+        const r = Effect.gen(function* (_) {
+            const svc = yield* _(tag)
+            return svc.buildObject(i)
+        })
+        return r       
+    }
 }
