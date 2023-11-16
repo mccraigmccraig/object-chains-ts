@@ -52,21 +52,21 @@ const echoContext = Context.empty().pipe(
     })))
 
 Deno.test("empty objectChain returns input", () => {
-    type DoNothing = { readonly tag: "doNothing" }
+    type DoNothing = { readonly _chainTag: "doNothing" }
     const DoNothingTag = chainTag<DoNothing>("doNothing")
 
     const steps = [] as const
     const prog = objectChain<DoNothing>()(DoNothingTag, steps)
 
-    const input = { tag: "doNothing" as const}
+    const input = { _chainTag: "doNothing" as const}
     const effect = prog.program(input)
     const r = Effect.runSync(effect)
 
-    assertEquals(r, {tag: "doNothing"})
+    assertEquals(r, {_chainTag: "doNothing"})
 })
 
 type SendPushNotification = {
-    readonly tag: "sendPushNotification",
+    readonly _chainTag: "sendPushNotification",
     readonly data: { org_nick: string, user_id: string }
 }
 const SendPushNotificationTag = chainTag<SendPushNotification>("sendPushNotification")
@@ -81,7 +81,7 @@ Deno.test("objectChain mixes fx and pure steps", () => {
     const prog = objectChain<SendPushNotification>()(SendPushNotificationTag, sendPushNotificationSteps)
 
     const input: SendPushNotification = {
-        tag: "sendPushNotification" as const,
+        _chainTag: "sendPushNotification" as const,
         data: {org_nick: "foo", user_id: "bar"}
     }
     const effect = prog.program(input)
@@ -99,7 +99,7 @@ Deno.test("objectChain mixes fx and pure steps", () => {
 
 Deno.test("addSteps lets you add steps", () => {
     const input: SendPushNotification = {
-        tag: "sendPushNotification" as const,
+        _chainTag: "sendPushNotification" as const,
         data: { org_nick: "foo", user_id: "bar" }
     }
 

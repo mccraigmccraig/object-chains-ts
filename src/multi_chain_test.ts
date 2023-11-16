@@ -41,7 +41,7 @@ const pureFormatOrgOutputStepSpec = {
 
 //////////////////////// getOrg chain
 
-type GetOrgInput = { tag: "GetOrg", data: { org_nick: string } }
+type GetOrgInput = { _chainTag: "GetOrg", data: { org_nick: string } }
 const GetOrgInputTag = chainTag<GetOrgInput>("GetOrg")
 
 
@@ -53,7 +53,7 @@ const getOrgProg = objectChain<GetOrgInput>()(
 
 //////////////////////// sendWelcomePush chain
 
-type SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: string, user_id: string } }
+type SendWelcomePushInput = { _chainTag: "SendWelcomePush", data: { org_nick: string, user_id: string } }
 const SendWelcomePushInputTag = chainTag<SendWelcomePushInput>("SendWelcomePush")
 
 const sendWelcomePushProg = objectChain<SendWelcomePushInput>()(
@@ -84,7 +84,7 @@ const programs = [getOrgProg, sendWelcomePushProg] as const
 const prog = multiChainProgram(programs)
 
 Deno.test("multiChainProgram runs chains", () => {
-    const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }
+    const getOrgInput: GetOrgInput = { _chainTag: "GetOrg", data: { org_nick: "foo" } }
 
     // note the inferred Effect value type selects the output of the getOrg chain
     const getOrgEffect = prog(getOrgInput)
@@ -97,7 +97,7 @@ Deno.test("multiChainProgram runs chains", () => {
         apiResponse: { org: { id: "foo", name: "Foo" } }
     })
 
-    const sendWelcomePushInput: SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
+    const sendWelcomePushInput: SendWelcomePushInput = { _chainTag: "SendWelcomePush", data: { org_nick: "foo", user_id: "100" } }
 
     // note the inferred Effect value type selects the output of the sendWelcomePush chain
     const sendWelcomePushEffect = prog(sendWelcomePushInput)
@@ -116,7 +116,7 @@ Deno.test("multiChainProgram runs chains", () => {
 Deno.test("multiChain runs chains", () => {
     const mc = multiChain(programs)
 
-    const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }
+    const getOrgInput: GetOrgInput = { _chainTag: "GetOrg", data: { org_nick: "foo" } }
 
     // note the inferred Effect value type selects the output of the getOrg chain
     const getOrgEffect = mc.program(getOrgInput)
@@ -134,7 +134,7 @@ Deno.test("addChains adds to a multiChain", () => {
     const emptyMultiChain = multiChain([])
     const mc = addChains(emptyMultiChain, programs)
 
-    const getOrgInput: GetOrgInput = { tag: "GetOrg", data: { org_nick: "foo" } }
+    const getOrgInput: GetOrgInput = { _chainTag: "GetOrg", data: { org_nick: "foo" } }
 
     // note the inferred Effect value type selects the output of the getOrg chain
     const getOrgEffect = mc.program(getOrgInput)

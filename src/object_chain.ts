@@ -9,7 +9,7 @@ import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStep
 export type ObjectChain<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> = {
         readonly tag: ChainTag<Input>
-        readonly tagStr: Input['tag']
+        readonly tagStr: Input['_chainTag']
         readonly steps: ChainObjectSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ChainObjectSteps<Steps, Input>
         readonly program: (i: Input) => Effect.Effect<ObjectStepsDepsU<Steps>,
             ObjectStepsErrorsU<Steps>,
