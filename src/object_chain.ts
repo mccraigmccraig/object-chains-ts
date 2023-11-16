@@ -1,5 +1,6 @@
-import { Effect } from "effect"
-import { Tagged, Tag } from "./tagged.ts"
+import { Effect, Context } from "effect"
+import { FxFn } from "./fx_fn.ts"
+import { Tagged, Tag, tagStr } from "./tagged.ts"
 import { UnionFromTuple, ChainObjectSteps } from "./object_builders.ts"
 import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg } from "./object_builders.ts"
 
@@ -40,7 +41,7 @@ export function objectChain<Input extends Tagged>() {
 
         return {
             tag: tag,
-            tagStr: tag.tag,
+            tagStr: tagStr(tag),
             steps: steps,
             program: chainObjectStepsProg<Input>()(steps)
         } as ObjectChain<Input, Steps>
@@ -59,4 +60,48 @@ export function addSteps<Input extends Tagged,
 
     // deno-lint-ignore no-explicit-any
     return objectChain<Input>()(chain.tag, newSteps as any) as ObjectChain<Input, readonly [...Steps, ...AdditionalSteps]>
+}
+
+// a type for a service which can run an ObjectChain
+export type ObjectChainService<Input extends Tagged, R, E, V extends Tagged> = {
+    readonly buildObject: (i: Input) => Effect.Effect<R, E, V>
+}
+
+export type ObjectChainServiceTag<Input extends Tagged, R, E, V extends Tagged> =
+    Context.Tag<Tag<Input>, ObjectChainService<Input, R, E, V>>
+
+export type RunObjectChainFxFn<Input extends Tagged, R, E, V extends Tagged> = FxFn<Input, R, E, V>
+
+// make an ObjectChainService impl with given Id which will run an ObjectChain for a particular Input
+// ooo - maybe the Context.Tag Id type should also be the Tagged type - would be a nice symmetry
+// and avoid boilerplate
+export function makeObjectChainServiceImpl
+    <Input extends Tagged,
+        Steps extends readonly [...UPObjectStepSpec[]],
+        Chain extends ObjectChain<Input, Steps>,
+        R, E, V extends Tagged>
+    (_contextTag: ObjectChainServiceTag<Input, R, E, V>,
+        _chain: Chain) {
+    return undefined as unknown as ObjectChainService<Input, R, E, V>
+}
+
+// provide an implementation of the ObjectChainService for this chain
+// to an Effect
+export function provideObjectChainServiceImpl
+    <Input extends Tagged,
+        Steps extends readonly [...UPObjectStepSpec[]],
+        Chain extends ObjectChain<Input, Steps>,
+        R, E, V extends Tagged>
+    (effect: Effect.Effect<any, any, any>,
+        contextTag: ObjectChainServiceTag<Input, R, E, V>,
+        chain: Chain) {
+
+    return Effect.provideService(effect, contextTag, makeObjectChainServiceImpl(contextTag, chain as any))
+}
+
+
+export function runObjectChainFxFn
+    <ContextTag extends ObjectChainServiceTag<Input, R, E, V>, Input extends Tagged, R, E, V extends Tagged>
+    (_tag: ContextTag) {
+    return undefined as unknown as Effect.Effect<R, E, V>
 }

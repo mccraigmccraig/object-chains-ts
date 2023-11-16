@@ -120,3 +120,7 @@ Deno.test("addSteps lets you add steps", () => {
         sendPush: "push sent OK: Welcome Bar of Foo"
     })
 })
+
+Deno.test("recursion with RunObjectChainFxFn", () => {
+    
+})
