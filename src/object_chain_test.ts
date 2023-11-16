@@ -1,6 +1,6 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
-import { tag } from "./tagged.ts"
+import { chainTag } from "./tagged.ts"
 import { objectChain, addSteps } from "./object_chain.ts"
 import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
 
@@ -53,7 +53,7 @@ const echoContext = Context.empty().pipe(
 
 Deno.test("empty objectChain returns input", () => {
     type DoNothing = { readonly tag: "doNothing" }
-    const DoNothingTag = tag<DoNothing>("doNothing")
+    const DoNothingTag = chainTag<DoNothing>("doNothing")
 
     const steps = [] as const
     const prog = objectChain<DoNothing>()(DoNothingTag, steps)
@@ -69,7 +69,7 @@ type SendPushNotification = {
     readonly tag: "sendPushNotification",
     readonly data: { org_nick: string, user_id: string }
 }
-const SendPushNotificationTag = tag<SendPushNotification>("sendPushNotification")
+const SendPushNotificationTag = chainTag<SendPushNotification>("sendPushNotification")
 
 const sendPushNotificationSteps = [getOrgObjectStepSpec,
     getUserObjectStepSpec,
@@ -122,5 +122,5 @@ Deno.test("addSteps lets you add steps", () => {
 })
 
 Deno.test("recursion with RunObjectChainFxFn", () => {
-    
+
 })

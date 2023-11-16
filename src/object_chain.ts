@@ -1,14 +1,14 @@
 import { Effect, Context } from "effect"
 import { FxFn } from "./fx_fn.ts"
-import { Tagged, Tag, tagStr } from "./tagged.ts"
+import { ChainTagged, ChainTag, chainTagStr } from "./tagged.ts"
 import { UnionFromTuple, ChainObjectSteps } from "./object_builders.ts"
 import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg } from "./object_builders.ts"
 
 // an ObjectChain is a datastructure defining a series of steps to build an Object.
 // it can be built in a single step with objectChain, or iteratively with addSteps
-export type ObjectChain<Input extends Tagged,
+export type ObjectChain<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> = {
-        readonly tag: Tag<Input>
+        readonly tag: ChainTag<Input>
         readonly tagStr: Input['tag']
         readonly steps: ChainObjectSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ChainObjectSteps<Steps, Input>
         readonly program: (i: Input) => Effect.Effect<ObjectStepsDepsU<Steps>,
@@ -34,21 +34,21 @@ export type ObjectChainsInputU<Tuple extends readonly [...UPObjectChain[]]> = Un
     
 
 // build an ObjectChain from Steps
-export function objectChain<Input extends Tagged>() {
+export function objectChain<Input extends ChainTagged>() {
     return function <Steps extends readonly [...UPObjectStepSpec[]]>
-        (tag: Tag<Input>,
+        (tag: ChainTag<Input>,
             steps: ChainObjectSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ChainObjectSteps<Steps, Input>) {
 
         return {
             tag: tag,
-            tagStr: tagStr(tag),
+            tagStr: chainTagStr(tag),
             steps: steps,
             program: chainObjectStepsProg<Input>()(steps)
         } as ObjectChain<Input, Steps>
     }
 }
 
-export function addSteps<Input extends Tagged,
+export function addSteps<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]],
     AdditionalSteps extends readonly [...UPObjectStepSpec[]]>
     (chain: ObjectChain<Input, Steps>,
@@ -71,24 +71,24 @@ export function addSteps<Input extends Tagged,
 // step
 
 // a type for a service which can run an ObjectChain
-export type ObjectChainService<Input extends Tagged, R, E, V extends Tagged> = {
+export type ObjectChainService<Input extends ChainTagged, R, E, V extends ChainTagged> = {
     readonly buildObject: (i: Input) => Effect.Effect<R, E, V>
 }
 
-export type ObjectChainServiceTag<Input extends Tagged, R, E, V extends Tagged> =
-    Context.Tag<Tag<Input>, ObjectChainService<Input, R, E, V>>
+export type ObjectChainServiceTag<Input extends ChainTagged, R, E, V extends ChainTagged> =
+    Context.Tag<ChainTag<Input>, ObjectChainService<Input, R, E, V>>
 
-export type RunObjectChainFxFn<Input extends Tagged, R, E, V extends Tagged> = FxFn<Input, R, E, V>
+export type RunObjectChainFxFn<Input extends ChainTagged, R, E, V extends ChainTagged> = FxFn<Input, R, E, V>
 
 
 // get a Context.Tag for an ObjectChainService
 export function objectChainServiceContextTag
-    <Input extends Tagged,
+    <Input extends ChainTagged,
         Steps extends readonly [...UPObjectStepSpec[]],
         Chain extends ObjectChain<Input, Steps>>
     (_chain: Chain) {
 
-    return Context.Tag<Tag<Input>,
+    return Context.Tag<ChainTag<Input>,
         ObjectChainService<Input,
             ObjectStepsDepsU<Steps>,
             ObjectStepsErrorsU<Steps>,
@@ -100,7 +100,7 @@ export function objectChainServiceContextTag
 // ooo - maybe the Context.Tag Id type should also be the Tagged type - would be a nice symmetry
 // and avoid boilerplate
 export function makeObjectChainServiceImpl
-    <Input extends Tagged,
+    <Input extends ChainTagged,
         Steps extends readonly [...UPObjectStepSpec[]],
         Chain extends ObjectChain<Input, Steps>>
     (chain: Chain) {
@@ -118,7 +118,7 @@ export function makeObjectChainServiceImpl
 // provide an implementation of the ObjectChainService for this chain
 // to an Effect
 export function provideObjectChainServiceImpl
-    <Input extends Tagged,
+    <Input extends ChainTagged,
         Steps extends readonly [...UPObjectStepSpec[]],
         Chain extends ObjectChain<Input, Steps>,
         InR, InE, InV>
@@ -141,10 +141,10 @@ export function provideObjectChainServiceImpl
 
 export function runObjectChainFxFn
     <ContextTag extends ObjectChainServiceTag<Input, R, E, V>,
-        Input extends Tagged,
+        Input extends ChainTagged,
         R,
         E,
-        V extends Tagged>
+        V extends ChainTagged>
     
     (tag: ContextTag) {
 

@@ -1,7 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
 import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
-import { tag } from "./tagged.ts"
+import { chainTag } from "./tagged.ts"
 import { objectChain } from "./object_chain.ts"
 import { multiChainProgram, multiChain, addChains } from "./multi_chain.ts"
 
@@ -42,7 +42,7 @@ const pureFormatOrgOutputStepSpec = {
 //////////////////////// getOrg chain
 
 type GetOrgInput = { tag: "GetOrg", data: { org_nick: string } }
-const GetOrgInputTag = tag<GetOrgInput>("GetOrg")
+const GetOrgInputTag = chainTag<GetOrgInput>("GetOrg")
 
 
 const getOrgProg = objectChain<GetOrgInput>()(
@@ -54,7 +54,7 @@ const getOrgProg = objectChain<GetOrgInput>()(
 //////////////////////// sendWelcomePush chain
 
 type SendWelcomePushInput = { tag: "SendWelcomePush", data: { org_nick: string, user_id: string } }
-const SendWelcomePushInputTag = tag<SendWelcomePushInput>("SendWelcomePush")
+const SendWelcomePushInputTag = chainTag<SendWelcomePushInput>("SendWelcomePush")
 
 const sendWelcomePushProg = objectChain<SendWelcomePushInput>()(
     SendWelcomePushInputTag,

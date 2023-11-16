@@ -1,6 +1,6 @@
 import { Effect } from "effect"
 import { UnionFromTuple } from "./object_builders.ts"
-import { Tagged } from "./tagged.ts"
+import { ChainTagged } from "./tagged.ts"
 import { UPObjectChain, ObjectChainsInputU } from "./object_chain.ts"
 
 
@@ -35,7 +35,7 @@ export type IndexObjectChainTuple<T extends ReadonlyArray<UPObjectChain>> = {
 
 // not obvious - the conditional type distribute the value type over a union of Taggeds, resulting in a union of values!
 // https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
-export type DistributeObjectChainValueTypes<I extends Tagged, Chains extends readonly [...UPObjectChain[]]> =
+export type DistributeObjectChainValueTypes<I extends ChainTagged, Chains extends readonly [...UPObjectChain[]]> =
     IndexObjectChainTuple<Chains>[I['tag']] extends UPObjectChain
     ? ProgramValue<IndexObjectChainTuple<Chains>[I['tag']]>
     : never

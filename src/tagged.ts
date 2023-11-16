@@ -1,24 +1,24 @@
 
-export interface Tagged {
+export interface ChainTagged {
     readonly tag: string
 }
 
-const tagKey: unique symbol = Symbol()
+const chainTagKey: unique symbol = Symbol()
 
-export type Tag<T extends Tagged> = {
-    readonly [tagKey]: T['tag']
+export type ChainTag<T extends ChainTagged> = {
+    readonly [chainTagKey]: T['tag']
 }
 
 // build a tag value for a Tagged type,
 // forcing the tag param to match the Tagged.tag string
 // const aTag = tag<ATagged>("ATagged")
-export const tag = <T extends Tagged>(tag: T['tag']): Tag<T> => {
+export const chainTag = <T extends ChainTagged>(chainTagStr: T['tag']): ChainTag<T> => {
     return {
-        [tagKey]: tag
+        [chainTagKey]: chainTagStr
     }
 }
 
 // get the tag string from a Tag
-export const tagStr = <T extends Tagged>(tag: Tag<T>): Tag<T>[typeof tagKey] => {
-    return tag[tagKey]
+export const chainTagStr = <T extends ChainTagged>(chainTag: ChainTag<T>): ChainTag<T>[typeof chainTagKey] => {
+    return chainTag[chainTagKey]
 }
