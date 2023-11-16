@@ -1,6 +1,6 @@
 import { Effect } from "effect"
 import { UnionFromTuple } from "./object_builders.ts"
-import { ChainTagged } from "./tagged.ts"
+import { ChainTagged } from "./chain_tag.ts"
 import { UPObjectChain, ObjectChainsInputU } from "./object_chain.ts"
 
 

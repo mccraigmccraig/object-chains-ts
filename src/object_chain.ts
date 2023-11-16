@@ -1,6 +1,6 @@
 import { Effect, Context } from "effect"
 import { FxFn } from "./fx_fn.ts"
-import { ChainTagged, ChainTag, chainTagStr } from "./tagged.ts"
+import { ChainTagged, ChainTag, chainTagStr } from "./chain_tag.ts"
 import { UnionFromTuple, ChainObjectSteps } from "./object_builders.ts"
 import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg } from "./object_builders.ts"
 
