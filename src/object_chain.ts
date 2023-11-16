@@ -1,5 +1,4 @@
 import { Effect, Context } from "effect"
-import { FxFn } from "./fx_fn.ts"
 import { ChainTagged, ChainTag, chainTagStr } from "./chain_tag.ts"
 import { UnionFromTuple, ChainObjectSteps } from "./object_builders.ts"
 import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg } from "./object_builders.ts"
@@ -26,12 +25,12 @@ export type UPObjectChain = {
 
 export type ObjectChainInput<T extends UPObjectChain> =
     T extends ObjectChain<infer Input, infer _Steps>
-    ? Input 
+    ? Input
     : never
 export type ObjectChainsInputU<Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
     +readonly [Index in keyof Tuple]: ObjectChainInput<Tuple[Index]>
 } & { length: Tuple['length'] }>
-    
+
 
 // build an ObjectChain from Steps
 export function objectChain<Input extends ChainTagged>() {
@@ -75,17 +74,16 @@ export type ObjectChainService<Input extends ChainTagged, R, E, V extends ChainT
     readonly buildObject: (i: Input) => Effect.Effect<R, E, V>
 }
 
-export type ObjectChainServiceTag<Input extends ChainTagged, R, E, V extends ChainTagged> =
+export type ObjectChainServiceContextTag<Input extends ChainTagged, R, E, V extends ChainTagged> =
     Context.Tag<ChainTag<Input>, ObjectChainService<Input, R, E, V>>
-
-export type RunObjectChainFxFn<Input extends ChainTagged, R, E, V extends ChainTagged> = FxFn<Input, R, E, V>
-
 
 // get a Context.Tag for an ObjectChainService
 export function objectChainServiceContextTag
-    <Input extends ChainTagged,
-        Steps extends readonly [...UPObjectStepSpec[]],
-        Chain extends ObjectChain<Input, Steps>>
+
+    <Chain extends ObjectChain<Input, Steps>,
+        Input extends ChainTagged,
+        Steps extends readonly [...UPObjectStepSpec[]]>
+
     (_chain: Chain) {
 
     return Context.Tag<ChainTag<Input>,
@@ -100,17 +98,22 @@ export function objectChainServiceContextTag
 // ooo - maybe the Context.Tag Id type should also be the Tagged type - would be a nice symmetry
 // and avoid boilerplate
 export function makeObjectChainServiceImpl
-    <Input extends ChainTagged,
-        Steps extends readonly [...UPObjectStepSpec[]],
-        Chain extends ObjectChain<Input, Steps>>
+
+    <Chain extends ObjectChain<Input, Steps>,
+        Input extends ChainTagged,
+        Steps extends readonly [...UPObjectStepSpec[]]>
+
     (chain: Chain) {
-    
+
     const service = {
-         buildObject: (i: Input) => {
+        buildObject: (i: Input) => {
             return chain.program(i)
         }
-    } as ObjectChainService<Input, ObjectStepsDepsU<Steps>, ObjectStepsErrorsU<Steps>, ChainObjectStepsReturn<Steps, Input>>
-    
+    } as ObjectChainService<Input,
+        ObjectStepsDepsU<Steps>,
+        ObjectStepsErrorsU<Steps>,
+        ChainObjectStepsReturn<Steps, Input>>
+
     return service
 }
 
@@ -118,13 +121,13 @@ export function makeObjectChainServiceImpl
 // provide an implementation of the ObjectChainService for this chain
 // to an Effect
 export function provideObjectChainServiceImpl
-    <Input extends ChainTagged,
-        Steps extends readonly [...UPObjectStepSpec[]],
-        Chain extends ObjectChain<Input, Steps>,
+    <Chain extends ObjectChain<Input, Steps>,
+        Input extends ChainTagged,
+        Steps extends readonly [...UPObjectStepSpec[]],        
         InR, InE, InV>
 
     (effect: Effect.Effect<InR, InE, InV>,
-        contextTag: ObjectChainServiceTag<Input,
+        contextTag: ObjectChainServiceContextTag<Input,
             ObjectStepsDepsU<Steps>,
             ObjectStepsErrorsU<Steps>,
             ChainObjectStepsReturn<Steps, Input>>,
@@ -140,19 +143,20 @@ export function provideObjectChainServiceImpl
 }
 
 export function runObjectChainFxFn
-    <ContextTag extends ObjectChainServiceTag<Input, R, E, V>,
+    <ContextTag extends ObjectChainServiceContextTag<Input, R, E, V>,
         Input extends ChainTagged,
         R,
         E,
         V extends ChainTagged>
-    
+
     (tag: ContextTag) {
 
     return (i: Input) => {
         const r = Effect.gen(function* (_) {
             const svc = yield* _(tag)
-            return svc.buildObject(i)
+            const obj = yield* _(svc.buildObject(i))
+            return obj
         })
-        return r       
+        return r
     }
 }
