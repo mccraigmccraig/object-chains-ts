@@ -7,7 +7,7 @@ export type Org = {
     id: string
     name: string
 }
-interface OrgService { readonly _: unique symbol }
+type OrgService = { readonly _: unique symbol }
 export interface OrgServiceI {
     readonly getById: (id: string) => Effect.Effect<never, never, Org>
     readonly getByNick: (nick: string) => Effect.Effect<never, never, Org>
@@ -24,7 +24,7 @@ export type User = {
     id: string
     name: string
 }
-interface UserService { readonly _: unique symbol }
+type UserService = { readonly _: unique symbol }
 // the service interface
 export interface UserServiceI {
     readonly getByIds: (d: { org_id: string, user_id: string }) => Effect.Effect<never, never, User>
@@ -37,7 +37,7 @@ export const getUserByIds = invokeServiceFxFn(UserService, "getByIds")
 
 /////////////////// PushNotification ///////////////////////
 
-interface PushNotificationService { readonly _: unique symbol }
+type PushNotificationService = { readonly _: unique symbol }
 export interface PushNotificationServiceI {
     readonly sendPush: (d: { user_id: string, message: string }) => Effect.Effect<never, never, string>
 }
