@@ -80,11 +80,10 @@ export type ObjectChainServiceContextTag<Input extends ChainTagged, R, E, V exte
 // get a Context.Tag for an ObjectChainService
 export function objectChainServiceContextTag
 
-    <Chain extends ObjectChain<Input, Steps>,
-        Input extends ChainTagged,
+    <Input extends ChainTagged,
         Steps extends readonly [...UPObjectStepSpec[]]>
 
-    (_chain: Chain) {
+    (_chain: ObjectChain<Input, Steps>) {
 
     return Context.Tag<ChainTag<Input>,
         ObjectChainService<Input,
@@ -99,11 +98,10 @@ export function objectChainServiceContextTag
 // and avoid boilerplate
 export function makeObjectChainServiceImpl
 
-    <Chain extends ObjectChain<Input, Steps>,
-        Input extends ChainTagged,
+    <Input extends ChainTagged,
         Steps extends readonly [...UPObjectStepSpec[]]>
 
-    (chain: Chain) {
+    (chain: ObjectChain<Input, Steps>) {
 
     const service = {
         buildObject: (i: Input) => {
@@ -121,8 +119,7 @@ export function makeObjectChainServiceImpl
 // provide an implementation of the ObjectChainService for this chain
 // to an Effect
 export function provideObjectChainServiceImpl
-    <Chain extends ObjectChain<Input, Steps>,
-        Input extends ChainTagged,
+    <Input extends ChainTagged,
         Steps extends readonly [...UPObjectStepSpec[]],        
         InR, InE, InV>
 
@@ -131,7 +128,7 @@ export function provideObjectChainServiceImpl
             ObjectStepsDepsU<Steps>,
             ObjectStepsErrorsU<Steps>,
             ChainObjectStepsReturn<Steps, Input>>,
-        chain: Chain) {
+        chain: ObjectChain<Input, Steps>) {
 
     const svc = makeObjectChainServiceImpl(chain) as
         ObjectChainService<Input,
@@ -143,13 +140,12 @@ export function provideObjectChainServiceImpl
 }
 
 export function runObjectChainFxFn
-    <ContextTag extends ObjectChainServiceContextTag<Input, R, E, V>,
-        Input extends ChainTagged,
+    <Input extends ChainTagged,
         R,
         E,
         V extends ChainTagged>
 
-    (tag: ContextTag) {
+    (tag: ObjectChainServiceContextTag<Input, R, E, V>) {
 
     return (i: Input) => {
         const r = Effect.gen(function* (_) {
