@@ -171,9 +171,13 @@ Deno.test("addFxStep and addPureStep add steps", () => {
 
     const sendPushProgEffect = threeSteps.program(input)
     // four steps is enough to trigger the "Type instantiation is excessively deep and possibly infinite" error
-    // so it seems the combination of iterative additions and inference over a list causes a 
+    // so it seems the combination of iterative additions and inference over a list causes a
     // combinatorial explosion
     // const fourStepsEffect = sendPushProg.program(input)
+    
+    // i think this is because the depths is  M + 2M + 3M + 4M = M(N+1)/2 = O(N^2)
+    // because each step has inference depth M, but a new array is created in each step
+
     const sendPushProgRunnable = Effect.provide(sendPushProgEffect, echoContext)
     const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
     assertEquals(sendPushProgResult, {
