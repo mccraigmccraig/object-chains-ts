@@ -1,7 +1,7 @@
 import { Effect, Context } from "effect"
 import { FxFn } from "./fx_fn.ts"
 import { ChainTagged, ChainTag, chainTagStr } from "./chain_tag.ts"
-import { UnionFromTuple, UCFxObjectStepSpec, PureObjectStepSpec, ChainObjectSteps } from "./object_builders.ts"
+import { UnionFromTuple, UCFxObjectStepSpec, UCPureObjectStepSpec, ChainObjectSteps } from "./object_builders.ts"
 import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg } from "./object_builders.ts"
 
 // an ObjectChain is a datastructure defining a series of steps to build an Object.
@@ -59,7 +59,8 @@ export function addSteps<Input extends ChainTagged,
     const newSteps = [...chain.steps, ...additionalSteps] as const
 
     // deno-lint-ignore no-explicit-any
-    return objectChain<Input>()(chain.tag, newSteps as any) as ObjectChain<Input, readonly [...Steps, ...AdditionalSteps]>
+    return objectChain<Input>()(chain.tag, newSteps as any) as
+        ObjectChain<Input, readonly [...Steps, ...AdditionalSteps]>
 }
 
 export function addStep<Input extends ChainTagged,
@@ -86,7 +87,9 @@ export function addFxStep<Input extends ChainTagged,
         inFn: (a: A) => D1,
         fxFn: FxFn<D2, R, E, V>) {
 
-    const steps = [{ k, inFn, fxFn } as UCFxObjectStepSpec<K, ChainObjectStepsReturn<Steps, Input>, D1, D2, R, E, V>] as const
+    const steps = [{ k, inFn, fxFn } as
+        UCFxObjectStepSpec<K,
+            ChainObjectStepsReturn<Steps, Input>, D1, D2, R, E, V>] as const
 
     return addSteps(chain, steps)
 }
@@ -99,7 +102,9 @@ export function addPureStep<Input extends ChainTagged,
         k: K,
         pureFn: (a: A) => V) {
 
-    const steps = [{ k, pureFn } as PureObjectStepSpec<K, ChainObjectStepsReturn<Steps, Input>, V>] as const
+    const steps = [{ k, pureFn } as
+        UCPureObjectStepSpec<K,
+            ChainObjectStepsReturn<Steps, Input>, V>] as const
 
     return addSteps(chain, steps)
 }
