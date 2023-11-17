@@ -95,3 +95,10 @@ export function addChains<Chains extends readonly [...UPObjectChain[]],
 
     return multiChain([...mc.chains, ...additionalChains])
 }
+
+///////////////////////// recursion support
+
+// each chain has a ContextTag for the service which will run it
+// so a MultiChain can register implementations for each of its
+// chains
+
