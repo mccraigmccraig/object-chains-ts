@@ -26,6 +26,17 @@ export type ObjectChainServiceContextTag<Input extends ChainTagged,
         ObjectStepsErrorsU<Steps>,
         ChainObjectStepsReturn<Steps, Input>>
 
+// get a Context.Tag for an ObjectChainService
+export function objectChainServiceContextTag
+
+    <Input extends ChainTagged,
+        Steps extends readonly [...UPObjectStepSpec[]]>
+
+    () {
+
+    return Context.Tag<ChainTag<Input>, ObjectChainService<Input, Steps>>()
+}
+
 // a function of Input which build an Object
 export type ObjectChainProgram<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> =
@@ -41,6 +52,7 @@ export type ObjectChain<Input extends ChainTagged,
         readonly tagStr: Input['_chainTag']
         readonly steps: ChainObjectSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ChainObjectSteps<Steps, Input>
         readonly program: ObjectChainProgram<Input, Steps>
+        readonly contextTag: ObjectChainServiceContextTag<Input, Steps>
     }
 
 // an unparameterised version of ObjectChain for typing tuples
@@ -49,8 +61,11 @@ export type UPObjectChain = {
     readonly steps: readonly [...UPObjectStepSpec[]]
     // deno-lint-ignore no-explicit-any
     readonly program: (i: any) => Effect.Effect<any, any, any>
+    // deno-lint-ignore no-explicit-any
+    readonly contextTag: Context.Tag<any, any>
 }
 
+// union of all the inputs from a tuple of chains
 export type ObjectChainInput<T extends UPObjectChain> =
     T extends ObjectChain<infer Input, infer _Steps>
     ? Input
@@ -70,7 +85,8 @@ export function objectChain<Input extends ChainTagged>() {
             tag: tag,
             tagStr: chainTagStr(tag),
             steps: steps,
-            program: chainObjectStepsProg<Input>()(steps)
+            program: chainObjectStepsProg<Input>()(steps),
+            contextTag: objectChainServiceContextTag<Input, Steps>()
         } as ObjectChain<Input, Steps>
     }
 }
@@ -144,17 +160,6 @@ export function addPureStep<Input extends ChainTagged,
 // as a computation step to recurse or run any other chain as a computation
 // step
 
-
-// get a Context.Tag for an ObjectChainService
-export function objectChainServiceContextTag
-
-    <Input extends ChainTagged,
-        Steps extends readonly [...UPObjectStepSpec[]]>
-
-    (_chain: ObjectChain<Input, Steps>) {
-
-    return Context.Tag<ChainTag<Input>, ObjectChainService<Input, Steps>>()
-}
 
 
 // make an ObjectChainService impl with given Id which will run an ObjectChain for a particular Input
