@@ -121,6 +121,76 @@ export function objectStepFn<Obj>() {
     }
 }
 
+///////////////////////////////// Cons
+
+// simple cons type for lists
+export type Cons<T> = null | readonly [T, Cons<T>]
+
+// reverse a Cons structure
+// NB: we aren't specifying C as extends Cons<T> - it leads
+// to instantiation depth sadness
+export type Reverse<C, Acc = null> =
+    C extends null
+    ? Acc
+    : C extends readonly [infer Head, infer Rest]
+    ? Reverse<Rest, readonly [Head, Acc]>
+    : never
+
+export type X = [1, [2, [3, null]]]
+// export type XRev = Reverse<X>
+
+// get the last element from a Cons structure
+export type Last<C> =
+    C extends null
+    ? null
+    : C extends readonly [infer Head, null]
+    ? Head
+    : C extends readonly [infer _Head, infer Rest]
+    ? Last<Rest>
+    : never
+
+// export type XLast = Last<X>
+
+// convert a cons list to a tuple
+export type ListToTuple<C, Acc extends readonly [...any[]] = []> =
+    C extends null
+    ? Acc
+    : C extends readonly [infer Head, infer Rest]
+    ? ListToTuple<Rest, readonly [...Acc, Head]>
+    : never
+
+export type XTuple = ListToTuple<X>
+
+// convert a cons list to a union
+export type ListToUnion<C, U = never> =
+    C extends null
+    ? U
+    : C extends readonly [infer Head, infer Rest]
+    ? ListToUnion<Rest, U | Head>
+    : never
+
+export type XUnion = ListToUnion<X>
+
+// turn a cons list into an array
+function listToArray_<T>(list: Cons<T>, acc: T[] = []) {
+    if (list == null) {
+        return acc
+    } else {
+        acc.push(list[0])
+        return listToArray_(list[1], acc)
+    }
+}
+// convert a cons list to a tuple
+function listToTuple<T>(list: Cons<T>) {
+    const acc = listToArray_(list)
+    return [...acc] as const
+}
+
+///////////////////////// cons list of UPObjectStepSpec
+
+export type UPObjectStepSpecList = Cons<UPObjectStepSpec>
+
+
 // utility type to get a Union from a Tuple of types
 export type UnionFromTuple<Tuple extends readonly any[]> = Tuple[number]
 
@@ -133,14 +203,17 @@ export type ExpandTuple<Tuple extends readonly [...any[]]> = {
     +readonly [Index in keyof Tuple]: Expand<Tuple[Index]>
 } & { length: Tuple['length'] }
 
-// get a union of all the R dependencies from a tuple of steps. pure steps have no deps
+
+
+// get a union of all the R dependencies from a list of steps. pure steps have no deps
 export type ObjectStepDeps<T extends UPObjectStepSpec> =
     T extends UCFxObjectStepSpec<infer _K, infer _A, infer _D1, infer _D2, infer R, infer _E, infer _V>
     ? R
     : never
-export type ObjectStepsDepsU<Tuple extends readonly [...UPObjectStepSpec[]]> = UnionFromTuple<{
+export type ObjectStepsTupleDepsU<Tuple extends readonly UPObjectStepSpec[]> = UnionFromTuple<{
     +readonly [Index in keyof Tuple]: ObjectStepDeps<Tuple[Index]>
 } & { length: Tuple['length'] }>
+export type ObjectStepsDepsU<L extends UPObjectStepSpecList> = ObjectStepDeps<ListToUnion<L>>
 
 // get a union of all the E errors from a tuple of steps. pure steps declare no errors
 export type ObjectStepErrors<T extends UPObjectStepSpec> =
@@ -177,6 +250,9 @@ export type ObjectStepsValueTuple<Tuple extends readonly [...UPObjectStepSpec[]]
 // complexity as all-together
 
 
+// export const acons: Cons<number> = [0, [1, [2, null]]]
+// export const alist = listToArray(acons)
+
 
 // type a chain to build an Object by chaining an initial value through 
 // a sequence of steps, accumulating {K: V} after each step
@@ -192,217 +268,78 @@ export type ObjectStepsValueTuple<Tuple extends readonly [...UPObjectStepSpec[]]
 // types we output - this gives us:
 // 1. easy to understsand errors about constraint failure
 // 2. it's safe to use never in the else branches. they will not be hit
-export type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
-    ObjAcc,
-    StepAcc extends [...UPObjectStepSpec[]] = []> =
+// export type ChainObjectSteps<Specs extends UPObjectStepSpecList,
+//     ObjAcc,
+//     StepAcc extends UPObjectStepSpecList = null> =
 
-    // case: empty specs
-    Specs extends readonly []
-    ? readonly [...StepAcc]
+//     // case: no more specs. return the reversed step accumulator cons
+//     Specs extends null
+//     ? Reverse<StepAcc>
 
-    // case: final spec - deliver final pipeline tuple type from StepAcc
-    : Specs extends readonly [infer Head]
-    ? Head extends UCFxObjectStepSpec<infer K, infer _A, infer _D1, infer D2, infer R, infer E, infer V>
-    // return the final inferred pipeline with an FxObjectStepSpec - note we constrain D1==D2
-    ? readonly [...StepAcc, UCFxObjectStepSpec<K, ObjAcc, D2, D2, R, E, V>]
-    : Head extends UCPureObjectStepSpec<infer K, infer _A, infer V>
-    ? readonly [...StepAcc, UCPureObjectStepSpec<K, ObjAcc, V>]
-    : never // readonly [...StepAcc, ["ChainObjectStepsFail-final-A: Head !extends UCPureObjectStepSpec", Head]]
-
-    // case: there are more specs - add to ObjAcc and StepAcc and recurse
-    : Specs extends readonly [infer Head, ...infer Tail]
-    ? Tail extends readonly [infer Next, ...any]
-    ? Next extends UCObjectStepSpec<infer _NK, infer _NA, infer _ND1, infer _ND2, infer _NR, infer _NE, infer _NV>
-    ? Head extends UCFxObjectStepSpec<infer HK, infer _HA, infer _HD1, infer HD2, infer HR, infer HE, infer HV>
-    // recurse - note constraint HD1==HD2
-    ? ChainObjectSteps<Tail,
-        ObjAcc & { readonly [_K in HK]: HV },
-        [...StepAcc, UCFxObjectStepSpec<HK, ObjAcc, HD2, HD2, HR, HE, HV>]>
-    : Head extends UCPureObjectStepSpec<infer HK, infer _HA, infer HV>
-    ? ChainObjectSteps<Tail,
-        ObjAcc & { readonly [_K in HK]: HV },
-        [...StepAcc, UCPureObjectStepSpec<HK, ObjAcc, HV>]>
-    : never // [...StepAcc, ["ChainObjectStepsFail-recurse-E: Head !extends UCPureObjectStepSpec"]]
-    : never // [...StepAcc, ["ChainObjectStepsFail-ecurse-D: Next extends UCObjectStepSpec"]]
-    : never // [...StepAcc, ["ChainObjectStepsFail-recurse-B: Tail extends readonly [infer Next, ...any]"]]
-    : never // [...StepAcc, ["ChainObjectStepsFail-recurse-A: Specs !extends [infer Head, ...infer Tail]"]]
-
-// get the final Object result type from a list of ObjectStepSpecs
-export type ChainObjectStepsReturn<Specs extends readonly [...UPObjectStepSpec[]], ObjAcc> =
-    Specs extends readonly []
-    ? ObjAcc // empty specs returns the input
-    : ChainObjectSteps<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
-    ? Last extends UCObjectStepSpec<infer LK, infer LA, infer _LD1, infer _LD2, infer _LR, infer _LE, infer LV>
-    // final Object type adds the final step output to the final step input type
-    ? Expand<LA & { readonly [_K in LK]: LV }>
-    : never // ["ChainObjectStepsReturnFail-B-Last !extends UCObjectStepSpec", Last]
-    : never // ["ChainObjectStepsReturnFail-A-ChainObjectSteps<Specs, ObjAcc> !extends", ChainObjectSteps<Specs, ObjAcc>]
-
-// build an Object with a sequence of ObjectStepSpecs. each step adds
-// a new key to the Object
-//
-// curried to allow passing of initial Obj type while allowing inference of other type params
-export function chainObjectStepsProg<Obj>() {
-
-    return function <Specs extends readonly [...UPObjectStepSpec[]]>
-        (objectStepSpecs: ChainObjectSteps<Specs, Obj> extends readonly [...Specs]
-            ? readonly [...Specs]
-            : ChainObjectSteps<Specs, Obj>) {
-
-        const stepFns: any[] = objectStepSpecs.map((step) => objectStepFn()(step as any))
-
-        const r = stepFns.reduce(
-            (prev, stepFn) => {
-                return function (obj: any) {
-                    console.log("CREATE chainObjectStepsEffect", obj)
-                    return Effect.gen(function* (_) {
-                        console.log("RUN chainObjectStepsEffect", obj)
-                        const prevStepObj: any = yield* _(prev(obj))
-                        console.log("PREV STEP", prevStepObj)
-                        const stepObj: any = yield* _(stepFn(prevStepObj))
-                        console.log("STEP", stepObj)
-                        const r = { ...prevStepObj, ...stepObj }
-                        console.log("END STEP OBJ", r)
-                        return r
-                    })
-                }
-            },
-            // start with the no-steps fn
-            (obj: Obj) => Effect.succeed(obj))
-
-        return r as (obj: Obj) => Effect.Effect<ObjectStepsDepsU<Specs>,
-            ObjectStepsErrorsU<Specs>,
-            ChainObjectStepsReturn<Specs, Obj>>
-    }
-}
+//     // case: there are specs - accumulate and recurse
+//     : Specs extends readonly [infer Head, infer Rest extends UPObjectStepSpecList]
+//     ? Head extends UCFxObjectStepSpec<infer K, infer _A, infer _D1, infer D2, infer R, infer E, infer V>
+//     // return the final inferred pipeline with an FxObjectStepSpec - note we constrain D1==D2
+//     ? ChainObjectSteps<Rest,
+//         ObjAcc & { readonly [_K in K]: V },
+//         readonly [UCFxObjectStepSpec<K, ObjAcc, D2, D2, R, E, V>, StepAcc]>
+//     : Head extends UCPureObjectStepSpec<infer K, infer _A, infer V>
+//     ? ChainObjectSteps<Rest,
+//         ObjAcc & { readonly [_K in K]: V },
+//         readonly [UCPureObjectStepSpec<K, ObjAcc, V>, StepAcc]>
+//     : never
+//     : never
 
 
-//////////////////////////////////////////////////////////////////////////////
+// // get the final Object result type from a list of ObjectStepSpecs
+// export type ChainObjectStepsReturn<Specs extends UPObjectStepSpecList, ObjAcc> =
 
-// build an Object by independently mapping each Step over corresponding values in an Inputs tuple,
-// accumulating outputs in an Object {K: V}
-//
-// once again, goal is that we should never hit a never branch - which is why the 
-// inferences are slack and constraints are applied by the output
-export type TupleMapObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
-    Inputs extends readonly [...any[]],
-    StepAcc extends [...UPObjectStepSpec[]] = []> =
+//     Specs extends null
+//     ? ObjAcc // empty specs returns the input
 
-    // case: empty specs
-    Specs extends readonly []
-    ? readonly [...StepAcc]
+//     : Last<ChainObjectSteps<Specs, ObjAcc>> extends UCObjectStepSpec<infer LK, infer LA, infer _LD1, infer _LD2, infer _LR, infer _LE, infer LV>
+//     // final Object type adds the final step output to the final step input type
+//     ? Expand<LA & { readonly [_K in LK]: LV }>
+//     : never 
 
-    // case: final spec - deliver final pipeline tuple type from StepAcc
-    : Specs extends readonly [infer Head]
-    ? Inputs extends readonly [infer HeadIn]
-    ? Head extends UCFxObjectStepSpec<infer K, infer _A, infer _D1, infer D2, infer R, infer E, infer V>
-    // return the final inferred pipeline
-    ? readonly [...StepAcc, UCObjectStepSpec<K, HeadIn, D2, D2, R, E, V>]
-    : Head extends UCPureObjectStepSpec<infer K, infer _A, infer V>
-    ? readonly [...StepAcc, UCPureObjectStepSpec<K, HeadIn, V>]
-    : never // ["TupleMapObjectStepsFail", "final-B: Head extends UCPureObjectStepSpec", Specs]
-    : never // ["TupleMapObjectStepsFail", "final-A: Inputs extends [infer HeadIn]", Specs]
 
-    // case: there are more specs - add to ObjAcc and StepAcc and recurse
-    : Specs extends readonly [infer Head, ...infer Tail]
-    ? Tail extends readonly [infer Next, ...any]
-    ? Inputs extends readonly [infer HeadIn, ...infer TailIn]
-    ? TailIn extends readonly [infer NextIn, ...any]
-    ? Next extends UCObjectStepSpec<infer _NK, infer _NA, infer _ND1, infer _ND2, infer _NR, infer _NE, infer _NV>
-    ? Head extends UCFxObjectStepSpec<infer HK, infer _HA, infer _HD1, infer HD2, infer HR, infer HE, infer HV>
-    // recurse
-    ? TupleMapObjectSteps<Tail,
-        TailIn,
-        [...StepAcc, UCFxObjectStepSpec<HK, HeadIn, HD2, HD2, HR, HE, HV>]>
-    : Head extends UCPureObjectStepSpec<infer HK, infer _HA, infer HV>
-    ? TupleMapObjectSteps<Tail,
-        TailIn,
-        [...StepAcc, UCPureObjectStepSpec<HK, HeadIn, HV>]>
-    : never // ["TupleMapObjectStepsFail", "recurse-G: Head extends UCPureObjectStepSpec"]
-    : never // ["TupleMapObjectStepsFail", "recurse-F: Next extends UCObjectStepSpec"]
-    : never // ["TupleMapObjectStepsFail", "recurse-E: TailIn extends readonly [infer NextIn, ...any]"]
-    : never // ["TupleMapObjectStepsFail", "recurse-C: Inputs extends readonly [infer HeadIn, ...infer TailIn]"]
-    : never // ["TupleMapObjectStepsFail", "recurse-B: Tail extends readonly [infer Next, ...any]"]
-    : never // ["TupleMapObjectStepsFail", "recurse-A: Specs extends readonly [infer Head, ...infer Tail]"]
 
-// calculate the return type ... since the array type is not chained through
-// the calculation, calculating the return type looks very similar to checking
-// the step constraints, but we accumulate the return type rather than the 
-// inferred steps
-export type TupleMapObjectStepsReturn<Specs extends readonly [...UPObjectStepSpec[]],
-    Inputs extends readonly [...any[]],
-    // the lint recommendation messes up the return type here, so ignoring it
-    // deno-lint-ignore ban-types
-    ObjAcc = {},
-    StepAcc extends [...UPObjectStepSpec[]] = []> =
+// // build an Object with a sequence of ObjectStepSpecs. each step adds
+// // a new key to the Object
+// //
+// // curried to allow passing of initial Obj type while allowing inference of other type params
+// export function chainObjectStepsProg<Obj>() {
 
-    // case: final spec - return type 
-    Specs extends readonly [infer Head]
-    ? Inputs extends readonly [infer HeadIn]
-    ? Head extends UCFxObjectStepSpec<infer K, infer _A, infer _D1, infer _D2, infer _R, infer _E, infer V>
-    // return the final inferred pipeline
-    ? Expand<ObjAcc & { readonly [_K in K]: V }>
-    : Head extends UCPureObjectStepSpec<infer K, infer _A, infer V>
-    ? Expand<ObjAcc & { readonly [_K in K]: V }>
-    : never // ["TupleMapObjectStepsReturnFail", "final-B: Head extends ObjectStepSpec", Specs]
-    : never // ["TupleMapObjectStepsReturnFail", "final-A: Inputs extends [infer HeadIn]", Specs]
+//     return function <Specs extends UPObjectStepSpecList>
+//         (objectStepSpecs: ChainObjectSteps<Specs, Obj> extends UPObjectStepSpecList
+//             ? Specs
+//             : ChainObjectSteps<Specs, Obj>) {
 
-    // case: there are more specs - add to ObjAcc and StepAcc and recurse
-    : Specs extends readonly [infer Head, ...infer Tail]
-    ? Tail extends readonly [infer Next, ...any]
-    ? Inputs extends readonly [infer HeadIn, ...infer TailIn]
-    ? TailIn extends readonly [infer NextIn, ...any]
-    ? Next extends UCObjectStepSpec<infer _NK, infer _A, infer _ND1, infer _ND1, infer _NR, infer _NE, infer _NV>
-    ? Head extends UCFxObjectStepSpec<infer HK, infer _A, infer _HD1, infer HD2, infer HR, infer HE, infer HV>
-    // recurse
-    ? TupleMapObjectStepsReturn<Tail,
-        TailIn,
-        ObjAcc & { readonly [_K in HK]: HV },
-        [...StepAcc, UCFxObjectStepSpec<HK, HeadIn, HD2, HD2, HR, HE, HV>]>
-    : Head extends UCPureObjectStepSpec<infer HK, infer _A, infer HV>
-    ? TupleMapObjectStepsReturn<Tail,
-        TailIn,
-        ObjAcc & { readonly [_K in HK]: HV },
-        [...StepAcc, UCPureObjectStepSpec<HK, HeadIn, HV>]>
-    : never // ["TupleMapObjectStepsReturnFail", "recurse-G: Head extends UCPureObjectStepSpec"]
-    : never // ["TupleMapObjectStepsReturnFail", "recurse-F: Next extends UCObjectStepSpec"]
-    : never // ["TupleMapObjectStepsReturnFail", "recurse-E: TailIn extends readonly [infer NextIn, ...any]"]
-    : never // ["TupleMapObjectStepsReturnFail", "recurse-C: Inputs extends readonly [infer HeadIn, ...infer TailIn]"]
-    : never // ["TupleMapObjectStepsReturnFail", "recurse-B: Tail extends readonly [infer Next, ...any]"]
-    : never // ["TupleMapObjectStepsReturnFail", "recurse-A: Specs extends [infer Head, ...infer Tail]"]
+//         const stepFns: any[] = listToTuple(objectStepSpecs as any).map((step) => objectStepFn()(step as any))
 
-export function tupleMapObjectStepsProg<Inputs extends readonly [...any[]]>() {
+//         const r = stepFns.reduce(
+//             (prev, stepFn) => {
+//                 return function (obj: any) {
+//                     console.log("CREATE chainObjectStepsEffect", obj)
+//                     return Effect.gen(function* (_) {
+//                         console.log("RUN chainObjectStepsEffect", obj)
+//                         const prevStepObj: any = yield* _(prev(obj))
+//                         console.log("PREV STEP", prevStepObj)
+//                         const stepObj: any = yield* _(stepFn(prevStepObj))
+//                         console.log("STEP", stepObj)
+//                         const r = { ...prevStepObj, ...stepObj }
+//                         console.log("END STEP OBJ", r)
+//                         return r
+//                     })
+//                 }
+//             },
+//             // start with the no-steps fn
+//             (obj: Obj) => Effect.succeed(obj))
 
-    return function <Specs extends readonly [...UPObjectStepSpec[]] & {length: Inputs['length']}>
+//         return r as (obj: Obj) => Effect.Effect<ObjectStepsDepsU<Specs>,
+//             ObjectStepsErrorsU<Specs>,
+//             ChainObjectStepsReturn<Specs, Obj>>
+//     }
+// }
 
-        (objectStepSpecs: TupleMapObjectSteps<Specs, Inputs> extends readonly [...Specs]
-            ? readonly [...Specs]
-            : TupleMapObjectSteps<Specs, Inputs>) {
 
-        const stepFns = objectStepSpecs.map((step) => objectStepFn()(step as any))
-
-        const r = function (inputs: Inputs) {
-            console.log("CREATE TUPLE_MAP EFFECT", inputs)
-            return Effect.gen(function* (_) {
-                console.log("RUN TUPLE_MAP EFFECT", inputs)
-
-                const oEffects = stepFns.map((stepFn, i) => stepFn(inputs[i]))
-
-                // docs says Effect.all runs effects in sequence - which is what we need (since
-                // tuple return is intended to reflect an ordering dependency)
-                const oVals = yield* _(Effect.all(oEffects))
-                const oMap = oVals.reduce((rObj: any, stepObj: any) => {
-                    return { ...rObj, ...stepObj }
-                },
-                    {})
-
-                console.log("END TUPLE_MAP", oMap)
-                return oMap
-            })
-        }
-
-        return r as (inputs: Inputs) => Effect.Effect<ObjectStepsDepsU<Specs>,
-            ObjectStepsErrorsU<Specs>,
-            TupleMapObjectStepsReturn<Specs, Inputs>>
-    }
-}
