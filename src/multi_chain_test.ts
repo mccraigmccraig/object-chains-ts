@@ -1,9 +1,9 @@
-import { assertEquals } from "assert"
+import { assertEquals, assertNotEquals } from "assert"
 import { Effect, Context } from "effect"
 import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
 import { chainTag } from "./chain_tag.ts"
 import { objectChain } from "./object_chain.ts"
-import { multiChainProgram, multiChain, addChains } from "./multi_chain.ts"
+import { multiChainProgram, multiChain, addChains, makeObjectChainServicesLayer } from "./multi_chain.ts"
 
 //////////////////// some steps //////////////////////////////////
 
@@ -146,4 +146,12 @@ Deno.test("addChains adds to a multiChain", () => {
         org: { id: "foo", name: "Foo" },
         apiResponse: { org: { id: "foo", name: "Foo" } }
     })
+})
+
+Deno.test("makeObjectChainServicesLayer", () => {
+    const mc = multiChain(programs)
+
+    const layer = makeObjectChainServicesLayer(mc)
+
+    assertNotEquals(layer, undefined)
 })

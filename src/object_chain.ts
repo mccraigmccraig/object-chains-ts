@@ -74,6 +74,22 @@ export type ObjectChainsInputU<Tuple extends readonly [...UPObjectChain[]]> = Un
     +readonly [Index in keyof Tuple]: ObjectChainInput<Tuple[Index]>
 } & { length: Tuple['length'] }>
 
+export type ObjectChainTagStr<T extends UPObjectChain> = 
+    T extends ObjectChain<infer _Input, infer _Steps>
+    ? T['tagStr']
+    : never
+export type ObjectChainsTagStrU<Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
+    +readonly [Index in keyof Tuple]: ObjectChainTagStr<Tuple[Index]>
+} & { length: Tuple['length'] }>
+
+export type ObjectChainContextTagId<T extends UPObjectChain> =
+    T extends ObjectChain<infer Input, infer _Steps>
+    ? ChainTag<Input>
+    : never
+export type ObjectChainsContextTagIdU<Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
+    +readonly [Index in keyof Tuple]: ObjectChainContextTagId<Tuple[Index]>
+} & { length: Tuple['length'] }>
+
 
 // build an ObjectChain from Steps
 export function objectChain<Input extends ChainTagged>() {
@@ -199,7 +215,9 @@ export function provideObjectChainServiceImpl
     return Effect.provideService(effect, contextTag, svc)
 }
 
-export function runObjectChainFxFn
+// given a Context.Tag for an ObjectBuilderService, return 
+// an FxFn to build an Object
+export function objectChainFxFn
     <Input extends ChainTagged,
         R,
         E,

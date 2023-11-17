@@ -1,7 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect, Context } from "effect"
 import { chainTag } from "./chain_tag.ts"
-import { objectChain, addSteps, addStep, addFxStep, addPureStep, runObjectChainFxFn, provideObjectChainServiceImpl } from "./object_chain.ts"
+import { objectChain, addSteps, addStep, addFxStep, addPureStep, objectChainFxFn, provideObjectChainServiceImpl } from "./object_chain.ts"
 import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
 
 const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string } }, string, OrgService, never, Org> */ =
@@ -207,7 +207,7 @@ const runGetOrgChainStepspec =
             data: { org_nick: d.data.org_nick }
         }
     },
-    fxFn: runObjectChainFxFn(GetOrgChainContextTag)
+    fxFn: objectChainFxFn(GetOrgChainContextTag)
 }
 
 type SendPushNotificationAndGetOrg = {

@@ -1,7 +1,7 @@
-import { Effect } from "effect"
+import { Effect, Context } from "effect"
 import { UnionFromTuple } from "./object_builders.ts"
 import { ChainTagged } from "./chain_tag.ts"
-import { UPObjectChain, ObjectChainsInputU } from "./object_chain.ts"
+import { UPObjectChain, ObjectChainsInputU, ObjectChainsTagStrU, ObjectChainsContextTagIdU, makeObjectChainServiceImpl } from "./object_chain.ts"
 
 
 export type ProgramDeps<T extends UPObjectChain> = ReturnType<T['program']> extends Effect.Effect<infer R, infer _E, infer _V>
@@ -74,6 +74,7 @@ export function multiChainProgram<Chains extends readonly [...UPObjectChain[]]>
 
 export type MultiChain<Chains extends readonly [...UPObjectChain[]]> = {
     readonly chains: Chains
+    readonly chainsByTag: {[index: string]: UPObjectChain}
     readonly program: <Input extends ObjectChainsInputU<Chains>>(i: Input) => Effect.Effect<ProgramsDepsU<Chains>,
         ProgramsErrorsU<Chains>,
         Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
@@ -84,7 +85,10 @@ export function multiChain<Chains extends readonly [...UPObjectChain[]]>
     
     return {
         chains: chains,
-        program: multiChainProgram(chains)
+        program: multiChainProgram(chains),
+        chainsByTag: chains.reduce(
+            (m, p) => { m[p.tagStr] = p; return m },
+            {} as { [index: string]: UPObjectChain })
     } as MultiChain<Chains>
 }
 
@@ -102,3 +106,38 @@ export function addChains<Chains extends readonly [...UPObjectChain[]],
 // so a MultiChain can register implementations for each of its
 // chains
 
+// make a Layer to provide implementations for all the contained
+// ObjectChainServices
+export function makeObjectChainServicesLayer
+    <Chains extends readonly [...UPObjectChain[]]>
+
+    (multiChain: MultiChain<Chains>) {
+
+    const initialContext = Context.empty()
+    const layer = multiChain.chains.reduce(
+        (l, ch) => {
+            return l.pipe(
+                Context.add(ch.contextTag,
+                    makeObjectChainServiceImpl(ch as any))
+            ) },
+        initialContext
+    )
+    return layer as Context.Context<ObjectChainsContextTagIdU<Chains>>
+}
+
+// get the Context.Tag for a particular chain
+export function getObjectChainServiceContextTag
+    <Chains extends readonly [...UPObjectChain[]]>
+    (multiChain: MultiChain<Chains>,
+        tagStr: ObjectChainsTagStrU<Chains>) {
+
+    return multiChain.chainsByTag[tagStr]?.contextTag
+}
+
+// get an FxFn to run a particular chain
+export function objectChainFxFn
+    <Chains extends readonly [...UPObjectChain[]]>
+    (multiChain: MultiChain<Chains>,
+      ) {
+
+}
