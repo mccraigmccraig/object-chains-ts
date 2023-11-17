@@ -4,6 +4,35 @@ import { ChainTagged, ChainTag, chainTagStr } from "./chain_tag.ts"
 import { UnionFromTuple, UCFxObjectStepSpec, UCPureObjectStepSpec, ChainObjectSteps } from "./object_builders.ts"
 import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg } from "./object_builders.ts"
 
+// a type for a service which can run an ObjectChain
+export type BuildObjectService<Input extends ChainTagged, R, E, V extends ChainTagged> = {
+    readonly buildObject: (i: Input) => Effect.Effect<R, E, V>
+}
+
+export type BuildObjectServiceContextTag<Input extends ChainTagged, R, E, V extends ChainTagged> =
+    Context.Tag<ChainTag<Input>, BuildObjectService<Input, R, E, V>>
+
+export type ObjectChainService<Input extends ChainTagged,
+    Steps extends readonly [...UPObjectStepSpec[]]> =
+    BuildObjectService<Input,
+        ObjectStepsDepsU<Steps>,
+        ObjectStepsErrorsU<Steps>,
+        ChainObjectStepsReturn<Steps, Input>>
+
+export type ObjectChainServiceContextTag<Input extends ChainTagged,
+    Steps extends readonly [...UPObjectStepSpec[]]> =
+    BuildObjectServiceContextTag<Input,
+        ObjectStepsDepsU<Steps>,
+        ObjectStepsErrorsU<Steps>,
+        ChainObjectStepsReturn<Steps, Input>>
+
+// a function of Input which build an Object
+export type ObjectChainProgram<Input extends ChainTagged,
+    Steps extends readonly [...UPObjectStepSpec[]]> =
+    (i: Input) => Effect.Effect<ObjectStepsDepsU<Steps>,
+        ObjectStepsErrorsU<Steps>,
+        ChainObjectStepsReturn<Steps, Input>>
+
 // an ObjectChain is a datastructure defining a series of steps to build an Object.
 // it can be built in a single step with objectChain, or iteratively with addSteps
 export type ObjectChain<Input extends ChainTagged,
@@ -11,9 +40,7 @@ export type ObjectChain<Input extends ChainTagged,
         readonly tag: ChainTag<Input>
         readonly tagStr: Input['_chainTag']
         readonly steps: ChainObjectSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ChainObjectSteps<Steps, Input>
-        readonly program: (i: Input) => Effect.Effect<ObjectStepsDepsU<Steps>,
-            ObjectStepsErrorsU<Steps>,
-            ChainObjectStepsReturn<Steps, Input>>
+        readonly program: ObjectChainProgram<Input, Steps>
     }
 
 // an unparameterised version of ObjectChain for typing tuples
@@ -117,13 +144,6 @@ export function addPureStep<Input extends ChainTagged,
 // as a computation step to recurse or run any other chain as a computation
 // step
 
-// a type for a service which can run an ObjectChain
-export type ObjectChainService<Input extends ChainTagged, R, E, V extends ChainTagged> = {
-    readonly buildObject: (i: Input) => Effect.Effect<R, E, V>
-}
-
-export type ObjectChainServiceContextTag<Input extends ChainTagged, R, E, V extends ChainTagged> =
-    Context.Tag<ChainTag<Input>, ObjectChainService<Input, R, E, V>>
 
 // get a Context.Tag for an ObjectChainService
 export function objectChainServiceContextTag
@@ -133,11 +153,7 @@ export function objectChainServiceContextTag
 
     (_chain: ObjectChain<Input, Steps>) {
 
-    return Context.Tag<ChainTag<Input>,
-        ObjectChainService<Input,
-            ObjectStepsDepsU<Steps>,
-            ObjectStepsErrorsU<Steps>,
-            ChainObjectStepsReturn<Steps, Input>>>()
+    return Context.Tag<ChainTag<Input>, ObjectChainService<Input, Steps>>()
 }
 
 
@@ -155,10 +171,7 @@ export function makeObjectChainServiceImpl
         buildObject: (i: Input) => {
             return chain.program(i)
         }
-    } as ObjectChainService<Input,
-        ObjectStepsDepsU<Steps>,
-        ObjectStepsErrorsU<Steps>,
-        ChainObjectStepsReturn<Steps, Input>>
+    } as ObjectChainService<Input, Steps>
 
     return service
 }
@@ -172,17 +185,11 @@ export function provideObjectChainServiceImpl
         InR, InE, InV>
 
     (effect: Effect.Effect<InR, InE, InV>,
-        contextTag: ObjectChainServiceContextTag<Input,
-            ObjectStepsDepsU<Steps>,
-            ObjectStepsErrorsU<Steps>,
-            ChainObjectStepsReturn<Steps, Input>>,
+        contextTag: ObjectChainServiceContextTag<Input, Steps>,
         chain: ObjectChain<Input, Steps>) {
 
     const svc = makeObjectChainServiceImpl(chain) as
-        ObjectChainService<Input,
-            ObjectStepsDepsU<Steps>,
-            ObjectStepsErrorsU<Steps>,
-            ChainObjectStepsReturn<Steps, Input>>
+        ObjectChainService<Input, Steps>
 
     return Effect.provideService(effect, contextTag, svc)
 }
@@ -193,7 +200,7 @@ export function runObjectChainFxFn
         E,
         V extends ChainTagged>
 
-    (tag: ObjectChainServiceContextTag<Input, R, E, V>) {
+    (tag: BuildObjectServiceContextTag<Input, R, E, V>) {
 
     return (i: Input) => {
         const r = Effect.gen(function* (_) {
