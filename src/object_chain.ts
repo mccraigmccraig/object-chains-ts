@@ -1,6 +1,7 @@
 import { Effect, Context } from "effect"
+import { FxFn } from "./fx_fn.ts"
 import { ChainTagged, ChainTag, chainTagStr } from "./chain_tag.ts"
-import { UnionFromTuple, ChainObjectSteps } from "./object_builders.ts"
+import { UnionFromTuple, UCFxObjectStepSpec, PureObjectStepSpec, ChainObjectSteps } from "./object_builders.ts"
 import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg } from "./object_builders.ts"
 
 // an ObjectChain is a datastructure defining a series of steps to build an Object.
@@ -59,6 +60,48 @@ export function addSteps<Input extends ChainTagged,
 
     // deno-lint-ignore no-explicit-any
     return objectChain<Input>()(chain.tag, newSteps as any) as ObjectChain<Input, readonly [...Steps, ...AdditionalSteps]>
+}
+
+export function addStep<Input extends ChainTagged,
+    Steps extends readonly [...UPObjectStepSpec[]],
+    K extends string,
+    D1 extends D2,
+    D2,
+    R, E, V>
+    (chain: ObjectChain<Input, Steps>,
+        step: UCFxObjectStepSpec<K, ChainObjectStepsReturn<Steps, Input>, D1, D2, R, E, V>) {
+
+    return addSteps(chain, [step] as const)
+}
+
+export function addFxStep<Input extends ChainTagged,
+    Steps extends readonly [...UPObjectStepSpec[]],
+    K extends string,
+    A extends ChainObjectStepsReturn<Steps, Input>,
+    D1 extends D2,
+    D2,
+    R, E, V>
+    (chain: ObjectChain<Input, Steps>,
+        k: K,
+        inFn: (a: A) => D1,
+        fxFn: FxFn<D2, R, E, V>) {
+
+    const steps = [{ k, inFn, fxFn } as UCFxObjectStepSpec<K, ChainObjectStepsReturn<Steps, Input>, D1, D2, R, E, V>] as const
+
+    return addSteps(chain, steps)
+}
+
+export function addPureStep<Input extends ChainTagged,
+    Steps extends readonly [...UPObjectStepSpec[]],
+    K extends string,
+    A extends ChainObjectStepsReturn<Steps, Input>,
+    V>(chain: ObjectChain<Input, Steps>,
+        k: K,
+        pureFn: (a: A) => V) {
+
+    const steps = [{ k, pureFn } as PureObjectStepSpec<K, ChainObjectStepsReturn<Steps, Input>, V>] as const
+
+    return addSteps(chain, steps)
 }
 
 ////////////////////////////////// recursion support //////////////////////////////
@@ -120,7 +163,7 @@ export function makeObjectChainServiceImpl
 // to an Effect
 export function provideObjectChainServiceImpl
     <Input extends ChainTagged,
-        Steps extends readonly [...UPObjectStepSpec[]],        
+        Steps extends readonly [...UPObjectStepSpec[]],
         InR, InE, InV>
 
     (effect: Effect.Effect<InR, InE, InV>,
