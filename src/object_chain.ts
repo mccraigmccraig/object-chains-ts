@@ -5,23 +5,23 @@ import { UnionFromTuple, UCFxObjectStepSpec, UCPureObjectStepSpec, ChainObjectSt
 import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg } from "./object_builders.ts"
 
 // a type for a service which can run an ObjectChain
-export type BuildObjectService<Input extends ChainTagged, R, E, V extends ChainTagged> = {
+export type ObjectBuilderService<Input extends ChainTagged, R, E, V extends ChainTagged> = {
     readonly buildObject: (i: Input) => Effect.Effect<R, E, V>
 }
 
-export type BuildObjectServiceContextTag<Input extends ChainTagged, R, E, V extends ChainTagged> =
-    Context.Tag<ChainTag<Input>, BuildObjectService<Input, R, E, V>>
+export type ObjectBuilderServiceContextTag<Input extends ChainTagged, R, E, V extends ChainTagged> =
+    Context.Tag<ChainTag<Input>, ObjectBuilderService<Input, R, E, V>>
 
 export type ObjectChainService<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> =
-    BuildObjectService<Input,
+    ObjectBuilderService<Input,
         ObjectStepsDepsU<Steps>,
         ObjectStepsErrorsU<Steps>,
         ChainObjectStepsReturn<Steps, Input>>
 
 export type ObjectChainServiceContextTag<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> =
-    BuildObjectServiceContextTag<Input,
+    ObjectBuilderServiceContextTag<Input,
         ObjectStepsDepsU<Steps>,
         ObjectStepsErrorsU<Steps>,
         ChainObjectStepsReturn<Steps, Input>>
@@ -205,7 +205,7 @@ export function runObjectChainFxFn
         E,
         V extends ChainTagged>
 
-    (tag: BuildObjectServiceContextTag<Input, R, E, V>) {
+    (tag: ObjectBuilderServiceContextTag<Input, R, E, V>) {
 
     return (i: Input) => {
         const r = Effect.gen(function* (_) {
