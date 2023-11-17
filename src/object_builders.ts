@@ -169,6 +169,15 @@ export type ObjectStepsValueTuple<Tuple extends readonly [...UPObjectStepSpec[]]
     +readonly [Index in keyof Tuple]: ObjectStepValue<Tuple[Index]>
 } & { length: Tuple['length'] }
 
+// TODO: change the Specs array to a cons structure
+// arrays are causing "type instantiation is excessively deep" errors with
+// iterative step composition, probably because each step requires the 
+// full arrays of the previous steps to be parsed too. if we use a cons
+// structure then (i think) iterative step composition will have the same type 
+// complexity as all-together
+
+
+
 // type a chain to build an Object by chaining an initial value through 
 // a sequence of steps, accumulating {K: V} after each step
 //

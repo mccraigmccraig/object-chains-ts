@@ -175,8 +175,8 @@ Deno.test("addFxStep and addPureStep add steps", () => {
     // combinatorial explosion
     // const fourStepsEffect = sendPushProg.program(input)
     
-    // i think this is because the depths is  M + 2M + 3M + 4M = M(N+1)/2 = O(N^2)
-    // because each step has inference depth M, but a new array is created in each step
+    // i think this is because the depth is  M + 2M + 3M + 4M = M(N+1)/2 = O(N^2)
+    // because each step has inference depth M, and a new array is created in each step
 
     const sendPushProgRunnable = Effect.provide(sendPushProgEffect, echoContext)
     const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
