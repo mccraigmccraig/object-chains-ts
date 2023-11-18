@@ -150,7 +150,6 @@ const changeUserSetWelcomeSentSteps = [changeUserSetWelcomeSentStepSpec] as cons
 const changeUserSetWelcomeSentChain = objectChain<ChangeUserSetWelcomeSent>()(
     ChangeUserSetWelcomeSentTag,
     changeUserSetWelcomeSentSteps)
-const runChangeUserSetWelcomeSentChainContextTag = changeUserSetWelcomeSentChain.contextTag
 
 const runChangeUserSetWelcomeSentChainStepSpec = {
     k: "runChangeUserSetWelcomeSentChain" as const,
@@ -160,7 +159,7 @@ const runChangeUserSetWelcomeSentChainStepSpec = {
             user: d.user
         }
     },
-    fxFn: objectChainFxFn(runChangeUserSetWelcomeSentChainContextTag)
+    fxFn: objectChainFxFn(changeUserSetWelcomeSentChain.contextTag)
 }
 type SendWelcomePushAndUpdateUser = {
     readonly _chainTag: "SendWelcomePushAndUpdateUser",
@@ -195,7 +194,6 @@ Deno.test("recursion with objectChainServicesContext", () => {
 
     const prog = mc.program(input)
     const almostRunnable = Effect.provide(prog, testServiceContext)
-    console.log("top level context.tag", runChangeUserSetWelcomeSentChainContextTag)
     const runnable = Effect.provide(almostRunnable, multiChainServicesContext(mc))
 
     const r = Effect.runSync(runnable)
