@@ -106,24 +106,28 @@ export function addChains<Chains extends readonly [...UPObjectChain[]],
 // so a MultiChain can register Service implementations for each of its
 // chains
 
-// make a Layer to provide implementations for all the contained
-// ObjectChainServices
+// return a Context with all the ObjectChain service impls
 export function objectChainServicesContext
     <Chains extends readonly [...UPObjectChain[]]>
 
     (multiChain: MultiChain<Chains>) {
 
-    const initialContext = Context.empty()
-    const layer = multiChain.chains.reduce(
-        (l, ch) => {
-            return l.pipe(
-                Context.add(ch.contextTag,
-                    // deno-lint-ignore no-explicit-any
-                    objectChainServiceImpl(ch as any))
-            ) },
-        initialContext
+    console.log("objectChainServicesContext")
+    
+    const rctx = multiChain.chains.reduce(
+        (ctx, ch) => {
+            const ctxTag = ch.contextTag
+
+            // deno-lint-ignore no-explicit-any
+            const svcImpl = objectChainServiceImpl(ch as any)
+
+            console.log("ADDING SERVICE:", ctxTag, svcImpl)
+            
+            return Context.add(ctx, ctxTag, svcImpl)
+        },
+        Context.empty()
     )
-    return layer as Context.Context<ObjectChainsContextTagIdU<Chains>>
+    return rctx as Context.Context<ObjectChainsContextTagIdU<Chains>>
 }
 
 // get the Context.Tag for a particular chain

@@ -57,6 +57,8 @@ export type ObjectChain<Input extends ChainTagged,
 
 // an unparameterised version of ObjectChain for typing tuples
 export type UPObjectChain = {
+    // deno-lint-ignore no-explicit-any
+    readonly tag: any
     readonly tagStr: string
     readonly steps: readonly [...UPObjectStepSpec[]]
     // deno-lint-ignore no-explicit-any
@@ -196,7 +198,6 @@ export function objectChainServiceImpl
 
     return service
 }
-
 
 // provide an implementation of the ObjectChainService for this chain
 // to an Effect
