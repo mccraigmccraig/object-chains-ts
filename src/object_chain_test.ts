@@ -1,8 +1,8 @@
 import { assertEquals } from "assert"
-import { Effect, Context } from "effect"
+import { Effect } from "effect"
 import { chainTag } from "./chain_tag.ts"
 import { objectChain, addSteps, addStep, addFxStep, addPureStep, objectChainFxFn, provideObjectChainServiceImpl } from "./object_chain.ts"
-import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
+import { Org, getOrgByNick, User, getUserByIds, sendPush, testServiceContext } from "./test_services.ts"
 
 const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string } }, string, OrgService, never, Org> */ =
 {
@@ -36,20 +36,6 @@ const sendPusnNotificationStepSpec =
     },
     fxFn: sendPush
 }
-
-
-// a simple context with an OrgService and a UserService which echo data back
-const echoContext = Context.empty().pipe(
-    Context.add(OrgService, OrgService.of({
-        getById: (id: string) => Effect.succeed({ id: id, name: "Foo" }),
-        getByNick: (nick: string) => Effect.succeed({ id: nick, name: "Foo" })
-    })),
-    Context.add(UserService, UserService.of({
-        getByIds: (d: { org_id: string, user_id: string }) => Effect.succeed({ id: d.user_id, name: "Bar" })
-    })),
-    Context.add(PushNotificationService, PushNotificationService.of({
-        sendPush: (d: { user_id: string, message: string }) => Effect.succeed("push sent OK: " + d.message)
-    })))
 
 Deno.test("empty objectChain returns input", () => {
     type DoNothing = { readonly _chainTag: "doNothing" }
@@ -85,7 +71,7 @@ Deno.test("objectChain mixes fx and pure steps", () => {
         data: { org_nick: "foo", user_id: "bar" }
     }
     const effect = prog.program(input)
-    const runnable = Effect.provide(effect, echoContext)
+    const runnable = Effect.provide(effect, testServiceContext)
     const r = Effect.runSync(runnable)
 
     assertEquals(r, {
@@ -110,7 +96,7 @@ Deno.test("addSteps lets you add steps", () => {
 
     const sendPushProg = addSteps(emptyProg, sendPushNotificationSteps)
     const sendPushProgEffect = sendPushProg.program(input)
-    const sendPushProgRunnable = Effect.provide(sendPushProgEffect, echoContext)
+    const sendPushProgRunnable = Effect.provide(sendPushProgEffect, testServiceContext)
     const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
     assertEquals(sendPushProgResult, {
         ...input,
@@ -131,7 +117,7 @@ Deno.test("addStep lets you add a single step", () => {
         sendPushNotificationSteps.slice(0, 3))
     const sendPushProg = addStep(shortProg, sendPushNotificationSteps[3])
     const sendPushProgEffect = sendPushProg.program(input)
-    const sendPushProgRunnable = Effect.provide(sendPushProgEffect, echoContext)
+    const sendPushProgRunnable = Effect.provide(sendPushProgEffect, testServiceContext)
     const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
     assertEquals(sendPushProgResult, {
         ...input,
@@ -178,7 +164,7 @@ Deno.test("addFxStep and addPureStep add steps", () => {
     // i think this is because the depth is  M + 2M + 3M + 4M = M(N+1)/2 = O(N^2)
     // because each step has inference depth M, and a new array is created in each step
 
-    const sendPushProgRunnable = Effect.provide(sendPushProgEffect, echoContext)
+    const sendPushProgRunnable = Effect.provide(sendPushProgEffect, testServiceContext)
     const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
     assertEquals(sendPushProgResult, {
         ...input,
@@ -231,7 +217,7 @@ Deno.test("recursion with RunObjectChainFxFn", () => {
         data: { org_nick: "foo", user_id: "bar" }
     }
     const effect = prog.program(input)
-    const almostRunnable = Effect.provide(effect, echoContext)
+    const almostRunnable = Effect.provide(effect, testServiceContext)
     const runnable = provideObjectChainServiceImpl(almostRunnable, GetOrgChainContextTag, getOrgChain)
 
     const r = Effect.runSync(runnable)

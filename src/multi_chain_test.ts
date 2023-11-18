@@ -1,6 +1,6 @@
 import { assertEquals, assertNotEquals } from "assert"
-import { Effect, Context } from "effect"
-import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
+import { Effect } from "effect"
+import { Org, getOrgByNick, User, getUserByIds, sendPush, testServiceContext } from "./test_services.ts"
 import { chainTag } from "./chain_tag.ts"
 import { objectChain } from "./object_chain.ts"
 import { multiChainProgram, multiChain, addChains, objectChainServicesContext } from "./multi_chain.ts"
@@ -64,19 +64,6 @@ const sendWelcomePushProg = objectChain<SendWelcomePushInput>()(
         sendPusnNotificationStepSpec] as const)
 
 
-// a simple context with an OrgService and a UserService which echo data back
-const echoContext = Context.empty().pipe(
-    Context.add(OrgService, OrgService.of({
-        getById: (id: string) => Effect.succeed({ id: id, name: "Foo" }),
-        getByNick: (nick: string) => Effect.succeed({ id: nick, name: "Foo" })
-    })),
-    Context.add(UserService, UserService.of({
-        getByIds: (d: { org_id: string, user_id: string }) => Effect.succeed({ id: d.user_id, name: "Bar" })
-    })),
-    Context.add(PushNotificationService, PushNotificationService.of({
-        sendPush: (d: { user_id: string, message: string }) => Effect.succeed("push sent OK: " + d.message)
-    })))
-
 ////////////////////////// multiChain for getOrg and sendWelcomePush
 
 const programs = [getOrgProg, sendWelcomePushProg] as const
@@ -88,7 +75,7 @@ Deno.test("multiChainProgram runs chains", () => {
 
     // note the inferred Effect value type selects the output of the getOrg chain
     const getOrgEffect = prog(getOrgInput)
-    const getOrgRunnable = Effect.provide(getOrgEffect, echoContext)
+    const getOrgRunnable = Effect.provide(getOrgEffect, testServiceContext)
     const getOrgResult = Effect.runSync(getOrgRunnable)
 
     assertEquals(getOrgResult, {
@@ -101,7 +88,7 @@ Deno.test("multiChainProgram runs chains", () => {
 
     // note the inferred Effect value type selects the output of the sendWelcomePush chain
     const sendWelcomePushEffect = prog(sendWelcomePushInput)
-    const sendWelcomePushRunnable = Effect.provide(sendWelcomePushEffect, echoContext)
+    const sendWelcomePushRunnable = Effect.provide(sendWelcomePushEffect, testServiceContext)
     const sendWelcomePushResult = Effect.runSync(sendWelcomePushRunnable)
 
     assertEquals(sendWelcomePushResult, {
@@ -121,7 +108,7 @@ Deno.test("multiChain runs chains", () => {
 
     // note the inferred Effect value type selects the output of the getOrg chain
     const getOrgEffect = mc.program(getOrgInput)
-    const getOrgAlmostRunnable = Effect.provide(getOrgEffect, echoContext)
+    const getOrgAlmostRunnable = Effect.provide(getOrgEffect, testServiceContext)
     const getOrgRunnable = Effect.provide(getOrgAlmostRunnable, ctx)
 
     const getOrgResult = Effect.runSync(getOrgRunnable)
@@ -141,7 +128,7 @@ Deno.test("addChains adds to a multiChain", () => {
 
     // note the inferred Effect value type selects the output of the getOrg chain
     const getOrgEffect = mc.program(getOrgInput)
-    const getOrgRunnable = Effect.provide(getOrgEffect, echoContext)
+    const getOrgRunnable = Effect.provide(getOrgEffect, testServiceContext)
     const getOrgResult = Effect.runSync(getOrgRunnable)
 
     assertEquals(getOrgResult, {
@@ -151,7 +138,7 @@ Deno.test("addChains adds to a multiChain", () => {
     })
 })
 
-Deno.test("makeObjectChainServicesLayer", () => {
+Deno.test("recursion with objectChainServicesContext", () => {
     const mc = multiChain(programs)
 
     const layer = objectChainServicesContext(mc)

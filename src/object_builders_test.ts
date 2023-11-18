@@ -1,7 +1,7 @@
 import { assertEquals } from "assert"
-import { Effect, Context } from "effect"
+import { Effect } from "effect"
 import { objectStepFn, chainObjectStepsProg } from "./object_builders.ts"
-import { Org, User, OrgService, getOrgByNick, UserService, getUserByIds } from "./test_services.ts"
+import { Org, User, getOrgByNick, getUserByIds, testServiceContext } from "./test_services.ts"
 
 // some computation steps...
 
@@ -34,23 +34,12 @@ export const stepSpecs = [
 ] as const
 
 
-// a simple context with an OrgService and a UserService which echo data back
-const echoContext = Context.empty().pipe(
-    Context.add(OrgService, OrgService.of({
-        getById: (id: string) => Effect.succeed({ id: id, name: "Foo" }),
-        getByNick: (nick: string) => Effect.succeed({ id: nick, name: "Foo" })
-    })),
-    Context.add(UserService, UserService.of({
-        getByIds: (d: { org_id: string, user_id: string }) => Effect.succeed({ id: d.user_id, name: "Bar" })
-    })))
-
-
 Deno.test("objectStepFn runs an Fx step", () => {
     const stepFn = objectStepFn<{ data: { org_nick: string } }>()(getOrgObjectStepSpec)
 
     const input = { data: { org_nick: "foo" } }
     const stepEffect = stepFn(input)
-    const runnable = Effect.provide(stepEffect, echoContext)
+    const runnable = Effect.provide(stepEffect, testServiceContext)
     const r = Effect.runSync(runnable)
 
     assertEquals(r, { org: { id: "foo", name: "Foo" } })
@@ -85,7 +74,7 @@ Deno.test("chainObjectStepsProg chains steps", () => {
 
     const chainEffect = chainObjectStepsProg<INPUT>()(stepSpecs)(input)
 
-    const runnable = Effect.provide(chainEffect, echoContext)
+    const runnable = Effect.provide(chainEffect, testServiceContext)
 
     const r = Effect.runSync(runnable)
 
