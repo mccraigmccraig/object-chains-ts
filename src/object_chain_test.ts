@@ -182,7 +182,6 @@ type GetOrg = {
 const GetOrgTag = chainTag<GetOrg>("getOrg")
 const getOrgSteps = [getOrgObjectStepSpec] as const
 const getOrgChain = objectChain<GetOrg>()(GetOrgTag, getOrgSteps)
-const GetOrgChainContextTag = getOrgChain.contextTag
 
 const runGetOrgChainStepspec =
 {
@@ -193,7 +192,7 @@ const runGetOrgChainStepspec =
             data: { org_nick: d.data.org_nick }
         }
     },
-    fxFn: objectChainFxFn(GetOrgChainContextTag)
+    fxFn: objectChainFxFn(getOrgChain)
 }
 
 type SendPushNotificationAndGetOrg = {

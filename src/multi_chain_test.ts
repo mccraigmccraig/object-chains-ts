@@ -159,7 +159,7 @@ const runChangeUserSetWelcomeSentChainStepSpec = {
             user: d.user
         }
     },
-    fxFn: objectChainFxFn(changeUserSetWelcomeSentChain.contextTag)
+    fxFn: objectChainFxFn(changeUserSetWelcomeSentChain)
 }
 type SendWelcomePushAndUpdateUser = {
     readonly _chainTag: "SendWelcomePushAndUpdateUser",

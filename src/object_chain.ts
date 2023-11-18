@@ -220,19 +220,18 @@ export function provideObjectChainServiceImpl
     return Effect.provideService(effect, chain.contextTag, svc)
 }
 
-// given a Context.Tag for an ObjectBuilderService, return 
-// an FxFn to build an Object
+// given an ObjectChain, return an FxFn to invoke the chain
+// which retrieves the ObjectChainService which calls the chain, and 
+// calls it's buildObject function
 export function objectChainFxFn
     <Input extends ChainTagged,
-        R,
-        E,
-        V extends ChainTagged>
+        Steps extends readonly [...UPObjectStepSpec[]]>
 
-    (tag: ObjectBuilderServiceContextTag<Input, R, E, V>) {
+    (chain: ObjectChain<Input, Steps>) {
 
     return (i: Input) => {
         const r = Effect.gen(function* (_) {
-            const svc = yield* _(tag)
+            const svc = yield* _(chain.contextTag)
             const obj = yield* _(svc.buildObject(i))
             return obj
         })
