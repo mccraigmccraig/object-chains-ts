@@ -181,7 +181,7 @@ export function addPureStep<Input extends ChainTagged,
 // make an ObjectChainService impl with given Id which will run an ObjectChain for a particular Input
 // ooo - maybe the Context.Tag Id type should also be the Tagged type - would be a nice symmetry
 // and avoid boilerplate
-export function makeObjectChainServiceImpl
+export function objectChainServiceImpl
 
     <Input extends ChainTagged,
         Steps extends readonly [...UPObjectStepSpec[]]>
@@ -209,7 +209,7 @@ export function provideObjectChainServiceImpl
         contextTag: ObjectChainServiceContextTag<Input, Steps>,
         chain: ObjectChain<Input, Steps>) {
 
-    const svc = makeObjectChainServiceImpl(chain) as
+    const svc = objectChainServiceImpl(chain) as
         ObjectChainService<Input, Steps>
 
     return Effect.provideService(effect, contextTag, svc)

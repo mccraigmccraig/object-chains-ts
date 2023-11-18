@@ -23,7 +23,7 @@ export const getOrgByNick = invokeServiceFxFn(OrgService, "getByNick")
 export type User = {
     id: string
     name: string
-    welcomePushSent?: boolean
+    welcomeSent?: boolean
 }
 type UserService = { readonly _: unique symbol }
 // the service interface
@@ -36,6 +36,7 @@ export const UserService = Context.Tag<UserService, UserServiceI>("UserService")
 // $ExpectType FxFn<{org_id: string, user_id: string}, UserService, never, User>
 export const getUserByIds = invokeServiceFxFn(UserService, "getByIds")
 
+export const changeUser = invokeServiceFxFn(UserService, "change")
 
 /////////////////// PushNotification ///////////////////////
 

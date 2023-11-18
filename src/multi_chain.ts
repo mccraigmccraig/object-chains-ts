@@ -1,7 +1,7 @@
 import { Effect, Context } from "effect"
 import { UnionFromTuple } from "./object_builders.ts"
 import { ChainTagged } from "./chain_tag.ts"
-import { UPObjectChain, ObjectChainsInputU, ObjectChainsTagStrU, ObjectChainsContextTagIdU, makeObjectChainServiceImpl } from "./object_chain.ts"
+import { UPObjectChain, ObjectChainsInputU, ObjectChainsTagStrU, ObjectChainsContextTagIdU, objectChainServiceImpl } from "./object_chain.ts"
 
 
 export type ProgramDeps<T extends UPObjectChain> = ReturnType<T['program']> extends Effect.Effect<infer R, infer _E, infer _V>
@@ -119,7 +119,7 @@ export function objectChainServicesContext
             return l.pipe(
                 Context.add(ch.contextTag,
                     // deno-lint-ignore no-explicit-any
-                    makeObjectChainServiceImpl(ch as any))
+                    objectChainServiceImpl(ch as any))
             ) },
         initialContext
     )

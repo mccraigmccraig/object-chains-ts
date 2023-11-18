@@ -1,8 +1,8 @@
-import { assertEquals, assertNotEquals } from "assert"
+import { assertEquals } from "assert"
 import { Effect } from "effect"
-import { Org, getOrgByNick, User, getUserByIds, sendPush, testServiceContext } from "./test_services.ts"
+import { Org, getOrgByNick, User, getUserByIds, changeUser, sendPush, testServiceContext } from "./test_services.ts"
 import { chainTag } from "./chain_tag.ts"
-import { objectChain } from "./object_chain.ts"
+import { objectChain, objectChainFxFn, objectChainServiceImpl } from "./object_chain.ts"
 import { multiChainProgram, multiChain, addChains, objectChainServicesContext } from "./multi_chain.ts"
 
 //////////////////// some steps //////////////////////////////////
@@ -138,10 +138,79 @@ Deno.test("addChains adds to a multiChain", () => {
     })
 })
 
+type ChangeUserSetWelcomeSent = {
+    readonly _chainTag: "ChangeUserSetWelcomeSent"
+    readonly user: User
+}
+const changeUserSetWelcomeSentStepSpec = {
+    k: "changeUserSetWelcomeSent" as const,
+    inFn: (d: { user: User }) => { return { old: d.user, new: { ...d.user, welcomeSent: true } } },
+    fxFn: changeUser
+}
+const ChangeUserSetWelcomeSentTag = chainTag<ChangeUserSetWelcomeSent>("ChangeUserSetWelcomeSent")
+const changeUserSetWelcomeSentSteps = [changeUserSetWelcomeSentStepSpec] as const
+const changeUserSetWelcomeSentChain = objectChain<ChangeUserSetWelcomeSent>()(
+    ChangeUserSetWelcomeSentTag,
+    changeUserSetWelcomeSentSteps)
+const runChangeUserSetWelcomeSentChainContextTag = changeUserSetWelcomeSentChain.contextTag
+
+const runChangeUserSetWelcomeSentChainStepSpec = {
+    k: "runChangeUserSetWelcomeSentChain" as const,
+    inFn: (d: { user: User }) => {
+        return {
+            _chainTag: "ChangeUserSetWelcomeSent" as const,
+            user: d.user
+        }
+    },
+    fxFn: objectChainFxFn(runChangeUserSetWelcomeSentChainContextTag)
+}
+type SendWelcomePushAndUpdateUser = {
+    readonly _chainTag: "SendWelcomePushAndUpdateUser",
+    readonly data: { org_nick: string, user_id: string }
+}
+const SendWelcomePushAndUpdateUser = chainTag<SendWelcomePushAndUpdateUser>("SendWelcomePushAndUpdateUser")
+const sendWelcomePushAndUpdateUserSteps = [
+    getOrgObjectStepSpec,
+    getUserObjectStepSpec,
+    pureFormatWelcomePushStepSpec,
+    sendPusnNotificationStepSpec,
+    runChangeUserSetWelcomeSentChainStepSpec
+] as const
+
+const sendWelcomePushAndUpdateUserStepsChain = objectChain<SendWelcomePushAndUpdateUser>()(
+    SendWelcomePushAndUpdateUser,
+    sendWelcomePushAndUpdateUserSteps
+)
+
 Deno.test("recursion with objectChainServicesContext", () => {
-    const mc = multiChain(programs)
+    const mc = multiChain([getOrgProg, sendWelcomePushProg, sendWelcomePushAndUpdateUserStepsChain])
 
-    const layer = objectChainServicesContext(mc)
+    const input: SendWelcomePushAndUpdateUser = {
+        _chainTag: "SendWelcomePushAndUpdateUser",
+        data: { org_nick: "foo", user_id: "100" }
+    }
 
-    assertNotEquals(layer, undefined)
+    const prog = mc.program(input)
+    const almostRunnable = Effect.provide(prog, testServiceContext)
+    const runnable = Effect.provideService(
+        almostRunnable,
+        runChangeUserSetWelcomeSentChainContextTag,
+        objectChainServiceImpl(changeUserSetWelcomeSentChain))
+    // const runnable = Effect.provide(almostRunnable, objectChainServicesContext(mc))
+
+
+    const r = Effect.runSync(runnable)
+
+    assertEquals(r, {
+        ...input,
+        org: { id: "foo", name: "Foo" },
+        user: { id: "100", name: "Bar" },
+        formatWelcomePush: "Welcome Bar of Foo",
+        sendPush: "push sent OK: Welcome Bar of Foo",
+        runChangeUserSetWelcomeSentChain: {
+            _chainTag: "ChangeUserSetWelcomeSent",
+            user: { id: "100", name: "Bar" },
+            changeUserSetWelcomeSent: { id: "100", name: "Bar", welcomeSent: true }
+        }
+    })
 })
