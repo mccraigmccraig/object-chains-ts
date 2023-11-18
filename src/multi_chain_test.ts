@@ -3,7 +3,7 @@ import { Effect, Context } from "effect"
 import { Org, OrgService, getOrgByNick, User, UserService, getUserByIds, PushNotificationService, sendPush } from "./test_services.ts"
 import { chainTag } from "./chain_tag.ts"
 import { objectChain } from "./object_chain.ts"
-import { multiChainProgram, multiChain, addChains, makeObjectChainServicesLayer } from "./multi_chain.ts"
+import { multiChainProgram, multiChain, addChains, objectChainServicesContext } from "./multi_chain.ts"
 
 //////////////////// some steps //////////////////////////////////
 
@@ -115,12 +115,15 @@ Deno.test("multiChainProgram runs chains", () => {
 
 Deno.test("multiChain runs chains", () => {
     const mc = multiChain(programs)
+    const ctx = objectChainServicesContext(mc)
 
     const getOrgInput: GetOrgInput = { _chainTag: "GetOrg", data: { org_nick: "foo" } }
 
     // note the inferred Effect value type selects the output of the getOrg chain
     const getOrgEffect = mc.program(getOrgInput)
-    const getOrgRunnable = Effect.provide(getOrgEffect, echoContext)
+    const getOrgAlmostRunnable = Effect.provide(getOrgEffect, echoContext)
+    const getOrgRunnable = Effect.provide(getOrgAlmostRunnable, ctx)
+
     const getOrgResult = Effect.runSync(getOrgRunnable)
 
     assertEquals(getOrgResult, {
@@ -151,7 +154,7 @@ Deno.test("addChains adds to a multiChain", () => {
 Deno.test("makeObjectChainServicesLayer", () => {
     const mc = multiChain(programs)
 
-    const layer = makeObjectChainServicesLayer(mc)
+    const layer = objectChainServicesContext(mc)
 
     assertNotEquals(layer, undefined)
 })

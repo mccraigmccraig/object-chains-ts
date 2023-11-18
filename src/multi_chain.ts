@@ -103,12 +103,12 @@ export function addChains<Chains extends readonly [...UPObjectChain[]],
 ///////////////////////// recursion support
 
 // each chain has a ContextTag for the service which will run it
-// so a MultiChain can register implementations for each of its
+// so a MultiChain can register Service implementations for each of its
 // chains
 
 // make a Layer to provide implementations for all the contained
 // ObjectChainServices
-export function makeObjectChainServicesLayer
+export function objectChainServicesContext
     <Chains extends readonly [...UPObjectChain[]]>
 
     (multiChain: MultiChain<Chains>) {
@@ -118,6 +118,7 @@ export function makeObjectChainServicesLayer
         (l, ch) => {
             return l.pipe(
                 Context.add(ch.contextTag,
+                    // deno-lint-ignore no-explicit-any
                     makeObjectChainServiceImpl(ch as any))
             ) },
         initialContext
@@ -134,10 +135,3 @@ export function getObjectChainServiceContextTag
     return multiChain.chainsByTag[tagStr]?.contextTag
 }
 
-// get an FxFn to run a particular chain
-export function objectChainFxFn
-    <Chains extends readonly [...UPObjectChain[]]>
-    (multiChain: MultiChain<Chains>,
-      ) {
-
-}
