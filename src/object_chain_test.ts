@@ -218,7 +218,7 @@ Deno.test("recursion with RunObjectChainFxFn", () => {
     }
     const effect = prog.program(input)
     const almostRunnable = Effect.provide(effect, testServiceContext)
-    const runnable = provideObjectChainServiceImpl(almostRunnable, GetOrgChainContextTag, getOrgChain)
+    const runnable = provideObjectChainServiceImpl(almostRunnable, getOrgChain)
 
     const r = Effect.runSync(runnable)
 

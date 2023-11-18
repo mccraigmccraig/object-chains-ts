@@ -1,4 +1,3 @@
-// deno-lint-ignore-file no-explicit-any
 import { Effect } from "effect"
 import { FxFn, UPFxFn } from "./fx_fn.ts"
 
@@ -64,6 +63,7 @@ export type UPFxObjectStepSpec = {
     // the key at which the FxFn output V will be added to the Object
     readonly k: string
     // a pure function which maps the input A to the FxFn input D
+    // deno-lint-ignore no-explicit-any
     readonly inFn: (arg: any) => any
     // an effectful function of D, producing V
     readonly fxFn: UPFxFn
@@ -71,6 +71,7 @@ export type UPFxObjectStepSpec = {
 
 export type UPPureObjectStepSpec = {
     readonly k: string
+    // deno-lint-ignore no-explicit-any
     readonly pureFn: (arg: any) => any
 }
 
@@ -122,6 +123,7 @@ export function objectStepFn<Obj>() {
 }
 
 // utility type to get a Union from a Tuple of types
+// deno-lint-ignore no-explicit-any
 export type UnionFromTuple<Tuple extends readonly any[]> = Tuple[number]
 
 // builds a new Object type from an intersected ObjAcc type,
@@ -129,6 +131,7 @@ export type UnionFromTuple<Tuple extends readonly any[]> = Tuple[number]
 // https://stackoverflow.com/questions/57683303/how-can-i-see-the-full-expanded-contract-of-a-typescript-type
 export type Expand<T> = T extends infer O ? { readonly [K in keyof O]: O[K] } : never;
 
+// deno-lint-ignore no-explicit-any
 export type ExpandTuple<Tuple extends readonly [...any[]]> = {
     +readonly [Index in keyof Tuple]: Expand<Tuple[Index]>
 } & { length: Tuple['length'] }
@@ -211,6 +214,7 @@ export type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends readonly [infer Head, ...infer Tail]
+    // deno-lint-ignore no-explicit-any
     ? Tail extends readonly [infer Next, ...any]
     ? Next extends UCObjectStepSpec<infer _NK, infer _NA, infer _ND1, infer _ND2, infer _NR, infer _NE, infer _NV>
     ? Head extends UCFxObjectStepSpec<infer HK, infer _HA, infer _HD1, infer HD2, infer HR, infer HE, infer HV>
@@ -249,16 +253,20 @@ export function chainObjectStepsProg<Obj>() {
             ? readonly [...Specs]
             : ChainObjectSteps<Specs, Obj>) {
 
+        // deno-lint-ignore no-explicit-any
         const stepFns: any[] = objectStepSpecs.map((step) => objectStepFn()(step as any))
 
         const r = stepFns.reduce(
             (prev, stepFn) => {
+                // deno-lint-ignore no-explicit-any
                 return function (obj: any) {
                     console.log("CREATE chainObjectStepsEffect", obj)
                     return Effect.gen(function* (_) {
                         console.log("RUN chainObjectStepsEffect", obj)
+                        // deno-lint-ignore no-explicit-any
                         const prevStepObj: any = yield* _(prev(obj))
                         console.log("PREV STEP", prevStepObj)
+                        // deno-lint-ignore no-explicit-any
                         const stepObj: any = yield* _(stepFn(prevStepObj))
                         console.log("STEP", stepObj)
                         const r = { ...prevStepObj, ...stepObj }

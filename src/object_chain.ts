@@ -67,6 +67,11 @@ export type UPObjectChain = {
     readonly contextTag: Context.Tag<any, any>
 }
 
+export type CastObjectChain<T extends UPObjectChain> =
+    T extends ObjectChain<infer Input, infer Steps>
+    ? ObjectChain<Input, Steps>
+    : never
+
 // union of all the inputs from a tuple of chains
 export type ObjectChainInput<T extends UPObjectChain> =
     T extends ObjectChain<infer Input, infer _Steps>
@@ -207,13 +212,12 @@ export function provideObjectChainServiceImpl
         InR, InE, InV>
 
     (effect: Effect.Effect<InR, InE, InV>,
-        contextTag: ObjectChainServiceContextTag<Input, Steps>,
         chain: ObjectChain<Input, Steps>) {
 
     const svc = objectChainServiceImpl(chain) as
         ObjectChainService<Input, Steps>
 
-    return Effect.provideService(effect, contextTag, svc)
+    return Effect.provideService(effect, chain.contextTag, svc)
 }
 
 // given a Context.Tag for an ObjectBuilderService, return 

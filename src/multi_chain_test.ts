@@ -2,8 +2,8 @@ import { assertEquals } from "assert"
 import { Effect } from "effect"
 import { Org, getOrgByNick, User, getUserByIds, changeUser, sendPush, testServiceContext } from "./test_services.ts"
 import { chainTag } from "./chain_tag.ts"
-import { objectChain, objectChainFxFn, objectChainServiceImpl } from "./object_chain.ts"
-import { multiChainProgram, multiChain, addChains, objectChainServicesContext } from "./multi_chain.ts"
+import { objectChain, objectChainFxFn } from "./object_chain.ts"
+import { multiChainProgram, multiChain, addChains, multiChainServicesContext } from "./multi_chain.ts"
 
 //////////////////// some steps //////////////////////////////////
 
@@ -102,14 +102,12 @@ Deno.test("multiChainProgram runs chains", () => {
 
 Deno.test("multiChain runs chains", () => {
     const mc = multiChain(programs)
-    const ctx = objectChainServicesContext(mc)
 
     const getOrgInput: GetOrgInput = { _chainTag: "GetOrg", data: { org_nick: "foo" } }
 
     // note the inferred Effect value type selects the output of the getOrg chain
     const getOrgEffect = mc.program(getOrgInput)
-    const getOrgAlmostRunnable = Effect.provide(getOrgEffect, testServiceContext)
-    const getOrgRunnable = Effect.provide(getOrgAlmostRunnable, ctx)
+    const getOrgRunnable = Effect.provide(getOrgEffect, testServiceContext)
 
     const getOrgResult = Effect.runSync(getOrgRunnable)
 
@@ -183,7 +181,12 @@ const sendWelcomePushAndUpdateUserStepsChain = objectChain<SendWelcomePushAndUpd
 )
 
 Deno.test("recursion with objectChainServicesContext", () => {
-    const mc = multiChain([getOrgProg, sendWelcomePushProg, sendWelcomePushAndUpdateUserStepsChain])
+    const mc = multiChain([
+        getOrgProg,
+        sendWelcomePushProg,
+        sendWelcomePushAndUpdateUserStepsChain,
+        changeUserSetWelcomeSentChain
+    ])
 
     const input: SendWelcomePushAndUpdateUser = {
         _chainTag: "SendWelcomePushAndUpdateUser",
@@ -192,12 +195,8 @@ Deno.test("recursion with objectChainServicesContext", () => {
 
     const prog = mc.program(input)
     const almostRunnable = Effect.provide(prog, testServiceContext)
-    const runnable = Effect.provideService(
-        almostRunnable,
-        runChangeUserSetWelcomeSentChainContextTag,
-        objectChainServiceImpl(changeUserSetWelcomeSentChain))
-    // const runnable = Effect.provide(almostRunnable, objectChainServicesContext(mc))
-
+    console.log("top level context.tag", runChangeUserSetWelcomeSentChainContextTag)
+    const runnable = Effect.provide(almostRunnable, multiChainServicesContext(mc))
 
     const r = Effect.runSync(runnable)
 

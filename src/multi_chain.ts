@@ -1,7 +1,7 @@
 import { Effect, Context } from "effect"
 import { UnionFromTuple } from "./object_builders.ts"
 import { ChainTagged } from "./chain_tag.ts"
-import { UPObjectChain, ObjectChainsInputU, ObjectChainsTagStrU, ObjectChainsContextTagIdU, objectChainServiceImpl } from "./object_chain.ts"
+import { UPObjectChain, ObjectChainsInputU, ObjectChainsContextTagIdU, objectChainServiceImpl } from "./object_chain.ts"
 
 
 export type ProgramDeps<T extends UPObjectChain> = ReturnType<T['program']> extends Effect.Effect<infer R, infer _E, infer _V>
@@ -107,7 +107,7 @@ export function addChains<Chains extends readonly [...UPObjectChain[]],
 // chains
 
 // return a Context with all the ObjectChain service impls
-export function objectChainServicesContext
+export function multiChainServicesContext
     <Chains extends readonly [...UPObjectChain[]]>
 
     (multiChain: MultiChain<Chains>) {
@@ -116,26 +116,11 @@ export function objectChainServicesContext
     
     const rctx = multiChain.chains.reduce(
         (ctx, ch) => {
-            const ctxTag = ch.contextTag
-
+            console.log("registering ObjectChainService for:", ch.tagStr)
             // deno-lint-ignore no-explicit-any
-            const svcImpl = objectChainServiceImpl(ch as any)
-
-            console.log("ADDING SERVICE:", ctxTag, svcImpl)
-            
-            return Context.add(ctx, ctxTag, svcImpl)
+            return Context.add(ctx, ch.contextTag, objectChainServiceImpl(ch as any))
         },
         Context.empty()
     )
     return rctx as Context.Context<ObjectChainsContextTagIdU<Chains>>
 }
-
-// get the Context.Tag for a particular chain
-export function getObjectChainServiceContextTag
-    <Chains extends readonly [...UPObjectChain[]]>
-    (multiChain: MultiChain<Chains>,
-        tagStr: ObjectChainsTagStrU<Chains>) {
-
-    return multiChain.chainsByTag[tagStr]?.contextTag
-}
-
