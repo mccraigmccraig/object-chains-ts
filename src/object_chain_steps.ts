@@ -172,12 +172,19 @@ export type ObjectStepsValueTuple<Tuple extends readonly [...UPObjectStepSpec[]]
     +readonly [Index in keyof Tuple]: ObjectStepValue<Tuple[Index]>
 } & { length: Tuple['length'] }
 
-// TODO: change the Specs array to a cons structure
+
+
+// TODO: tried to change the Specs array to a cons structure - 
 // arrays are causing "type instantiation is excessively deep" errors with
 // iterative step composition, probably because each step requires the 
-// full arrays of the previous steps to be parsed too. if we use a cons
+// full arrays of the previous steps to be parsed too, leading to N^2 depth. 
+// if we use a cons
 // structure then (i think) iterative step composition will have the same type 
-// complexity as all-together
+// complexity as array-based all-in-one-hit
+// ... however ... an iterative cons types seems to cause the typescript compiler
+// much more trouble than the array types, and i failed to find a structure that
+// didn't cause slow inference and "type instantiation is excessively deep" errors,
+// so i'm stuck with all-in-one-hit arrays for the moment
 
 
 
@@ -186,7 +193,7 @@ export type ObjectStepsValueTuple<Tuple extends readonly [...UPObjectStepSpec[]]
 //
 // goal is to *always* hit one of the non-never branches
 //
-// to this end we infer UCObjectStepSpec/UCFxObjectStepSpec/UCPureObjectStepSpec
+// to this end we infer UCFxObjectStepSpec/UCPureObjectStepSpec
 // which is guaranteed to be inferrable
 // from elements of an UPObjectStepSpec[] (as opposed to FxObjectStepSpec,
 // which is *not* guaranteed to be inferrable from all UPObjectStepSpecs
