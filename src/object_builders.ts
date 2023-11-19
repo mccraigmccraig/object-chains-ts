@@ -195,7 +195,7 @@ export type ObjectStepsValueTuple<Tuple extends readonly [...UPObjectStepSpec[]]
 // types we output - this gives us:
 // 1. easy to understsand errors about constraint failure
 // 2. it's safe to use never in the else branches. they will not be hit
-export type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
+export type ObjectChainSteps<Specs extends readonly [...UPObjectStepSpec[]],
     ObjAcc,
     StepAcc extends [...UPObjectStepSpec[]] = []> =
 
@@ -219,11 +219,11 @@ export type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
     ? Next extends UCObjectStepSpec<infer _NK, infer _NA, infer _ND1, infer _ND2, infer _NR, infer _NE, infer _NV>
     ? Head extends UCFxObjectStepSpec<infer HK, infer _HA, infer _HD1, infer HD2, infer HR, infer HE, infer HV>
     // recurse - note constraint HD1==HD2
-    ? ChainObjectSteps<Tail,
+    ? ObjectChainSteps<Tail,
         ObjAcc & { readonly [_K in HK]: HV },
         [...StepAcc, UCFxObjectStepSpec<HK, ObjAcc, HD2, HD2, HR, HE, HV>]>
     : Head extends UCPureObjectStepSpec<infer HK, infer _HA, infer HV>
-    ? ChainObjectSteps<Tail,
+    ? ObjectChainSteps<Tail,
         ObjAcc & { readonly [_K in HK]: HV },
         [...StepAcc, UCPureObjectStepSpec<HK, ObjAcc, HV>]>
     : never // [...StepAcc, ["ChainObjectStepsFail-recurse-E: Head !extends UCPureObjectStepSpec"]]
@@ -232,10 +232,10 @@ export type ChainObjectSteps<Specs extends readonly [...UPObjectStepSpec[]],
     : never // [...StepAcc, ["ChainObjectStepsFail-recurse-A: Specs !extends [infer Head, ...infer Tail]"]]
 
 // get the final Object result type from a list of ObjectStepSpecs
-export type ChainObjectStepsReturn<Specs extends readonly [...UPObjectStepSpec[]], ObjAcc> =
+export type ObjectChainStepsReturn<Specs extends readonly [...UPObjectStepSpec[]], ObjAcc> =
     Specs extends readonly []
     ? ObjAcc // empty specs returns the input
-    : ChainObjectSteps<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
+    : ObjectChainSteps<Specs, ObjAcc> extends readonly [...infer _Prev, infer Last]
     ? Last extends UCObjectStepSpec<infer LK, infer LA, infer _LD1, infer _LD2, infer _LR, infer _LE, infer LV>
     // final Object type adds the final step output to the final step input type
     ? Expand<LA & { readonly [_K in LK]: LV }>
@@ -246,12 +246,12 @@ export type ChainObjectStepsReturn<Specs extends readonly [...UPObjectStepSpec[]
 // a new key to the Object
 //
 // curried to allow passing of initial Obj type while allowing inference of other type params
-export function chainObjectStepsProg<Obj>() {
+export function objectChainStepsProg<Obj>() {
 
     return function <Specs extends readonly [...UPObjectStepSpec[]]>
-        (objectStepSpecs: ChainObjectSteps<Specs, Obj> extends readonly [...Specs]
+        (objectStepSpecs: ObjectChainSteps<Specs, Obj> extends readonly [...Specs]
             ? readonly [...Specs]
-            : ChainObjectSteps<Specs, Obj>) {
+            : ObjectChainSteps<Specs, Obj>) {
 
         // deno-lint-ignore no-explicit-any
         const stepFns: any[] = objectStepSpecs.map((step) => objectStepFn()(step as any))
@@ -280,6 +280,6 @@ export function chainObjectStepsProg<Obj>() {
 
         return r as (obj: Obj) => Effect.Effect<ObjectStepsDepsU<Specs>,
             ObjectStepsErrorsU<Specs>,
-            ChainObjectStepsReturn<Specs, Obj>>
+            ObjectChainStepsReturn<Specs, Obj>>
     }
 }

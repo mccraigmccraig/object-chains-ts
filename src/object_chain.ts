@@ -1,8 +1,8 @@
 import { Effect, Context } from "effect"
 import { FxFn } from "./fx_fn.ts"
 import { ChainTagged, ChainTag, chainTagStr } from "./chain_tag.ts"
-import { UnionFromTuple, UCFxObjectStepSpec, UCPureObjectStepSpec, ChainObjectSteps } from "./object_builders.ts"
-import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ChainObjectStepsReturn, chainObjectStepsProg } from "./object_builders.ts"
+import { UnionFromTuple, UCFxObjectStepSpec, UCPureObjectStepSpec, ObjectChainSteps } from "./object_builders.ts"
+import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg } from "./object_builders.ts"
 
 // a type for a service which can run an ObjectChain
 export type ObjectBuilderService<Input extends ChainTagged, R, E, V extends ChainTagged> = {
@@ -17,14 +17,14 @@ export type ObjectChainService<Input extends ChainTagged,
     ObjectBuilderService<Input,
         ObjectStepsDepsU<Steps>,
         ObjectStepsErrorsU<Steps>,
-        ChainObjectStepsReturn<Steps, Input>>
+        ObjectChainStepsReturn<Steps, Input>>
 
 export type ObjectChainServiceContextTag<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> =
     ObjectBuilderServiceContextTag<Input,
         ObjectStepsDepsU<Steps>,
         ObjectStepsErrorsU<Steps>,
-        ChainObjectStepsReturn<Steps, Input>>
+        ObjectChainStepsReturn<Steps, Input>>
 
 // get a Context.Tag for an ObjectChainService
 export function objectChainServiceContextTag
@@ -42,7 +42,7 @@ export type ObjectChainProgram<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> =
     (i: Input) => Effect.Effect<ObjectStepsDepsU<Steps>,
         ObjectStepsErrorsU<Steps>,
-        ChainObjectStepsReturn<Steps, Input>>
+        ObjectChainStepsReturn<Steps, Input>>
 
 // an ObjectChain is a datastructure defining a series of steps to build an Object.
 // it can be built in a single step with objectChain, or iteratively with addSteps
@@ -50,7 +50,7 @@ export type ObjectChain<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> = {
         readonly tag: ChainTag<Input>
         readonly tagStr: Input['_tag']
-        readonly steps: ChainObjectSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ChainObjectSteps<Steps, Input>
+        readonly steps: ObjectChainSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ObjectChainSteps<Steps, Input>
         readonly program: ObjectChainProgram<Input, Steps>
         readonly contextTag: ObjectChainServiceContextTag<Input, Steps>
     }
@@ -102,13 +102,13 @@ export type ObjectChainsContextTagIdU<Tuple extends readonly [...UPObjectChain[]
 export function objectChain<Input extends ChainTagged>() {
     return function <Steps extends readonly [...UPObjectStepSpec[]]>
         (tag: ChainTag<Input>,
-            steps: ChainObjectSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ChainObjectSteps<Steps, Input>) {
+            steps: ObjectChainSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ObjectChainSteps<Steps, Input>) {
 
         return {
             tag: tag,
             tagStr: chainTagStr(tag),
             steps: steps,
-            program: chainObjectStepsProg<Input>()(steps),
+            program: objectChainStepsProg<Input>()(steps),
             contextTag: objectChainServiceContextTag<Input, Steps>()
         } as ObjectChain<Input, Steps>
     }
@@ -118,9 +118,9 @@ export function addSteps<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]],
     AdditionalSteps extends readonly [...UPObjectStepSpec[]]>
     (chain: ObjectChain<Input, Steps>,
-        additionalSteps: ChainObjectSteps<AdditionalSteps, ChainObjectStepsReturn<Steps, Input>> extends readonly [...AdditionalSteps]
+        additionalSteps: ObjectChainSteps<AdditionalSteps, ObjectChainStepsReturn<Steps, Input>> extends readonly [...AdditionalSteps]
             ? readonly [...AdditionalSteps]
-            : ChainObjectSteps<AdditionalSteps, ChainObjectStepsReturn<Steps, Input>>) {
+            : ObjectChainSteps<AdditionalSteps, ObjectChainStepsReturn<Steps, Input>>) {
 
     const newSteps = [...chain.steps, ...additionalSteps] as const
 
@@ -136,7 +136,7 @@ export function addStep<Input extends ChainTagged,
     D2,
     R, E, V>
     (chain: ObjectChain<Input, Steps>,
-        step: UCFxObjectStepSpec<K, ChainObjectStepsReturn<Steps, Input>, D1, D2, R, E, V>) {
+        step: UCFxObjectStepSpec<K, ObjectChainStepsReturn<Steps, Input>, D1, D2, R, E, V>) {
 
     return addSteps(chain, [step] as const)
 }
@@ -144,7 +144,7 @@ export function addStep<Input extends ChainTagged,
 export function addFxStep<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]],
     K extends string,
-    A extends ChainObjectStepsReturn<Steps, Input>,
+    A extends ObjectChainStepsReturn<Steps, Input>,
     D1 extends D2,
     D2,
     R, E, V>
@@ -155,7 +155,7 @@ export function addFxStep<Input extends ChainTagged,
 
     const steps = [{ k, inFn, fxFn } as
         UCFxObjectStepSpec<K,
-            ChainObjectStepsReturn<Steps, Input>, D1, D2, R, E, V>] as const
+            ObjectChainStepsReturn<Steps, Input>, D1, D2, R, E, V>] as const
 
     return addSteps(chain, steps)
 }
@@ -163,14 +163,14 @@ export function addFxStep<Input extends ChainTagged,
 export function addPureStep<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]],
     K extends string,
-    A extends ChainObjectStepsReturn<Steps, Input>,
+    A extends ObjectChainStepsReturn<Steps, Input>,
     V>(chain: ObjectChain<Input, Steps>,
         k: K,
         pureFn: (a: A) => V) {
 
     const steps = [{ k, pureFn } as
         UCPureObjectStepSpec<K,
-            ChainObjectStepsReturn<Steps, Input>, V>] as const
+            ObjectChainStepsReturn<Steps, Input>, V>] as const
 
     return addSteps(chain, steps)
 }
