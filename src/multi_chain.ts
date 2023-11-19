@@ -28,7 +28,7 @@ export type ProgramValue<T extends UPObjectChain> = ReturnType<T['program']> ext
 export type IndexObjectChainTuple<T extends ReadonlyArray<UPObjectChain>> = {
     [K in T[number]['tagStr']]: Extract<T[number], { tagStr: K }>
 }
-// showing that this does indeed index a tuple of UPPureWrapperProgram
+// showing that this does indeed index a tuple of UPObjectChain
 // export type X = IndexObjectChainTuple<[
 //     { tagStr: "foo", program: (ev: number) => Effect.Effect<never, never, number> },
 //     { tagStr: "bar", program: (ev: number) => Effect.Effect<never, never, number> }]>
@@ -41,9 +41,9 @@ export type DistributeObjectChainValueTypes<I extends ChainTagged, Chains extend
     : never
 
 // return a function of the union 
-// of all the input types handled by the supplied UPPureWrapperPrograms,
-// which uses a supplied UPPureWrapperProgram to handle the input,
-// returning the same results as the supplied UPPureWrapperProgram
+// of all the input types handled by the supplied UPObjectChains,
+// which uses a UPObjectChain to handle the input,
+// returning the same results as the handling UPObjectChain
 //
 // the Effect result type will be narrowed to the union member corresponding
 // to the input type when the input is supplied
