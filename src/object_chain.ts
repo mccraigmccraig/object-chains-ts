@@ -1,8 +1,8 @@
 import { Effect, Context } from "effect"
 import { FxFn } from "./fx_fn.ts"
 import { ChainTagged, ChainTag, chainTagStr } from "./chain_tag.ts"
-import { UnionFromTuple, UCFxObjectStepSpec, UCPureObjectStepSpec, ObjectChainSteps } from "./object_builders.ts"
-import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg } from "./object_builders.ts"
+import { UnionFromTuple, UCFxObjectStepSpec, UCPureObjectStepSpec, ObjectChainSteps } from "./object_chain_steps.ts"
+import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg } from "./object_chain_steps.ts"
 
 // a type for a service which can run an ObjectChain
 export type ObjectBuilderService<Input extends ChainTagged, R, E, V extends ChainTagged> = {

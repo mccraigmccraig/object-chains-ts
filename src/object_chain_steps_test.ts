@@ -1,6 +1,6 @@
 import { assertEquals } from "assert"
 import { Effect } from "effect"
-import { objectStepFn, objectChainStepsProg } from "./object_builders.ts"
+import { objectStepFn, objectChainStepsProg } from "./object_chain_steps.ts"
 import { Org, User, getOrgByNick, getUserByIds, testServiceContext } from "./test_services.ts"
 
 // some computation steps...
