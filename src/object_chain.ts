@@ -5,26 +5,16 @@ import { UnionFromTuple, UCFxObjectStepSpec, UCPureObjectStepSpec, ObjectChainSt
 import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg } from "./object_chain_steps.ts"
 
 // a type for a service which can run an ObjectChain
-export type ObjectBuilderService<Input extends ChainTagged, R, E, V extends ChainTagged> = {
-    readonly buildObject: (i: Input) => Effect.Effect<R, E, V>
-}
-
-export type ObjectBuilderServiceContextTag<Input extends ChainTagged, R, E, V extends ChainTagged> =
-    Context.Tag<ChainTag<Input>, ObjectBuilderService<Input, R, E, V>>
-
 export type ObjectChainService<Input extends ChainTagged,
-    Steps extends readonly [...UPObjectStepSpec[]]> =
-    ObjectBuilderService<Input,
-        ObjectStepsDepsU<Steps>,
-        ObjectStepsErrorsU<Steps>,
-        ObjectChainStepsReturn<Steps, Input>>
+    Steps extends readonly [...UPObjectStepSpec[]]> = {
+        readonly buildObject: (i: Input) => Effect.Effect<ObjectStepsDepsU<Steps>,
+            ObjectStepsErrorsU<Steps>,
+            ObjectChainStepsReturn<Steps, Input>>
+    }
 
 export type ObjectChainServiceContextTag<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> =
-    ObjectBuilderServiceContextTag<Input,
-        ObjectStepsDepsU<Steps>,
-        ObjectStepsErrorsU<Steps>,
-        ObjectChainStepsReturn<Steps, Input>>
+    Context.Tag<ChainTag<Input>, ObjectChainService<Input, Steps>>
 
 // get a Context.Tag for an ObjectChainService
 export function objectChainServiceContextTag
@@ -66,11 +56,6 @@ export type UPObjectChain = {
     // deno-lint-ignore no-explicit-any
     readonly contextTag: Context.Tag<any, any>
 }
-
-export type CastObjectChain<T extends UPObjectChain> =
-    T extends ObjectChain<infer Input, infer Steps>
-    ? ObjectChain<Input, Steps>
-    : never
 
 // union of all the inputs from a tuple of chains
 export type ObjectChainInput<T extends UPObjectChain> =
@@ -114,6 +99,11 @@ export function objectChain<Input extends ChainTagged>() {
     }
 }
 
+// warning - doesn't work well - quickly gets to 
+// "Type instantiation is excessively deep and possibly infinite"
+//
+// i think this is because the depth is  M + 2M + 3M + 4M = M(N+1)/2 = O(N^2)
+// because each step has inference depth M, and a new array is created in each step
 export function addSteps<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]],
     AdditionalSteps extends readonly [...UPObjectStepSpec[]]>
@@ -129,6 +119,7 @@ export function addSteps<Input extends ChainTagged,
         ObjectChain<Input, readonly [...Steps, ...AdditionalSteps]>
 }
 
+// warning - doesn't work well - see addSteps
 export function addStep<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]],
     K extends string,
@@ -141,6 +132,7 @@ export function addStep<Input extends ChainTagged,
     return addSteps(chain, [step] as const)
 }
 
+// warning - doesn't work well - see addSteps
 export function addFxStep<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]],
     K extends string,
@@ -160,6 +152,7 @@ export function addFxStep<Input extends ChainTagged,
     return addSteps(chain, steps)
 }
 
+// warning - doesn't work well - see addSteps
 export function addPureStep<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]],
     K extends string,
@@ -185,9 +178,8 @@ export function addPureStep<Input extends ChainTagged,
 
 
 
-// make an ObjectChainService impl with given Id which will run an ObjectChain for a particular Input
-// ooo - maybe the Context.Tag Id type should also be the Tagged type - would be a nice symmetry
-// and avoid boilerplate
+// make an ObjectChainService impl with given which will run an ObjectChain for a particular Input,
+// and is identified by chain.contextTag
 export function objectChainServiceImpl
 
     <Input extends ChainTagged,
@@ -220,8 +212,8 @@ export function provideObjectChainServiceImpl
     return Effect.provideService(effect, chain.contextTag, svc)
 }
 
-// given an ObjectChain, return an FxFn to invoke the chain
-// which retrieves the ObjectChainService which calls the chain, and 
+// given an ObjectChain, returns an FxFn to invoke the chain,
+// which retrieves the ObjectChainService for the chain, and 
 // calls it's buildObject function
 export function objectChainFxFn
     <Input extends ChainTagged,
