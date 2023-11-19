@@ -8,7 +8,7 @@ export type FxFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
 // deno-lint-ignore no-explicit-any
 export type UPFxFn = (d: any) => Effect.Effect<any, any, any>
 
-export type UPFxFnDeps<T extends UPFxFn> = ReturnType<T> extends Effect.Effect<infer R, infer _E, infer _V>
+export type UPFxFnReqs<T extends UPFxFn> = ReturnType<T> extends Effect.Effect<infer R, infer _E, infer _V>
     ? R
     : never
 export type UPFxFnErrors<T extends UPFxFn> = ReturnType<T> extends Effect.Effect<infer _R, infer E, infer _V>

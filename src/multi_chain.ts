@@ -4,12 +4,12 @@ import { ChainTagged } from "./chain_tag.ts"
 import { UPObjectChain, ObjectChainsInputU, ObjectChainsContextTagIdU, objectChainServiceImpl } from "./object_chain.ts"
 
 
-export type ProgramDeps<T extends UPObjectChain> = ReturnType<T['program']> extends Effect.Effect<infer R, infer _E, infer _V>
+export type ProgramReqs<T extends UPObjectChain> = ReturnType<T['program']> extends Effect.Effect<infer R, infer _E, infer _V>
     ? R
     : never
 
-export type ProgramsDepsU<Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
-    +readonly [Index in keyof Tuple]: ProgramDeps<Tuple[Index]>
+export type ProgramsReqsU<Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
+    +readonly [Index in keyof Tuple]: ProgramReqs<Tuple[Index]>
 } & { length: Tuple['length'] }>
 
 export type ProgramErrors<T extends UPObjectChain> = ReturnType<T['program']> extends Effect.Effect<infer _R, infer E, infer _V>
@@ -64,7 +64,7 @@ export function multiChainProgram<Chains extends readonly [...UPObjectChain[]]>
             // so prog.program should be the resolved PureWrapperProgram - but 
             // the type is dependent on the actual type of the input
             console.log("multiProg: ", i)
-            return prog.program(i) as Effect.Effect<ProgramsDepsU<Chains>,
+            return prog.program(i) as Effect.Effect<ProgramsReqsU<Chains>,
                 ProgramsErrorsU<Chains>,
                 Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
         } else
@@ -75,7 +75,7 @@ export function multiChainProgram<Chains extends readonly [...UPObjectChain[]]>
 export type MultiChain<Chains extends readonly [...UPObjectChain[]]> = {
     readonly chains: Chains
     readonly chainsByTag: {[index: string]: UPObjectChain}
-    readonly program: <Input extends ObjectChainsInputU<Chains>>(i: Input) => Effect.Effect<ProgramsDepsU<Chains>,
+    readonly program: <Input extends ObjectChainsInputU<Chains>>(i: Input) => Effect.Effect<ProgramsReqsU<Chains>,
         ProgramsErrorsU<Chains>,
         Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
 }

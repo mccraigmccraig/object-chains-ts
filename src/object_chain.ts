@@ -2,12 +2,12 @@ import { Effect, Context } from "effect"
 import { FxFn } from "./fx_fn.ts"
 import { ChainTagged, ChainTag, chainTagStr } from "./chain_tag.ts"
 import { UnionFromTuple, UCFxObjectStepSpec, UCPureObjectStepSpec, ObjectChainSteps } from "./object_chain_steps.ts"
-import { UPObjectStepSpec, ObjectStepsDepsU, ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg } from "./object_chain_steps.ts"
+import { UPObjectStepSpec, ObjectStepsReqsU, ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg } from "./object_chain_steps.ts"
 
 // a type for a service which can run an ObjectChain
 export type ObjectChainService<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> = {
-        readonly buildObject: (i: Input) => Effect.Effect<ObjectStepsDepsU<Steps>,
+        readonly buildObject: (i: Input) => Effect.Effect<ObjectStepsReqsU<Steps>,
             ObjectStepsErrorsU<Steps>,
             ObjectChainStepsReturn<Steps, Input>>
     }
@@ -30,7 +30,7 @@ export function objectChainServiceContextTag
 // a function of Input which build an Object
 export type ObjectChainProgram<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> =
-    (i: Input) => Effect.Effect<ObjectStepsDepsU<Steps>,
+    (i: Input) => Effect.Effect<ObjectStepsReqsU<Steps>,
         ObjectStepsErrorsU<Steps>,
         ObjectChainStepsReturn<Steps, Input>>
 

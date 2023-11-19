@@ -137,12 +137,12 @@ export type ExpandTuple<Tuple extends readonly [...any[]]> = {
 } & { length: Tuple['length'] }
 
 // get a union of all the R dependencies from a tuple of steps. pure steps have no deps
-export type ObjectStepDeps<T extends UPObjectStepSpec> =
+export type ObjectStepReqs<T extends UPObjectStepSpec> =
     T extends UCFxObjectStepSpec<infer _K, infer _A, infer _D1, infer _D2, infer R, infer _E, infer _V>
     ? R
     : never
-export type ObjectStepsDepsU<Tuple extends readonly [...UPObjectStepSpec[]]> = UnionFromTuple<{
-    +readonly [Index in keyof Tuple]: ObjectStepDeps<Tuple[Index]>
+export type ObjectStepsReqsU<Tuple extends readonly [...UPObjectStepSpec[]]> = UnionFromTuple<{
+    +readonly [Index in keyof Tuple]: ObjectStepReqs<Tuple[Index]>
 } & { length: Tuple['length'] }>
 
 // get a union of all the E errors from a tuple of steps. pure steps declare no errors
@@ -285,7 +285,7 @@ export function objectChainStepsProg<Obj>() {
             // start with the no-steps fn
             (obj: Obj) => Effect.succeed(obj))
 
-        return r as (obj: Obj) => Effect.Effect<ObjectStepsDepsU<Specs>,
+        return r as (obj: Obj) => Effect.Effect<ObjectStepsReqsU<Specs>,
             ObjectStepsErrorsU<Specs>,
             ObjectChainStepsReturn<Specs, Obj>>
     }
