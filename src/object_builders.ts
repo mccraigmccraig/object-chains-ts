@@ -260,9 +260,9 @@ export function objectChainStepsProg<Obj>() {
             (prev, stepFn) => {
                 // deno-lint-ignore no-explicit-any
                 return function (obj: any) {
-                    console.log("CREATE chainObjectStepsEffect", obj)
+                    console.log("CREATE objectChainStepsEffect", obj)
                     return Effect.gen(function* (_) {
-                        console.log("RUN chainObjectStepsEffect", obj)
+                        console.log("RUN objectChainStepsEffect", obj)
                         // deno-lint-ignore no-explicit-any
                         const prevStepObj: any = yield* _(prev(obj))
                         console.log("PREV STEP", prevStepObj)
