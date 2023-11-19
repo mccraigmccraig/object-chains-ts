@@ -38,21 +38,21 @@ const sendPusnNotificationStepSpec =
 }
 
 Deno.test("empty objectChain returns input", () => {
-    type DoNothing = { readonly _chainTag: "doNothing" }
+    type DoNothing = { readonly _tag: "doNothing" }
     const DoNothingTag = chainTag<DoNothing>("doNothing")
 
     const steps = [] as const
     const prog = objectChain<DoNothing>()(DoNothingTag, steps)
 
-    const input = { _chainTag: "doNothing" as const }
+    const input = { _tag: "doNothing" as const }
     const effect = prog.program(input)
     const r = Effect.runSync(effect)
 
-    assertEquals(r, { _chainTag: "doNothing" })
+    assertEquals(r, { _tag: "doNothing" })
 })
 
 type SendPushNotification = {
-    readonly _chainTag: "sendPushNotification",
+    readonly _tag: "sendPushNotification",
     readonly data: { org_nick: string, user_id: string }
 }
 const SendPushNotificationTag = chainTag<SendPushNotification>("sendPushNotification")
@@ -67,7 +67,7 @@ Deno.test("objectChain mixes fx and pure steps", () => {
     const prog = objectChain<SendPushNotification>()(SendPushNotificationTag, sendPushNotificationSteps)
 
     const input: SendPushNotification = {
-        _chainTag: "sendPushNotification" as const,
+        _tag: "sendPushNotification" as const,
         data: { org_nick: "foo", user_id: "bar" }
     }
     const effect = prog.program(input)
@@ -85,7 +85,7 @@ Deno.test("objectChain mixes fx and pure steps", () => {
 
 Deno.test("addSteps lets you add steps", () => {
     const input: SendPushNotification = {
-        _chainTag: "sendPushNotification" as const,
+        _tag: "sendPushNotification" as const,
         data: { org_nick: "foo", user_id: "bar" }
     }
 
@@ -109,7 +109,7 @@ Deno.test("addSteps lets you add steps", () => {
 
 Deno.test("addStep lets you add a single step", () => {
     const input: SendPushNotification = {
-        _chainTag: "sendPushNotification" as const,
+        _tag: "sendPushNotification" as const,
         data: { org_nick: "foo", user_id: "bar" }
     }
 
@@ -130,7 +130,7 @@ Deno.test("addStep lets you add a single step", () => {
 
 Deno.test("addFxStep and addPureStep add steps", () => {
     const input: SendPushNotification = {
-        _chainTag: "sendPushNotification" as const,
+        _tag: "sendPushNotification" as const,
         data: { org_nick: "foo", user_id: "bar" }
     }
 
@@ -176,7 +176,7 @@ Deno.test("addFxStep and addPureStep add steps", () => {
 })
 
 type GetOrg = {
-    readonly _chainTag: "getOrg",
+    readonly _tag: "getOrg",
     readonly data: { org_nick: string }
 }
 const GetOrgTag = chainTag<GetOrg>("getOrg")
@@ -188,7 +188,7 @@ const runGetOrgChainStepspec =
     k: "runGetOrgChain" as const,
     inFn: (d: { data: { org_nick: string } }) => {
         return {
-            _chainTag: "getOrg" as const,
+            _tag: "getOrg" as const,
             data: { org_nick: d.data.org_nick }
         }
     },
@@ -196,7 +196,7 @@ const runGetOrgChainStepspec =
 }
 
 type SendPushNotificationAndGetOrg = {
-    readonly _chainTag: "sendPushNotificationAndGetOrg",
+    readonly _tag: "sendPushNotificationAndGetOrg",
     readonly data: { org_nick: string, user_id: string }
 }
 const SendPushNotificationAndGetOrgTag = chainTag<SendPushNotificationAndGetOrg>("sendPushNotificationAndGetOrg")
@@ -212,7 +212,7 @@ Deno.test("recursion with RunObjectChainFxFn", () => {
     const prog = objectChain<SendPushNotificationAndGetOrg>()(SendPushNotificationAndGetOrgTag, sendPushNotificationAndGetOrgSteps)
 
     const input: SendPushNotificationAndGetOrg = {
-        _chainTag: "sendPushNotificationAndGetOrg" as const,
+        _tag: "sendPushNotificationAndGetOrg" as const,
         data: { org_nick: "foo", user_id: "bar" }
     }
     const effect = prog.program(input)
@@ -228,7 +228,7 @@ Deno.test("recursion with RunObjectChainFxFn", () => {
         formatPushNotification: "Welcome Bar of Foo",
         sendPush: "push sent OK: Welcome Bar of Foo",
         runGetOrgChain: {
-            _chainTag: "getOrg",
+            _tag: "getOrg",
             data: { org_nick: "foo" },
             org: { id: "foo", name: "Foo" }
         }

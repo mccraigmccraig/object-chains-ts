@@ -49,7 +49,7 @@ export type ObjectChainProgram<Input extends ChainTagged,
 export type ObjectChain<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> = {
         readonly tag: ChainTag<Input>
-        readonly tagStr: Input['_chainTag']
+        readonly tagStr: Input['_tag']
         readonly steps: ChainObjectSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ChainObjectSteps<Steps, Input>
         readonly program: ObjectChainProgram<Input, Steps>
         readonly contextTag: ObjectChainServiceContextTag<Input, Steps>

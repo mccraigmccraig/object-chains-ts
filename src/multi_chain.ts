@@ -36,8 +36,8 @@ export type IndexObjectChainTuple<T extends ReadonlyArray<UPObjectChain>> = {
 // not obvious - the conditional type distribute the value type over a union of Taggeds, resulting in a union of values!
 // https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
 export type DistributeObjectChainValueTypes<I extends ChainTagged, Chains extends readonly [...UPObjectChain[]]> =
-    IndexObjectChainTuple<Chains>[I['_chainTag']] extends UPObjectChain
-    ? ProgramValue<IndexObjectChainTuple<Chains>[I['_chainTag']]>
+    IndexObjectChainTuple<Chains>[I['_tag']] extends UPObjectChain
+    ? ProgramValue<IndexObjectChainTuple<Chains>[I['_tag']]>
     : never
 
 // return a function of the union 
@@ -59,7 +59,7 @@ export function multiChainProgram<Chains extends readonly [...UPObjectChain[]]>
     // we can use Extract to select the value type of the Effect 
     // corresponding to the value type of the chain selected by the input
     return <Input extends ObjectChainsInputU<Chains>>(i: Input) => {
-        const prog = progsByEventTag[i._chainTag]
+        const prog = progsByEventTag[i._tag]
         if (prog != undefined) {
             // so prog.program should be the resolved PureWrapperProgram - but 
             // the type is dependent on the actual type of the input
@@ -68,7 +68,7 @@ export function multiChainProgram<Chains extends readonly [...UPObjectChain[]]>
                 ProgramsErrorsU<Chains>,
                 Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
         } else
-            throw "NoProgram for tag: " + i._chainTag
+            throw "NoProgram for tag: " + i._tag
     }
 }
 
