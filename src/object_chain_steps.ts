@@ -108,7 +108,7 @@ export function objectStepFn<Obj>() {
     return function <Step extends UPObjectStepSpec>
         (step: ConcreteObjectStepSpec<Step> extends Step
             ? Step : ConcreteObjectStepSpec<Step>) {
-        
+
         return function (obj: Obj) {
 
             console.log("CREATE OBJECT STEP FN", step.k, step)
@@ -154,8 +154,8 @@ export type ObjectStepReqs<T extends UPObjectStepSpec> =
     : never
 export type ObjectStepsReqsU<
     Tuple extends readonly [...UPObjectStepSpec[]]> = UnionFromTuple<{
-    +readonly [Index in keyof Tuple]: ObjectStepReqs<Tuple[Index]>
-} & { length: Tuple['length'] }>
+        +readonly [Index in keyof Tuple]: ObjectStepReqs<Tuple[Index]>
+    } & { length: Tuple['length'] }>
 
 // get a union of all the E errors from a tuple of steps. pure steps 
 // declare no errors
@@ -166,8 +166,8 @@ export type ObjectStepErrors<T extends UPObjectStepSpec> =
     : never
 export type ObjectStepsErrorsU<
     Tuple extends readonly [...UPObjectStepSpec[]]> = UnionFromTuple<{
-    +readonly [Index in keyof Tuple]: ObjectStepErrors<Tuple[Index]>
-} & { length: Tuple['length'] }>
+        +readonly [Index in keyof Tuple]: ObjectStepErrors<Tuple[Index]>
+    } & { length: Tuple['length'] }>
 
 // get a tuple of the input types from a tuple of steps
 export type ObjectStepInput<T extends UPObjectStepSpec> =
@@ -177,8 +177,8 @@ export type ObjectStepInput<T extends UPObjectStepSpec> =
     : never
 export type ObjectStepsInputTuple<
     Tuple extends readonly [...UPObjectStepSpec[]]> = {
-    +readonly [Index in keyof Tuple]: ObjectStepInput<Tuple[Index]>
-} & { length: Tuple['length'] }
+        +readonly [Index in keyof Tuple]: ObjectStepInput<Tuple[Index]>
+    } & { length: Tuple['length'] }
 
 // get a tuple of the value types from a tuple of steps
 export type ObjectStepValue<T extends UPObjectStepSpec> =
@@ -188,8 +188,8 @@ export type ObjectStepValue<T extends UPObjectStepSpec> =
     : never
 export type ObjectStepsValueTuple<
     Tuple extends readonly [...UPObjectStepSpec[]]> = {
-    +readonly [Index in keyof Tuple]: ObjectStepValue<Tuple[Index]>
-} & { length: Tuple['length'] }
+        +readonly [Index in keyof Tuple]: ObjectStepValue<Tuple[Index]>
+    } & { length: Tuple['length'] }
 
 
 
@@ -239,7 +239,7 @@ export type ObjectChainSteps<Specs extends readonly [...UPObjectStepSpec[]],
     ? readonly [...StepAcc, UCFxObjectStepSpec<K, ObjAcc, D2, D2, R, E, V>]
     : Head extends UCPureObjectStepSpec<infer K, infer _A, infer V>
     ? readonly [...StepAcc, UCPureObjectStepSpec<K, ObjAcc, V>]
-    : never 
+    : never
 
     // case: there are more specs - add to ObjAcc and StepAcc and recurse
     : Specs extends readonly [infer Head, ...infer Tail]
@@ -259,10 +259,10 @@ export type ObjectChainSteps<Specs extends readonly [...UPObjectStepSpec[]],
     ? ObjectChainSteps<Tail,
         ObjAcc & { readonly [_K in HK]: HV },
         [...StepAcc, UCPureObjectStepSpec<HK, ObjAcc, HV>]>
-    : never 
-    : never 
-    : never 
-    : never 
+    : never
+    : never
+    : never
+    : never
 
 // get the final Object result type from a list of ObjectStepSpecs
 export type ObjectChainStepsReturn<
@@ -275,8 +275,8 @@ export type ObjectChainStepsReturn<
         infer _LR, infer _LE, infer LV>
     // final Object type adds final step output to the final step input type
     ? Expand<LA & { readonly [_K in LK]: LV }>
-    : never 
-    : never 
+    : never
+    : never
 
 // build an Object with a sequence of ObjectStepSpecs. each step adds
 // a new key to the Object

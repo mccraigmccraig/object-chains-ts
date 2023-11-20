@@ -46,7 +46,7 @@ export const invokeServiceFxFn =
     <I, S, K extends keyof S>
         (tag: CheckServiceFxFnTag<I, S, K>, k: K)
         : InvokeServiceFxFnResult<I, S, K> => {
-        
+
         const rf = (d: InvokeServiceFxFnParam<I, S, K>) => {
             return Effect.gen(function* (_) {
                 const svc = yield* _(tag)
