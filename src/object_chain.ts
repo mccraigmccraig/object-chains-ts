@@ -1,13 +1,20 @@
 import { Effect, Context } from "effect"
 import { FxFn } from "./fx_fn.ts"
 import { ChainTagged, ChainTag, chainTagStr } from "./chain_tag.ts"
-import { UnionFromTuple, UCFxObjectStepSpec, UCPureObjectStepSpec, ObjectChainSteps } from "./object_chain_steps.ts"
-import { UPObjectStepSpec, ObjectStepsReqsU, ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg } from "./object_chain_steps.ts"
+import {
+    UnionFromTuple, UCFxObjectStepSpec, UCPureObjectStepSpec,
+    ObjectChainSteps
+} from "./object_chain_steps.ts"
+import {
+    UPObjectStepSpec, ObjectStepsReqsU, ObjectStepsErrorsU,
+    ObjectChainStepsReturn, objectChainStepsProg
+} from "./object_chain_steps.ts"
 
 // a type for a service which can run an ObjectChain
 export type ObjectChainService<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> = {
-        readonly buildObject: (i: Input) => Effect.Effect<ObjectStepsReqsU<Steps>,
+        readonly buildObject: (i: Input) => Effect.Effect<
+            ObjectStepsReqsU<Steps>,
             ObjectStepsErrorsU<Steps>,
             ObjectChainStepsReturn<Steps, Input>>
     }
@@ -34,13 +41,20 @@ export type ObjectChainProgram<Input extends ChainTagged,
         ObjectStepsErrorsU<Steps>,
         ObjectChainStepsReturn<Steps, Input>>
 
-// an ObjectChain is a datastructure defining a series of steps to build an Object.
-// it can be built in a single step with objectChain, or iteratively with addSteps
+// an ObjectChain is a datastructure defining a series of steps to build an 
+// Object. it can be built in a single step with objectChain, or iteratively 
+// with addSteps
 export type ObjectChain<Input extends ChainTagged,
     Steps extends readonly [...UPObjectStepSpec[]]> = {
+
         readonly tag: ChainTag<Input>
         readonly tagStr: Input['_tag']
-        readonly steps: ObjectChainSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ObjectChainSteps<Steps, Input>
+
+        readonly steps:
+        ObjectChainSteps<Steps, Input> extends readonly [...Steps]
+        ? readonly [...Steps]
+        : ObjectChainSteps<Steps, Input>
+
         readonly program: ObjectChainProgram<Input, Steps>
         readonly contextTag: ObjectChainServiceContextTag<Input, Steps>
     }
@@ -62,32 +76,38 @@ export type ObjectChainInput<T extends UPObjectChain> =
     T extends ObjectChain<infer Input, infer _Steps>
     ? Input
     : never
-export type ObjectChainsInputU<Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
-    +readonly [Index in keyof Tuple]: ObjectChainInput<Tuple[Index]>
-} & { length: Tuple['length'] }>
+export type ObjectChainsInputU<
+    Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
+        +readonly [Index in keyof Tuple]: ObjectChainInput<Tuple[Index]>
+    } & { length: Tuple['length'] }>
 
-export type ObjectChainTagStr<T extends UPObjectChain> = 
+export type ObjectChainTagStr<T extends UPObjectChain> =
     T extends ObjectChain<infer _Input, infer _Steps>
     ? T['tagStr']
     : never
-export type ObjectChainsTagStrU<Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
-    +readonly [Index in keyof Tuple]: ObjectChainTagStr<Tuple[Index]>
-} & { length: Tuple['length'] }>
+export type ObjectChainsTagStrU<
+    Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
+        +readonly [Index in keyof Tuple]: ObjectChainTagStr<Tuple[Index]>
+    } & { length: Tuple['length'] }>
 
 export type ObjectChainContextTagId<T extends UPObjectChain> =
     T extends ObjectChain<infer Input, infer _Steps>
     ? ChainTag<Input>
     : never
-export type ObjectChainsContextTagIdU<Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
-    +readonly [Index in keyof Tuple]: ObjectChainContextTagId<Tuple[Index]>
-} & { length: Tuple['length'] }>
+export type ObjectChainsContextTagIdU<
+    Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
+        +readonly [Index in keyof Tuple]: ObjectChainContextTagId<Tuple[Index]>
+    } & { length: Tuple['length'] }>
 
 
 // build an ObjectChain from Steps
 export function objectChain<Input extends ChainTagged>() {
     return function <Steps extends readonly [...UPObjectStepSpec[]]>
         (tag: ChainTag<Input>,
-            steps: ObjectChainSteps<Steps, Input> extends readonly [...Steps] ? readonly [...Steps] : ObjectChainSteps<Steps, Input>) {
+
+            steps: ObjectChainSteps<Steps, Input> extends readonly [...Steps]
+                ? readonly [...Steps]
+                : ObjectChainSteps<Steps, Input>) {
 
         return {
             tag: tag,
@@ -103,14 +123,21 @@ export function objectChain<Input extends ChainTagged>() {
 // "Type instantiation is excessively deep and possibly infinite"
 //
 // i think this is because the depth is  M + 2M + 3M + 4M = M(N+1)/2 = O(N^2)
-// because each step has inference depth M, and a new array is created in each step
-export function addSteps<Input extends ChainTagged,
-    Steps extends readonly [...UPObjectStepSpec[]],
-    AdditionalSteps extends readonly [...UPObjectStepSpec[]]>
+// because each step has inference depth M, and a new array is created 
+// in each step
+export function addSteps
+    <Input extends ChainTagged,
+        Steps extends readonly [...UPObjectStepSpec[]],
+        AdditionalSteps extends readonly [...UPObjectStepSpec[]]>
+
     (chain: ObjectChain<Input, Steps>,
-        additionalSteps: ObjectChainSteps<AdditionalSteps, ObjectChainStepsReturn<Steps, Input>> extends readonly [...AdditionalSteps]
+
+        additionalSteps: ObjectChainSteps<AdditionalSteps,
+            ObjectChainStepsReturn<
+                Steps, Input>> extends readonly [...AdditionalSteps]
             ? readonly [...AdditionalSteps]
-            : ObjectChainSteps<AdditionalSteps, ObjectChainStepsReturn<Steps, Input>>) {
+            : ObjectChainSteps<AdditionalSteps,
+                ObjectChainStepsReturn<Steps, Input>>) {
 
     const newSteps = [...chain.steps, ...additionalSteps] as const
 
@@ -127,7 +154,8 @@ export function addStep<Input extends ChainTagged,
     D2,
     R, E, V>
     (chain: ObjectChain<Input, Steps>,
-        step: UCFxObjectStepSpec<K, ObjectChainStepsReturn<Steps, Input>, D1, D2, R, E, V>) {
+        step: UCFxObjectStepSpec<K, ObjectChainStepsReturn<Steps, Input>,
+            D1, D2, R, E, V>) {
 
     return addSteps(chain, [step] as const)
 }
@@ -168,7 +196,7 @@ export function addPureStep<Input extends ChainTagged,
     return addSteps(chain, steps)
 }
 
-////////////////////////////////// recursion support //////////////////////////////
+////////////////////////////////// recursion support ////////////////////
 
 // idea is that a chain will have an associated service, and we use the 
 // Tag<Input> of the chain to identify the service in a Context.Tag ... 
@@ -178,8 +206,8 @@ export function addPureStep<Input extends ChainTagged,
 
 
 
-// make an ObjectChainService impl with given which will run an ObjectChain for a particular Input,
-// and is identified by chain.contextTag
+// make an ObjectChainService impl with given which will run an ObjectChain 
+// for a particular Input, and is identified by chain.contextTag
 export function objectChainServiceImpl
 
     <Input extends ChainTagged,
