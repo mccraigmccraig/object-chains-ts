@@ -19,9 +19,9 @@ const prog = Effect.gen(function* (_) {
 Deno.test("invokeServiceFxFn retrieves the service and invokes the FxFn",
     () => {
 
-    const runnable = Effect.provide(prog, context)
+        const runnable = Effect.provide(prog, context)
 
-    const r = Effect.runSync(runnable)
+        const r = Effect.runSync(runnable)
 
-    assertEquals(r, { id: "foo", name: "foo" })
-})
+        assertEquals(r, { id: "foo", name: "foo" })
+    })
