@@ -80,9 +80,10 @@ const sendWelcomePushProg = objectChain<SendWelcomePushInput>()(
 
 const programs = [getOrgProg, sendWelcomePushProg] as const
 
-const prog = multiChainProgram(programs)
 
 Deno.test("multiChainProgram runs chains", () => {
+    const prog = multiChainProgram(programs)
+
     const getOrgInput: GetOrgInput = {
         _tag: "GetOrg",
         data: { org_nick: "foo" }
@@ -140,6 +141,26 @@ Deno.test("multiChain runs chains", () => {
         ...getOrgInput,
         org: { id: "foo", name: "Foo" },
         apiResponse: { org: { id: "foo", name: "Foo" } }
+    })
+
+    const sendWelcomePushInput: SendWelcomePushInput = {
+        _tag: "SendWelcomePush",
+        data: { org_nick: "foo", user_id: "100" }
+    }
+
+    // note the inferred Effect value type selects the output of the 
+    // sendWelcomePush chain
+    const sendWelcomePushEffect = mc.program(sendWelcomePushInput)
+    const sendWelcomePushRunnable =
+        Effect.provide(sendWelcomePushEffect, testServiceContext)
+    const sendWelcomePushResult = Effect.runSync(sendWelcomePushRunnable)
+
+    assertEquals(sendWelcomePushResult, {
+        ...sendWelcomePushInput,
+        org: { id: "foo", name: "Foo" },
+        user: { id: "100", name: "Bar" },
+        formatWelcomePush: "Welcome Bar of Foo",
+        sendPush: "push sent OK: Welcome Bar of Foo"
     })
 })
 
