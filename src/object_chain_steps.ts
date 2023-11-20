@@ -291,6 +291,7 @@ export function objectChainStepsProg<Obj>() {
             ? readonly [...Specs]
             : ObjectChainSteps<Specs, Obj>) {
 
+        // deno-lint-ignore no-explicit-any
         const stepFns: any[] = objectStepSpecs.map(
             // deno-lint-ignore no-explicit-any
             (step) => objectStepFn()(step as any))
