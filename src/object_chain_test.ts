@@ -1,20 +1,28 @@
 import { assertEquals } from "assert"
 import { Effect } from "effect"
 import { chainTag } from "./chain_tag.ts"
-import { objectChain, addSteps, addStep, addFxStep, addPureStep, objectChainFxFn, provideObjectChainServiceImpl } from "./object_chain.ts"
-import { Org, getOrgByNick, User, getUserByIds, sendPush, testServiceContext } from "./test_services.ts"
+import {
+    objectChain, addSteps, addStep, addFxStep, addPureStep,
+    objectChainFxFn, provideObjectChainServiceImpl
+} from "./object_chain.ts"
+import {
+    Org, getOrgByNick, User, getUserByIds, sendPush,
+    testServiceContext
+} from "./test_services.ts"
 
-const getOrgObjectStepSpec /* : ObjectStepSpec<"org", { data: { org_nick: string } }, string, OrgService, never, Org> */ =
+const getOrgObjectStepSpec =
 {
     k: "org" as const,
     inFn: (d: { data: { org_nick: string } }) => d.data.org_nick,
     fxFn: getOrgByNick
 }
-const getUserObjectStepSpec /* : ObjectStepSpec<"user", { data: { user_id: string }, org: Org }, {org_id: string, user_id: string}, UserService, never, User> */ =
+const getUserObjectStepSpec =
 {
     k: "user" as const,
     // note that this fn depends on the output of an OrgServiceI.getBy* step
-    inFn: (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
+    inFn: (d: { data: { user_id: string }, org: Org }) => {
+        return { org_id: d.org.id, user_id: d.data.user_id }
+    },
     fxFn: getUserByIds
 }
 
@@ -55,7 +63,8 @@ type SendPushNotification = {
     readonly _tag: "sendPushNotification",
     readonly data: { org_nick: string, user_id: string }
 }
-const SendPushNotificationTag = chainTag<SendPushNotification>("sendPushNotification")
+const SendPushNotificationTag =
+    chainTag<SendPushNotification>("sendPushNotification")
 
 const sendPushNotificationSteps = [getOrgObjectStepSpec,
     getUserObjectStepSpec,
@@ -64,7 +73,8 @@ const sendPushNotificationSteps = [getOrgObjectStepSpec,
 
 Deno.test("objectChain mixes fx and pure steps", () => {
 
-    const prog = objectChain<SendPushNotification>()(SendPushNotificationTag, sendPushNotificationSteps)
+    const prog = objectChain<SendPushNotification>()(SendPushNotificationTag,
+        sendPushNotificationSteps)
 
     const input: SendPushNotification = {
         _tag: "sendPushNotification" as const,
@@ -89,14 +99,16 @@ Deno.test("addSteps lets you add steps", () => {
         data: { org_nick: "foo", user_id: "bar" }
     }
 
-    const emptyProg = objectChain<SendPushNotification>()(SendPushNotificationTag, [])
+    const emptyProg = objectChain<SendPushNotification>()(
+        SendPushNotificationTag, [])
     const emptyEffect = emptyProg.program(input)
     const emptyResult = Effect.runSync(emptyEffect)
     assertEquals(emptyResult, input)
 
     const sendPushProg = addSteps(emptyProg, sendPushNotificationSteps)
     const sendPushProgEffect = sendPushProg.program(input)
-    const sendPushProgRunnable = Effect.provide(sendPushProgEffect, testServiceContext)
+    const sendPushProgRunnable = Effect.provide(sendPushProgEffect,
+        testServiceContext)
     const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
     assertEquals(sendPushProgResult, {
         ...input,
@@ -113,11 +125,13 @@ Deno.test("addStep lets you add a single step", () => {
         data: { org_nick: "foo", user_id: "bar" }
     }
 
-    const shortProg = objectChain<SendPushNotification>()(SendPushNotificationTag,
+    const shortProg = objectChain<SendPushNotification>()(
+        SendPushNotificationTag,
         sendPushNotificationSteps.slice(0, 3))
     const sendPushProg = addStep(shortProg, sendPushNotificationSteps[3])
     const sendPushProgEffect = sendPushProg.program(input)
-    const sendPushProgRunnable = Effect.provide(sendPushProgEffect, testServiceContext)
+    const sendPushProgRunnable = Effect.provide(sendPushProgEffect,
+        testServiceContext)
     const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
     assertEquals(sendPushProgResult, {
         ...input,
@@ -134,7 +148,8 @@ Deno.test("addFxStep and addPureStep add steps", () => {
         data: { org_nick: "foo", user_id: "bar" }
     }
 
-    const noSteps = objectChain<SendPushNotification>()(SendPushNotificationTag, [])
+    const noSteps = objectChain<SendPushNotification>()(
+        SendPushNotificationTag, [])
 
     const oneStep = addFxStep(noSteps,
         "org",
@@ -142,11 +157,15 @@ Deno.test("addFxStep and addPureStep add steps", () => {
         getOrgByNick)
     const twoSteps = addFxStep(oneStep,
         "user",
-        (d: { data: { user_id: string }, org: Org }) => { return { org_id: d.org.id, user_id: d.data.user_id } },
+        (d: { data: { user_id: string }, org: Org }) => {
+            return { org_id: d.org.id, user_id: d.data.user_id }
+        },
         getUserByIds)
     const threeSteps = addPureStep(twoSteps,
         "formatPushNotification",
-        (d: { org: Org, user: User }) => { return "Welcome " + d.user.name + " of " + d.org.name }
+        (d: { org: Org, user: User }) => {
+            return "Welcome " + d.user.name + " of " + d.org.name
+        }
     )
     // const sendPushProg = addFxStep(threeSteps,
     //     "sendPush",
@@ -156,15 +175,19 @@ Deno.test("addFxStep and addPureStep add steps", () => {
     //     sendPush)
 
     const sendPushProgEffect = threeSteps.program(input)
-    // four steps is enough to trigger the "Type instantiation is excessively deep and possibly infinite" error
-    // so it seems the combination of iterative additions and inference over a list causes a
-    // combinatorial explosion
+    // four steps is enough to trigger the "Type instantiation is excessively 
+    // deep and possibly infinite" error
+    // so it seems the combination of iterative additions and inference over
+    // a list causes a combinatorial explosion
     // const fourStepsEffect = sendPushProg.program(input)
-    
-    // i think this is because the depth is  M + 2M + 3M + 4M = M(N+1)/2 = O(N^2)
-    // because each step has inference depth M, and a new array is created in each step
 
-    const sendPushProgRunnable = Effect.provide(sendPushProgEffect, testServiceContext)
+    // i think this is because the depth is
+    // M + 2M + 3M + 4M = M(N + 1) / 2 = O(N ^ 2)
+    // because each step has inference depth M, and a new array is created
+    //     in each step
+
+    const sendPushProgRunnable =
+        Effect.provide(sendPushProgEffect, testServiceContext)
     const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
     assertEquals(sendPushProgResult, {
         ...input,
@@ -199,7 +222,8 @@ type SendPushNotificationAndGetOrg = {
     readonly _tag: "sendPushNotificationAndGetOrg",
     readonly data: { org_nick: string, user_id: string }
 }
-const SendPushNotificationAndGetOrgTag = chainTag<SendPushNotificationAndGetOrg>("sendPushNotificationAndGetOrg")
+const SendPushNotificationAndGetOrgTag =
+    chainTag<SendPushNotificationAndGetOrg>("sendPushNotificationAndGetOrg")
 
 const sendPushNotificationAndGetOrgSteps = [
     getOrgObjectStepSpec,
@@ -209,7 +233,8 @@ const sendPushNotificationAndGetOrgSteps = [
     runGetOrgChainStepspec] as const
 
 Deno.test("recursion with RunObjectChainFxFn", () => {
-    const prog = objectChain<SendPushNotificationAndGetOrg>()(SendPushNotificationAndGetOrgTag, sendPushNotificationAndGetOrgSteps)
+    const prog = objectChain<SendPushNotificationAndGetOrg>()(
+        SendPushNotificationAndGetOrgTag, sendPushNotificationAndGetOrgSteps)
 
     const input: SendPushNotificationAndGetOrg = {
         _tag: "sendPushNotificationAndGetOrg" as const,
