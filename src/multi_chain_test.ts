@@ -78,11 +78,8 @@ const sendWelcomePushProg = objectChain<SendWelcomePushInput>()(
 
 ////////////////////////// multiChain for getOrg and sendWelcomePush
 
-const programs = [getOrgProg, sendWelcomePushProg] as const
-
-
 Deno.test("multiChainProgram runs chains", () => {
-    const prog = multiChainProgram(programs)
+    const prog = multiChainProgram([getOrgProg, sendWelcomePushProg])
 
     const getOrgInput: GetOrgInput = {
         _tag: "GetOrg",
@@ -123,7 +120,7 @@ Deno.test("multiChainProgram runs chains", () => {
 })
 
 Deno.test("multiChain runs chains", () => {
-    const mc = multiChain(programs)
+    const mc = multiChain([getOrgProg, sendWelcomePushProg])
 
     const getOrgInput: GetOrgInput = {
         _tag: "GetOrg",
@@ -166,7 +163,7 @@ Deno.test("multiChain runs chains", () => {
 
 Deno.test("addChains adds to a multiChain", () => {
     const emptyMultiChain = multiChain([])
-    const mc = addChains(emptyMultiChain, programs)
+    const mc = addChains(emptyMultiChain, [getOrgProg, sendWelcomePushProg])
 
     const getOrgInput: GetOrgInput = {
         _tag: "GetOrg",
@@ -238,7 +235,10 @@ const sendWelcomePushAndUpdateUserStepsChain =
         sendWelcomePushAndUpdateUserSteps
     )
 
-Deno.test("recursion with objectChainServicesContext", () => {
+Deno.test("recursion with multiChainServicesContext", () => {
+    // both the directly invoked chain and the 
+    // recursively invoked chain must be in the 
+    // MultiChain
     const mc = multiChain([
         getOrgProg,
         sendWelcomePushProg,
