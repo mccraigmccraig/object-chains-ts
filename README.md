@@ -1,7 +1,5 @@
 # object-chains-ts
 
-This is a starter template for building Deno packages in TypeScript, with GitHub Actions-powered CI, tests, CLI, and Semantic Release on GitHub and npm.
-
 [![CI](https://github.com/mccraigmccraig/object-chains-ts/actions/workflows/test.yml/badge.svg)](https://github.com/mccraigmccraig/object-chains-ts/actions/workflows/test.yml)
 [![GitHub](https://img.shields.io/github/license/mccraigmccraig/object-chains-ts)](https://github.com/mccraigmccraig/object-chains-ts/blob/master/LICENSE)
 [![Contributors](https://img.shields.io/github/contributors/mccraigmccraig/object-chains-ts)](https://github.com/mccraigmccraig/object-chains-ts/graphs/contributors)
@@ -11,8 +9,14 @@ This is a starter template for building Deno packages in TypeScript, with GitHub
 
 ## ⭐ Getting started
 
+`object-chains` helps you create data-driven programs to process messages or 
+events.  A program to process a single type of value is built from a chain
+of effectful or pure steps, and such programs can be composed and can even
+recurse. It leans heavily on the awesome power of 
+[Effect](https://github.com/Effect-TS/effect)
 
 ```ts
+
 ```
 
 
