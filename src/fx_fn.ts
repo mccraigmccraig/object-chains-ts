@@ -8,13 +8,16 @@ export type FxFn<D, R, E, V> = (d: D) => Effect.Effect<R, E, V>
 // deno-lint-ignore no-explicit-any
 export type UPFxFn = (d: any) => Effect.Effect<any, any, any>
 
-export type UPFxFnReqs<T extends UPFxFn> = ReturnType<T> extends Effect.Effect<infer R, infer _E, infer _V>
+export type UPFxFnReqs<T extends UPFxFn> =
+    ReturnType<T> extends Effect.Effect<infer R, infer _E, infer _V>
     ? R
     : never
-export type UPFxFnErrors<T extends UPFxFn> = ReturnType<T> extends Effect.Effect<infer _R, infer E, infer _V>
+export type UPFxFnErrors<T extends UPFxFn> =
+    ReturnType<T> extends Effect.Effect<infer _R, infer E, infer _V>
     ? E
     : never
-export type UPFxFnValue<T extends UPFxFn> = ReturnType<T> extends Effect.Effect<infer _R, infer _E, infer V>
+export type UPFxFnValue<T extends UPFxFn> =
+    ReturnType<T> extends Effect.Effect<infer _R, infer _E, infer V>
     ? V
     : never
 
@@ -39,19 +42,24 @@ type InvokeServiceFxFnParam<_I, S, K extends keyof S> =
 // makes an FxFn, by looking up an FxFn from 
 // a service and invoking it. Adds the service into R. the
 // boilerplate of fetching the service disappears
-export const invokeServiceFxFn = <I, S, K extends keyof S>(tag: CheckServiceFxFnTag<I, S, K>, k: K): InvokeServiceFxFnResult<I, S, K> => {
-    const rf = (d: InvokeServiceFxFnParam<I, S, K>) => {
-        return Effect.gen(function* (_) {
-            const svc = yield* _(tag)
-            const fn = svc[k]
+export const invokeServiceFxFn =
+    <I, S, K extends keyof S>
+        (tag: CheckServiceFxFnTag<I, S, K>, k: K)
+        : InvokeServiceFxFnResult<I, S, K> => {
+        
+        const rf = (d: InvokeServiceFxFnParam<I, S, K>) => {
+            return Effect.gen(function* (_) {
+                const svc = yield* _(tag)
+                const fn = svc[k]
 
-            if (typeof fn === 'function') {
-                const r = yield* _(fn(d))
-                return r
-            } else {
-                throw new Error("no FxFn: " + tag.toString() + ", " + k.toString())
-            }
-        })
+                if (typeof fn === 'function') {
+                    const r = yield* _(fn(d))
+                    return r
+                } else {
+                    throw new Error("no FxFn: " +
+                        tag.toString() + ", " + k.toString())
+                }
+            })
+        }
+        return rf as InvokeServiceFxFnResult<I, S, K>
     }
-    return rf as InvokeServiceFxFnResult<I, S, K>
-}
