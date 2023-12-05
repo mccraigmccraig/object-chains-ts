@@ -25,7 +25,8 @@ export type Cons<T, C = None> =
     // it murders the compiler
     : never
 
-// build a cons from 
+// prepend an element to a cons list (or 
+// start a cons list by prepending to None)
 export function cons<T>() {
     return function <V extends T, const C>(
         v: V,
@@ -34,12 +35,7 @@ export function cons<T>() {
     }
 }
 
-// iteratively build a cons list
-export const a = cons<number>()(10, None)
-export const b = cons<number>()(11, a)
-export const c = cons<number>()(12, b)
-
-export type First<T, C> =
+type First<T, C> =
     C extends Cons<T, C>
     ? C extends None
     ? None
@@ -48,7 +44,7 @@ export type First<T, C> =
     : never
     : never
 
-// get the head element from a cons list
+// get the first element from a cons list
 export function first<T>() {
     return function <const C>(c: C extends Cons<T, C> ? C : Cons<T, C>)
         : First<T, C> {
@@ -62,12 +58,7 @@ export function first<T>() {
     }
 }
 
-export const hn = first<number>()(None)
-export const ha = first<number>()(a)
-export const hb = first<number>()(b)
-export const hc = first<number>()(c)
-
-export type Rest<T, C> =
+type Rest<T, C> =
     C extends Cons<T, C>
     ? C extends None
     ? None
@@ -90,6 +81,18 @@ export function rest<T>() {
     }
 }
 
+// itereatively build a list
+export const a = cons<number>()(10, None)
+export const b = cons<number>()(11, a)
+export const c = cons<number>()(12, b)
+
+// get some first elements
+export const hn = first<number>()(None)
+export const ha = first<number>()(a)
+export const hb = first<number>()(b)
+export const hc = first<number>()(c)
+
+// get some rests
 export const ra = rest()(a)
 export const rb = rest()(b)
 export const rc = rest()(c)
