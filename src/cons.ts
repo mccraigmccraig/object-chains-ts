@@ -81,10 +81,35 @@ export function rest<T>() {
     }
 }
 
+type Reverse<T, C, Acc = None> = 
+    C extends Cons<T, C> 
+    ? C extends None 
+    ? Acc 
+    : C extends readonly [infer F extends T, infer R]
+    ? Reverse<T, R, readonly [F, Acc]> 
+    : never 
+    : never
+
+export function reverse<T>() {
+    return function <const C>(c: C extends Cons<T, C> ? C : Cons<T, C>)
+        : Reverse<T, C> {
+        
+        let result: Cons<T> = None
+        let cursor = c 
+        while (!('_tag' in cursor)) {
+            // deno-lint-ignore no-explicit-any
+            result = [cursor[0], result] as const as any
+            cursor = cursor[1]
+        }
+        
+        return result as Reverse<T, C>
+    }
+}
+
 // itereatively build a list
-export const a = cons<number>()(10, None)
-export const b = cons<number>()(11, a)
-export const c = cons<number>()(12, b)
+export const a = cons<number>()(2, None)
+export const b = cons<number>()(1, a)
+export const c = cons<number>()(0, b)
 
 // get some first elements
 export const hn = first<number>()(None)
@@ -96,3 +121,9 @@ export const hc = first<number>()(c)
 export const ra = rest()(a)
 export const rb = rest()(b)
 export const rc = rest()(c)
+
+// reverse a list
+export const revn = reverse<number>()(None)
+export const reva = reverse<number>()(a)
+export const revb = reverse<number>()(b)
+export const revc = reverse<number>()(c)
