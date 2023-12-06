@@ -180,10 +180,10 @@ export type FromTuple<T,
     Acc extends NRCons<T> = None> =
 
     Tuple extends readonly []
-    ? Reverse<T, Acc>
-    : Tuple extends readonly [infer Head extends T,
-        ...infer Tail]
-    ? FromTuple<T, Tail, readonly [Head, Acc]>
+    ? Acc
+    : Tuple extends readonly [...infer Front,
+        infer Last extends T]
+    ? FromTuple<T, Front, readonly [Last, Acc]>
     : never
 
 export function fromTuple<T>() {
