@@ -83,7 +83,10 @@ Deno.test("objectChainStepsProg chains steps", () => {
     const stepSpecs = [
         getOrgObjectStepSpec,
         [getUserObjectStepSpec,
-            [formatUserStepSpec, None] as const] as const
+            [formatUserStepSpec,
+                None
+            ] as const
+        ] as const
     ] as const
 
     const chainEffect = objectChainStepsProg<INPUT>()(stepSpecs)(input)

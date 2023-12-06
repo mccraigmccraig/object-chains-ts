@@ -1,6 +1,6 @@
 import { Effect } from "effect"
 import { FxFn, UPFxFn } from "./fx_fn.ts"
-import { None, NRCons, Last, Append } from "./cons.ts"
+import { None, NRCons, Last, toTuple} from "./cons.ts"
 
 // inspiration:
 // https://dev.to/ecyrbe/how-to-use-advanced-typescript-to-define-a-pipe-function-381h
@@ -278,9 +278,11 @@ export function objectChainStepsProg<Obj>() {
             : ObjectChainSteps<Specs, Obj>) {
 
         // deno-lint-ignore no-explicit-any
-        const stepFns: any[] = objectStepSpecs.map(
+        const stepFns: any[] =
             // deno-lint-ignore no-explicit-any
-            (step) => objectStepFn()(step as any))
+            toTuple<UPObjectStepSpec>()(objectStepSpecs as any).map(
+                // deno-lint-ignore no-explicit-any
+                (step) => objectStepFn()(step as any))
 
         const r = stepFns.reduce(
             (prev, stepFn) => {
@@ -309,4 +311,3 @@ export function objectChainStepsProg<Obj>() {
             ObjectChainStepsReturn<Specs, Obj>>
     }
 }
-
