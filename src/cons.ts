@@ -206,9 +206,6 @@ export const a = cons<number>()(2, None)
 export const b = cons<number>()(1, a)
 export const c = cons<number>()(0, b)
 
-declare const f: readonly [number, None]
-export const g = cons<number>()(10, f)
-
 // get some first elements
 export const hn = first<number>()(None)
 export const ha = first<number>()(a)
