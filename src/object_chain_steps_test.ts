@@ -1,7 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect } from "effect"
 import { None } from "./cons.ts"
-import { objectStepFn, objectChainStepsProg } from "./object_chain_steps_cons.ts"
+import { objectStepFn, objectChainStepsProg } from "./object_chain_steps.ts"
 import {
     Org, User, getOrgByNick, getUserByIds,
     testServiceContext
