@@ -58,7 +58,7 @@ export type UCObjectStepSpec<K extends string, A, D1, D2, R, E, V> =
 
 ////////////////////// UnParameterised steps ///////////////////////////
 
-// UnParameterised steps can be used to roughly type tuples of steps, 
+// UnParameterised steps can be used to roughly type lists of steps, 
 // and we can guarantee that the conditional inferences on the 
 // UnParameterised types will always reach a non-never leaf node,
 // which may then deliver a sensible error to the user
@@ -242,10 +242,10 @@ export type ObjectChainSteps<
         infer FK, infer _FA, infer _FD1, infer FD2,
         infer FR, infer FE, infer FV>
     // recurse - note constraint FD1==FD2
-    ? [UCFxObjectStepSpec<FK, ObjAcc, FD2, FD2, FR, FE, FV>,
+    ? readonly [UCFxObjectStepSpec<FK, ObjAcc, FD2, FD2, FR, FE, FV>,
         ObjectChainSteps<Rest, ObjAcc & { readonly [_K in FK]: FV }>]
     : First extends UCPureObjectStepSpec<infer FK, infer _FA, infer FV>
-    ? [UCPureObjectStepSpec<FK, ObjAcc, FV>,
+    ? readonly [UCPureObjectStepSpec<FK, ObjAcc, FV>,
         ObjectChainSteps<Rest, ObjAcc & { readonly [_K in FK]: FV }>]
     : never
     : never

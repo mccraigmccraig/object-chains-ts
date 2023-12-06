@@ -1,6 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect } from "effect"
-import { objectStepFn, objectChainStepsProg } from "./object_chain_steps.ts"
+import { None } from "./cons.ts"
+import { objectStepFn, objectChainStepsProg } from "./object_chain_steps_cons.ts"
 import {
     Org, User, getOrgByNick, getUserByIds,
     testServiceContext
@@ -69,7 +70,7 @@ Deno.test("objectChainStepsProg empty chain", () => {
     type DoNothing = { data: { org_nick: string } }
     const doNothing = { data: { org_nick: "foo" } }
 
-    const chainEffect = objectChainStepsProg<DoNothing>()([])(doNothing)
+    const chainEffect = objectChainStepsProg<DoNothing>()(None)(doNothing)
     const r = Effect.runSync(chainEffect)
     assertEquals(r, doNothing)
 })
@@ -78,6 +79,12 @@ Deno.test("objectChainStepsProg chains steps", () => {
 
     type INPUT = { data: { org_nick: string, user_id: string } }
     const input = { data: { org_nick: "foo", user_id: "100" } }
+
+    const stepSpecs = [
+        getOrgObjectStepSpec,
+        [getUserObjectStepSpec,
+            [formatUserStepSpec, None] as const] as const
+    ] as const
 
     const chainEffect = objectChainStepsProg<INPUT>()(stepSpecs)(input)
 
