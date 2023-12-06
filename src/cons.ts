@@ -191,8 +191,7 @@ export function fromTuple<T>() {
         <const Tuple extends readonly [...T[]]>
         (tuple: Tuple) {
 
-        const reversed = tuple.toReversed()
-        const list = reversed.reduce(
+        const list = tuple.toReversed().reduce(
             // deno-lint-ignore no-explicit-any
             (l, v) => cons<T>()(v, l) as any,
             None
