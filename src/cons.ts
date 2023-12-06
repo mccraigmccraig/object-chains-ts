@@ -91,8 +91,7 @@ export type Last<T, C> =
     : never
 
 export function last<T>() {
-    return function <const C>(c: C extends Cons<T, C> ? C : Cons<T, C>)
-        : Last<T, C> {
+    return function <const C>(c: C extends Cons<T, C> ? C : Cons<T, C>) {
 
         let result: Cons<T, None> = None
         let cursor = c
@@ -103,31 +102,30 @@ export function last<T>() {
         }
 
         return result as Last<T, C>
-        
+
     }
 }
 
-export type Reverse<T, C, Acc = None> = 
-    C extends Cons<T, C> 
-    ? C extends None 
-    ? Acc 
+export type Reverse<T, C, Acc = None> =
+    C extends Cons<T, C>
+    ? C extends None
+    ? Acc
     : C extends readonly [infer F extends T, infer R]
-    ? Reverse<T, R, readonly [F, Acc]> 
-    : never 
+    ? Reverse<T, R, readonly [F, Acc]>
+    : never
     : never
 
 export function reverse<T>() {
-    return function <const C>(c: C extends Cons<T, C> ? C : Cons<T, C>)
-        : Reverse<T, C> {
-        
+    return function <const C>(c: C extends Cons<T, C> ? C : Cons<T, C>) {
+
         let result: Cons<T, None> = None
-        let cursor = c 
+        let cursor = c
         while (!('_tag' in cursor)) {
             // deno-lint-ignore no-explicit-any
             result = [cursor[0], result] as const as any
             cursor = cursor[1]
         }
-        
+
         return result as Reverse<T, C>
     }
 }
@@ -144,12 +142,63 @@ export type Append<T, C, V extends T> =
 export function append<T>() {
     return function <const C, V extends T>(
         c: C extends Cons<T, C> ? C : Cons<T, C>,
-        v: V): Append<T, C, V> {
+        v: V) {
 
         // deno-lint-ignore no-explicit-any
         const reversed = reverse<T>()(c) as any
         const prepended = cons<T>()(v, reversed)
         return reverse<T>()(prepended) as Append<T, C, V>
+    }
+}
+
+export type ToTuple<T, C, Acc extends readonly T[] = []> =
+    C extends None
+    ? Acc
+    : C extends readonly [infer F extends T, infer R]
+    ? ToTuple<T, R, readonly [...Acc, F]>
+    : never
+
+export function toTuple<T>() {
+    return function
+        <const C>
+        (c: C extends Cons<T, C> ? C : Cons<T, C>) {
+        
+        const result = []
+        let cursor = c
+        while (!('_tag' in cursor)) {
+            result.push(cursor[0])
+            cursor = cursor[1]
+        }
+
+        return result as ToTuple<T, C> 
+    }
+}
+
+export type FromTuple<T,
+    // deno-lint-ignore no-explicit-any
+    Tuple extends readonly [...any[]],
+    Acc extends NRCons<T> = None> =
+
+    Tuple extends readonly []
+    ? Reverse<T, Acc>
+    : Tuple extends readonly [infer Head extends T,
+        ...infer Tail]
+    ? FromTuple<T, Tail, readonly [Head, Acc]>
+    : never
+
+export function fromTuple<T>() {
+    return function
+        <const Tuple extends readonly [...T[]]>
+        (tuple: Tuple) {
+
+        const reversed = tuple.toReversed()
+        const list = reversed.reduce(
+            // deno-lint-ignore no-explicit-any
+            (l, v) => cons<T>()(v, l) as any,
+            None
+        )
+
+        return list as FromTuple<T, Tuple>
     }
 }
 
@@ -190,3 +239,14 @@ export const appn = append<number>()(None, 100)
 export const appa = append<number>()(a, 100)
 export const appb = append<number>()(b, 100)
 export const appc = append<number>()(c, 100)
+
+// convert to a tuple 
+export const tupn = toTuple<number>()(None)
+export const tupa = toTuple<number>()(a)
+export const tupb = toTuple<number>()(b)
+export const tupc = toTuple<number>()(c)
+
+// convert from tuple 
+export const ftupn = fromTuple<number>()([])
+export const ftupa = fromTuple<number>()([0])
+export const ftupb = fromTuple<number>()([0, 1, 2, 3])
