@@ -1,199 +1,177 @@
 import { Effect, Context } from "effect"
 import { FxFn } from "./fx_fn.ts"
-import { ChainTagged, ChainTag, chainTagStr } from "./chain_tag.ts"
+import * as cons from "./cons.ts"
+import { ChainTagged, ChainTag } from "./chain_tag.ts"
+import * as ctag from "./chain_tag.ts"
 import {
-    UnionFromTuple, UCFxObjectStepSpec, UCPureObjectStepSpec,
-    ObjectChainSteps
+    UCFxObjectStepSpec, UCPureObjectStepSpec,
+    ObjectChainSteps, UPObjectStepSpec,
+    ObjectStepsReqsU as _, ObjectStepsTupleReqsU,
+    ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg,
 } from "./object_chain_steps.ts"
-import {
-    UPObjectStepSpec, ObjectStepsReqsU, ObjectStepsErrorsU,
-    ObjectChainStepsReturn, objectChainStepsProg
-} from "./object_chain_steps.ts"
+
+// an effectful function of Input which build an Object
+export type ObjectChainProgram<Input extends ChainTagged,
+    Steps extends cons.NRCons<UPObjectStepSpec>> =
+    (i: Input) => Effect.Effect<
+        ObjectStepsTupleReqsU<Steps>,
+        ObjectStepsErrorsU<Steps>,
+        ObjectChainStepsReturn<Steps, Input>
+    >
 
 // a type for a service which can run an ObjectChain
 export type ObjectChainService<Input extends ChainTagged,
-    Steps extends readonly [...UPObjectStepSpec[]]> = {
-        readonly buildObject: (i: Input) => Effect.Effect<
-            ObjectStepsReqsU<Steps>,
-            ObjectStepsErrorsU<Steps>,
-            ObjectChainStepsReturn<Steps, Input>>
+    Steps extends cons.NRCons<UPObjectStepSpec>> = {
+        readonly buildObject: ObjectChainProgram<Input, Steps>
     }
 
 export type ObjectChainServiceContextTag<Input extends ChainTagged,
-    Steps extends readonly [...UPObjectStepSpec[]]> =
+    Steps extends cons.NRCons<UPObjectStepSpec>> =
     Context.Tag<ChainTag<Input>, ObjectChainService<Input, Steps>>
 
 // get a Context.Tag for an ObjectChainService
 export function objectChainServiceContextTag
-
     <Input extends ChainTagged,
-        Steps extends readonly [...UPObjectStepSpec[]]>
-
+        Steps extends cons.NRCons<UPObjectStepSpec>>
     () {
-
     return Context.Tag<ChainTag<Input>, ObjectChainService<Input, Steps>>()
 }
-
-// a function of Input which build an Object
-export type ObjectChainProgram<Input extends ChainTagged,
-    Steps extends readonly [...UPObjectStepSpec[]]> =
-    (i: Input) => Effect.Effect<ObjectStepsReqsU<Steps>,
-        ObjectStepsErrorsU<Steps>,
-        ObjectChainStepsReturn<Steps, Input>>
 
 // an ObjectChain is a datastructure defining a series of steps to build an 
 // Object. it can be built in a single step with objectChain, or iteratively 
 // with addSteps
 export type ObjectChain<Input extends ChainTagged,
-    Steps extends readonly [...UPObjectStepSpec[]]> = {
+    Steps extends cons.NRCons<UPObjectStepSpec>> = {
 
         readonly tag: ChainTag<Input>
         readonly tagStr: Input['_tag']
 
-        readonly steps:
-        ObjectChainSteps<Steps, Input> extends readonly [...Steps]
-        ? readonly [...Steps]
-        : ObjectChainSteps<Steps, Input>
+        readonly steps: Steps
+        // ObjectChainSteps<Steps, Input> extends Steps
+        // ? Steps
+        // : ObjectChainSteps<Steps, Input>
 
         readonly program: ObjectChainProgram<Input, Steps>
         readonly contextTag: ObjectChainServiceContextTag<Input, Steps>
     }
 
-// an unparameterised version of ObjectChain for typing tuples
+// an unparameterised version of ObjectChain for typing lists
 export type UPObjectChain = {
     // deno-lint-ignore no-explicit-any
     readonly tag: any
     readonly tagStr: string
-    readonly steps: readonly [...UPObjectStepSpec[]]
+    readonly steps: cons.NRCons<UPObjectStepSpec>
     // deno-lint-ignore no-explicit-any
     readonly program: (i: any) => Effect.Effect<any, any, any>
     // deno-lint-ignore no-explicit-any
     readonly contextTag: Context.Tag<any, any>
 }
 
-// union of all the inputs from a tuple of chains
-export type ObjectChainInput<T extends UPObjectChain> =
-    T extends ObjectChain<infer Input, infer _Steps>
-    ? Input
-    : never
-export type ObjectChainsInputU<
-    Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
-        +readonly [Index in keyof Tuple]: ObjectChainInput<Tuple[Index]>
-    } & { length: Tuple['length'] }>
-
-export type ObjectChainTagStr<T extends UPObjectChain> =
-    T extends ObjectChain<infer _Input, infer _Steps>
-    ? T['tagStr']
-    : never
-export type ObjectChainsTagStrU<
-    Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
-        +readonly [Index in keyof Tuple]: ObjectChainTagStr<Tuple[Index]>
-    } & { length: Tuple['length'] }>
-
-export type ObjectChainContextTagId<T extends UPObjectChain> =
-    T extends ObjectChain<infer Input, infer _Steps>
-    ? ChainTag<Input>
-    : never
-export type ObjectChainsContextTagIdU<
-    Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
-        +readonly [Index in keyof Tuple]: ObjectChainContextTagId<Tuple[Index]>
-    } & { length: Tuple['length'] }>
-
-
 // build an ObjectChain from Steps
 export function objectChain<Input extends ChainTagged>() {
-    return function <Steps extends readonly [...UPObjectStepSpec[]]>
+    return function <Steps extends cons.NRCons<UPObjectStepSpec>>
         (tag: ChainTag<Input>,
 
-            steps: ObjectChainSteps<Steps, Input> extends readonly [...Steps]
-                ? readonly [...Steps]
+            steps: ObjectChainSteps<Steps, Input> extends Steps
+                ? Steps
                 : ObjectChainSteps<Steps, Input>) {
 
+        const tagStr = ctag.tag(tag)
+        const program = objectChainStepsProg<Input>()(steps)
+        const contextTag = objectChainServiceContextTag<Input, Steps>()
+
+        // TODO find out why the parameterised as causes 
+        // too-deep type instantiation
         return {
-            tag: tag,
-            tagStr: chainTagStr(tag),
-            steps: steps,
-            program: objectChainStepsProg<Input>()(steps),
-            contextTag: objectChainServiceContextTag<Input, Steps>()
-        } as ObjectChain<Input, Steps>
+            tag,
+            tagStr,
+            steps,
+            program,
+            contextTag
+        } as UPObjectChain // as ObjectChain<Input, Steps>
     }
 }
 
-// warning - doesn't work well - quickly gets to 
-// "Type instantiation is excessively deep and possibly infinite"
-//
-// i think this is because the depth is  M + 2M + 3M + 4M = M(N+1)/2 = O(N^2)
-// because each step has inference depth M, and a new array is created 
-// in each step
-export function addSteps
+export function addFxStep
     <Input extends ChainTagged,
-        Steps extends readonly [...UPObjectStepSpec[]],
-        AdditionalSteps extends readonly [...UPObjectStepSpec[]]>
+        Steps extends cons.NRCons<UPObjectStepSpec>,
+        K extends string,
+        D1 extends D2,
+        D2,
+        R, E, V,
+        NewStep extends UCFxObjectStepSpec<K,
+            ObjectChainStepsReturn<Steps, Input>,
+            D1, D2, R, E, V>>
 
     (chain: ObjectChain<Input, Steps>,
+        step: NewStep) {
 
-        additionalSteps: ObjectChainSteps<AdditionalSteps,
-            ObjectChainStepsReturn<
-                Steps, Input>> extends readonly [...AdditionalSteps]
-            ? readonly [...AdditionalSteps]
-            : ObjectChainSteps<AdditionalSteps,
-                ObjectChainStepsReturn<Steps, Input>>) {
-
-    const newSteps = [...chain.steps, ...additionalSteps] as const
+    const newSteps =
+        // deno-lint-ignore no-explicit-any
+        cons.append<UPObjectStepSpec>()(chain.steps as any, step)
 
     // deno-lint-ignore no-explicit-any
     return objectChain<Input>()(chain.tag, newSteps as any) as
-        ObjectChain<Input, readonly [...Steps, ...AdditionalSteps]>
+        ObjectChain<Input, cons.Append<UPObjectStepSpec, Steps, NewStep>>
 }
 
-// warning - doesn't work well - see addSteps
-export function addStep<Input extends ChainTagged,
-    Steps extends readonly [...UPObjectStepSpec[]],
-    K extends string,
-    D1 extends D2,
-    D2,
-    R, E, V>
-    (chain: ObjectChain<Input, Steps>,
-        step: UCFxObjectStepSpec<K, ObjectChainStepsReturn<Steps, Input>,
-            D1, D2, R, E, V>) {
+export function makeFxStep
+    <Input extends ChainTagged,
+        Steps extends cons.NRCons<UPObjectStepSpec>,
+        K extends string,
+        A extends ObjectChainStepsReturn<Steps, Input>,
+        D1 extends D2,
+        D2,
+        R, E, V>
 
-    return addSteps(chain, [step] as const)
-}
-
-// warning - doesn't work well - see addSteps
-export function addFxStep<Input extends ChainTagged,
-    Steps extends readonly [...UPObjectStepSpec[]],
-    K extends string,
-    A extends ObjectChainStepsReturn<Steps, Input>,
-    D1 extends D2,
-    D2,
-    R, E, V>
     (chain: ObjectChain<Input, Steps>,
         k: K,
         inFn: (a: A) => D1,
         fxFn: FxFn<D2, R, E, V>) {
 
-    const steps = [{ k, inFn, fxFn } as
+    const step = { k, inFn, fxFn } as
         UCFxObjectStepSpec<K,
-            ObjectChainStepsReturn<Steps, Input>, D1, D2, R, E, V>] as const
+            ObjectChainStepsReturn<Steps, Input>, D1, D2, R, E, V>
 
-    return addSteps(chain, steps)
+    //deno-lint-ignore no-explicit-any
+    return addFxStep(chain, step as any)
 }
 
-// warning - doesn't work well - see addSteps
-export function addPureStep<Input extends ChainTagged,
-    Steps extends readonly [...UPObjectStepSpec[]],
-    K extends string,
-    A extends ObjectChainStepsReturn<Steps, Input>,
-    V>(chain: ObjectChain<Input, Steps>,
-        k: K,
-        pureFn: (a: A) => V) {
 
-    const steps = [{ k, pureFn } as
+export function addPureStep
+    <Input extends ChainTagged,
+        Steps extends cons.NRCons<UPObjectStepSpec>,
+        K extends string,
+        V,
+        NewStep extends UCPureObjectStepSpec<K,
+            ObjectChainStepsReturn<Steps, Input>, V>>
+
+    (chain: ObjectChain<Input, Steps>,
+        step: NewStep) {
+
+    const newSteps =
+        // deno-lint-ignore no-explicit-any
+        cons.append<UPObjectStepSpec>()(chain.steps as any, step)
+
+    // deno-lint-ignore no-explicit-any
+    return objectChain<Input>()(chain.tag, newSteps as any) as
+        ObjectChain<Input, cons.Append<UPObjectStepSpec, Steps, NewStep>>
+}
+
+export function makePureStep
+    <Input extends ChainTagged,
+        Steps extends cons.NRCons<UPObjectStepSpec>,
+        K extends string,
+        A extends ObjectChainStepsReturn<Steps, Input>,
+        V>(chain: ObjectChain<Input, Steps>,
+            k: K,
+            pureFn: (a: A) => V) {
+
+    const step = { k, pureFn } as
         UCPureObjectStepSpec<K,
-            ObjectChainStepsReturn<Steps, Input>, V>] as const
+            ObjectChainStepsReturn<Steps, Input>, V>
 
-    return addSteps(chain, steps)
+    return addPureStep(chain, step)
 }
 
 ////////////////////////////////// recursion support ////////////////////
@@ -204,14 +182,12 @@ export function addPureStep<Input extends ChainTagged,
 // as a computation step to recurse or run any other chain as a computation
 // step
 
-
-
 // make an ObjectChainService impl with given which will run an ObjectChain 
 // for a particular Input, and is identified by chain.contextTag
 export function objectChainServiceImpl
 
     <Input extends ChainTagged,
-        Steps extends readonly [...UPObjectStepSpec[]]>
+        Steps extends cons.NRCons<UPObjectStepSpec>>
 
     (chain: ObjectChain<Input, Steps>) {
 
@@ -228,7 +204,7 @@ export function objectChainServiceImpl
 // to an Effect
 export function provideObjectChainServiceImpl
     <Input extends ChainTagged,
-        Steps extends readonly [...UPObjectStepSpec[]],
+        Steps extends cons.NRCons<UPObjectStepSpec>,
         InR, InE, InV>
 
     (effect: Effect.Effect<InR, InE, InV>,
@@ -245,16 +221,15 @@ export function provideObjectChainServiceImpl
 // calls it's buildObject function
 export function objectChainFxFn
     <Input extends ChainTagged,
-        Steps extends readonly [...UPObjectStepSpec[]]>
+        Steps extends cons.NRCons<UPObjectStepSpec>>
 
     (chain: ObjectChain<Input, Steps>) {
 
     return (i: Input) => {
-        const r = Effect.gen(function* (_) {
+        return Effect.gen(function* (_) {
             const svc = yield* _(chain.contextTag)
             const obj = yield* _(svc.buildObject(i))
             return obj
         })
-        return r
     }
 }
