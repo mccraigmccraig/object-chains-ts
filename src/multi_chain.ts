@@ -2,9 +2,38 @@ import { Effect, Context } from "effect"
 import { UnionFromTuple } from "./object_chain_steps.ts"
 import { ChainTagged } from "./chain_tag.ts"
 import {
-    UPObjectChain, ObjectChainsInputU, ObjectChainsContextTagIdU,
+    UPObjectChain,
     objectChainServiceImpl
 } from "./object_chain.ts"
+
+// union of all the inputs from a tuple of chains
+export type ObjectChainInput<T extends UPObjectChain> =
+    T extends ObjectChain<infer Input, infer _Steps>
+    ? Input
+    : never
+export type ObjectChainsInputU<
+    Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
+        +readonly [Index in keyof Tuple]: ObjectChainInput<Tuple[Index]>
+    } & { length: Tuple['length'] }>
+
+export type ObjectChainTagStr<T extends UPObjectChain> =
+    T extends ObjectChain<infer _Input, infer _Steps>
+    ? T['tagStr']
+    : never
+export type ObjectChainsTagStrU<
+    Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
+        +readonly [Index in keyof Tuple]: ObjectChainTagStr<Tuple[Index]>
+    } & { length: Tuple['length'] }>
+
+export type ObjectChainContextTagId<T extends UPObjectChain> =
+    T extends ObjectChain<infer Input, infer _Steps>
+    ? ChainTag<Input>
+    : never
+export type ObjectChainsContextTagIdU<
+    Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
+        +readonly [Index in keyof Tuple]: ObjectChainContextTagId<Tuple[Index]>
+    } & { length: Tuple['length'] }>
+
 
 
 export type ProgramReqs<T extends UPObjectChain> =
