@@ -1,6 +1,6 @@
 import { Effect } from "effect"
 import { FxFn, UPFxFn } from "./fx_fn.ts"
-import { None, NRCons, Last, toTuple} from "./cons.ts"
+import { None, NRCons, Last, ToTuple, toTuple} from "./cons.ts"
 
 // inspiration:
 // https://dev.to/ecyrbe/how-to-use-advanced-typescript-to-define-a-pipe-function-381h
@@ -146,6 +146,10 @@ export type ExpandTuple<Tuple extends readonly [...any[]]> = {
     +readonly [Index in keyof Tuple]: Expand<Tuple[Index]>
 } & { length: Tuple['length'] }
 
+// convert a cons list of UPObjectStepSpecs type to a Tuple type
+export type ObjectStepsTuple<Steps extends NRCons<UPObjectStepSpec>> =
+    ToTuple<UPObjectStepSpec, Steps>
+
 // get a union of all the Requirements from a list of steps
 export type ObjectStepReqs<T extends UPObjectStepSpec> =
     T extends UCFxObjectStepSpec<
@@ -154,14 +158,26 @@ export type ObjectStepReqs<T extends UPObjectStepSpec> =
     : never
 export type ObjectStepsReqsU<
     List extends NRCons<UPObjectStepSpec>,
-    Acc = never> =
+    Acc = never> = 
     List extends None
     ? Acc
     : List extends readonly [infer F extends UPObjectStepSpec,
         infer R extends NRCons<UPObjectStepSpec>]
     ? ObjectStepsReqsU<R, Acc | ObjectStepReqs<F>>
     : never
-    
+type ObjectStepsTupleReqsUImpl<
+    Tuple extends readonly [...UPObjectStepSpec[]]> =
+    UnionFromTuple<{
+        +readonly [Index in keyof Tuple]: ObjectStepReqs<Tuple[Index]>
+    } & { length: Tuple['length'] }>
+// tuple version ... don't know why, but the list version ObjectStepsReqsU 
+// causes Effect to bork with type instantiation depth issues when 
+// setting up the recursion Service in object_chain.ts ...converting 
+// the list to a tuple before extracting the Requirements union seems 
+// to avoid that
+export type ObjectStepsTupleReqsU<Steps extends NRCons<UPObjectStepSpec>> =
+    ObjectStepsTupleReqsUImpl<ObjectStepsTuple<Steps>>
+
 // get a union of all the Errors from a list of steps
 export type ObjectStepErrors<T extends UPObjectStepSpec> =
     T extends UCFxObjectStepSpec<
@@ -273,7 +289,7 @@ export function objectChainStepsProg<Obj>() {
 
     return function <Specs extends NRCons<UPObjectStepSpec>>
         (objectStepSpecs:
-            Specs extends ObjectChainSteps<Specs, Obj>
+            ObjectChainSteps<Specs, Obj> extends Specs
             ? Specs
             : ObjectChainSteps<Specs, Obj>) {
 
