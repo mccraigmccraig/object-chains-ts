@@ -1,9 +1,15 @@
 
 // a None element marking an empty cons list 
-// or the end of a cons list
-const NoneTag: unique symbol = Symbol("ConsNone")
+// or the end of a cons list.
+export const NoneTag: unique symbol = Symbol("ConsNone")
 export type None = { readonly _tag: typeof NoneTag }
 export const None: None = { _tag: NoneTag }
+
+// a type-guard for the None type
+// deno-lint-ignore no-explicit-any
+export function isNone(v: any): v is None {
+    return (('_tag' in v) && (v._tag === NoneTag))
+}
 
 // it's probably a cons, but we're only checking
 // one level with this type
@@ -48,13 +54,11 @@ export type First<T, C> =
 export function first<T>() {
     return function <const C>(c: C extends Cons<T, C> ? C : Cons<T, C>)
         : First<T, C> {
-        if (('_tag' in c) && (c['_tag'] == NoneTag)) {
+        if (isNone(c)) {
             return None as First<T, C>
-        } else if (!('_tag' in c)) {
-            return c[0] as First<T, C>
         } else {
-            throw new Error("unknown cons type")
-        }
+            return c[0] as First<T, C>
+        } 
     }
 }
 
@@ -71,12 +75,10 @@ export type Rest<T, C> =
 export function rest<T>() {
     return function <const C>(c: C extends Cons<T, C> ? C : Cons<T, C>)
         : Rest<T, C> {
-        if (('_tag' in c) && (c._tag == NoneTag)) {
+        if (isNone(c)) {
             return c as Rest<T, C>
-        } else if (!('_tag' in c)) {
-            return c[1] as Rest<T, C>
         } else {
-            throw new Error("unknown cons type")
+            return c[1] as Rest<T, C>
         }
     }
 }
@@ -95,7 +97,7 @@ export function last<T>() {
 
         let result: Cons<T, None> = None
         let cursor = c
-        while (!('_tag' in cursor)) {
+        while (!isNone(cursor)) {
             // deno-lint-ignore no-explicit-any
             result = cursor[0] as any
             cursor = cursor[1]
@@ -120,7 +122,7 @@ export function reverse<T>() {
 
         let result: Cons<T, None> = None
         let cursor = c
-        while (!('_tag' in cursor)) {
+        while (!isNone(cursor)) {
             // deno-lint-ignore no-explicit-any
             result = [cursor[0], result] as const as any
             cursor = cursor[1]
@@ -165,7 +167,7 @@ export function toTuple<T>() {
         
         const result = []
         let cursor = c
-        while (!('_tag' in cursor)) {
+        while (!isNone(cursor)) {
             result.push(cursor[0])
             cursor = cursor[1]
         }
