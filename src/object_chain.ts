@@ -52,7 +52,7 @@ export type ObjectChain<Input extends ChainTagged,
         : ObjectChainSteps<Steps, Input>
 
         readonly program: ObjectChainProgram<Input, Steps>
-        // readonly contextTag: ObjectChainServiceContextTag<Input, Steps>
+        readonly contextTag: ObjectChainServiceContextTag<Input, Steps>
     }
 
 // an unparameterised version of ObjectChain for typing lists
@@ -63,7 +63,8 @@ export type UPObjectChain = {
     readonly steps: cons.NRCons<UPObjectStepSpec>
     // deno-lint-ignore no-explicit-any
     readonly program: (i: any) => Effect.Effect<any, any, any>
-    // readonly contextTag: Context.Tag<any, any>
+    // deno-lint-ignore no-explicit-any
+    readonly contextTag: Context.Tag<any, any>
 }
 
 // build an ObjectChain from Steps
@@ -77,7 +78,7 @@ export function objectChain<Input extends ChainTagged>() {
 
         const tagStr = ctag.tag(tag)
         const program = objectChainStepsProg<Input>()(steps)
-        // const contextTag = objectChainServiceContextTag<Input, Steps>()
+        const contextTag = objectChainServiceContextTag<Input, Steps>()
 
         // TODO find out why the parameterised as causes 
         // too-deep type instantiation
@@ -85,8 +86,8 @@ export function objectChain<Input extends ChainTagged>() {
             tag,
             tagStr,
             steps,
-            program
-            // contextTag
+            program,
+            contextTag
         } as UPObjectChain as ObjectChain<Input, Steps>
     }
 }
@@ -209,9 +210,7 @@ export function provideObjectChainServiceImpl
     const svc = objectChainServiceImpl(chain) as
         ObjectChainService<Input, Steps>
 
-    const contextTag = objectChainServiceContextTag<Input, Steps>()
-
-    return Effect.provideService(effect, contextTag, svc)
+    return Effect.provideService(effect, chain.contextTag, svc)
 }
 
 // given an ObjectChain, returns an FxFn to invoke the chain,
@@ -221,13 +220,11 @@ export function objectChainFxFn
     <Input extends ChainTagged,
         const Steps extends cons.NRCons<UPObjectStepSpec>>
 
-    (_chain: ObjectChain<Input, Steps>) {
-
-    const contextTag = objectChainServiceContextTag<Input, Steps>()
+    (chain: ObjectChain<Input, Steps>) {
 
     return (i: Input) => {
         return Effect.gen(function* (_) {
-            const svc = yield* _(contextTag)
+            const svc = yield* _(chain.contextTag)
             const obj = yield* _(svc.buildObject(i))
             return obj
         })
