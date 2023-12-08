@@ -126,7 +126,7 @@ Deno.test("addStep lets you add steps", () => {
     })
 })
 
-Deno.test("addFxStep and addPureStep add steps", () => {
+Deno.test("makeFxStep and makePureStep add steps", () => {
     const input: SendPushNotification = {
         _tag: "sendPushNotification" as const,
         data: { org_nick: "foo", user_id: "bar" }
@@ -172,6 +172,7 @@ Deno.test("addFxStep and addPureStep add steps", () => {
     })
 })
 
+// make a getOrg chain which can be run as a step
 type GetOrg = {
     readonly _tag: "getOrg",
     readonly data: { org_nick: string }
