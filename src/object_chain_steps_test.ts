@@ -34,13 +34,6 @@ const formatUserStepSpec =
         "User: " + d.user.name + " @ " + d.org.name
 }
 
-export const stepSpecs = [
-    getOrgObjectStepSpec,
-    getUserObjectStepSpec,
-    formatUserStepSpec
-] as const
-
-
 Deno.test("objectStepFn runs an Fx step", () => {
     const stepFn = objectStepFn
         <{ data: { org_nick: string } }>()(getOrgObjectStepSpec)
@@ -84,10 +77,7 @@ Deno.test("objectChainStepsProg chains steps", () => {
         getOrgObjectStepSpec,
         [getUserObjectStepSpec,
             [formatUserStepSpec,
-                None
-            ] as const
-        ] as const
-    ] as const
+                None]]] as const
 
     const chainEffect = objectChainStepsProg<INPUT>()(stepSpecs)(input)
 
