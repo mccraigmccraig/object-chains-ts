@@ -73,11 +73,24 @@ export type UPFxObjectStepSpec = {
     readonly fxFn: UPFxFn
 }
 
+// cast an UPFxObjectStepSpec down to its fully parameterised type
+export type CastUPFxObjectStepSpec<T extends UPFxObjectStepSpec> =
+    T extends UCFxObjectStepSpec<infer K, infer A, infer D1, infer D2,
+        infer R, infer E, infer V>
+    ? UCFxObjectStepSpec<K, A, D1, D2, R, E, V>
+    : never
+
 export type UPPureObjectStepSpec = {
     readonly k: string
     // deno-lint-ignore no-explicit-any
     readonly pureFn: (arg: any) => any
 }
+
+// cast an UPPureObjectStepSpec down to its fully parameterised type
+export type CastUPPureObjectStepSpec<T extends UPPureObjectStepSpec> =
+    T extends UCPureObjectStepSpec<infer K, infer A, infer V>
+    ? UCPureObjectStepSpec<K, A, V>
+    : never
 
 // the unparameterised type we will type all step tuples with
 export type UPObjectStepSpec = UPPureObjectStepSpec | UPFxObjectStepSpec
@@ -287,7 +300,7 @@ export type ObjectChainStepsReturn<
 // other type params
 export function objectChainStepsProg<Obj>() {
 
-    return function <Specs extends NRCons<UPObjectStepSpec>>
+    return function <const Specs extends NRCons<UPObjectStepSpec>>
         (objectStepSpecs:
             ObjectChainSteps<Specs, Obj> extends Specs
             ? Specs
