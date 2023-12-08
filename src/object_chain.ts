@@ -91,6 +91,7 @@ export function objectChain<Input extends ChainTagged>() {
     }
 }
 
+// add an FxStep to an ObjectChain, returning a new ObjectChain
 export function addFxStep
     <Input extends ChainTagged,
         const Steps extends cons.NRCons<UPObjectStepSpec>,
@@ -110,6 +111,7 @@ export function addFxStep
         ObjectChain<Input, cons.Append<UPObjectStepSpec, Steps, NewStep>>
 }
 
+// make an FxStep at the end of an ObjectChain, returning a new ObjectChain
 export function makeFxStep
     <Input extends ChainTagged,
         const Steps extends cons.NRCons<UPObjectStepSpec>,
@@ -128,10 +130,10 @@ export function makeFxStep
         UCFxObjectStepSpec<K,
             ObjectChainStepsReturn<Steps, Input>, D1, D2, R, E, V>
 
-    //deno-lint-ignore no-explicit-any
-    return addFxStep(chain, step as any)
+    return addFxStep(chain, step)
 }
 
+// add a PureStep to an ObjectChain, returning a new ObjectChain
 export function addPureStep
     <Input extends ChainTagged,
         const Steps extends cons.NRCons<UPObjectStepSpec>,
@@ -151,6 +153,7 @@ export function addPureStep
         ObjectChain<Input, cons.Append<UPObjectStepSpec, Steps, NewStep>>
 }
 
+// make a PureStep at the end of an ObjectChain, returning a new ObjectChain
 export function makePureStep
     <Input extends ChainTagged,
         const Steps extends cons.NRCons<UPObjectStepSpec>,

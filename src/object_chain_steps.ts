@@ -95,8 +95,6 @@ export type CastUPPureObjectStepSpec<T extends UPPureObjectStepSpec> =
 // the unparameterised type we will type all step tuples with
 export type UPObjectStepSpec = UPPureObjectStepSpec | UPFxObjectStepSpec
 
-//////////////////////// step fn //////////////////////////////////////
-
 // cast an UPObjectStepSpec down to its concrete type
 export type ConcreteObjectStepSpec<T extends UPObjectStepSpec> =
     T extends PureObjectStepSpec<infer K, infer A, infer V>
@@ -106,6 +104,8 @@ export type ConcreteObjectStepSpec<T extends UPObjectStepSpec> =
     // also apply the D1==D2 constraint
     ? UCFxObjectStepSpec<K, A, D2, D2, R, E, V>
     : never
+
+//////////////////////// step fn //////////////////////////////////////
 
 // the effect returned when a step is run
 export type ObjectStepFnReturnEffect<Spec> =
