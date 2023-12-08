@@ -6,7 +6,7 @@ import * as ctag from "./chain_tag.ts"
 import {
     UCFxObjectStepSpec, UCPureObjectStepSpec,
     ObjectChainSteps, UPObjectStepSpec,
-    ObjectStepsReqsU as _, ObjectStepsTupleReqsU,
+    ObjectStepsTupleReqsU ,
     ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg,
 } from "./object_chain_steps.ts"
 import * as steps from "./object_chain_steps.ts"
