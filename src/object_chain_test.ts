@@ -2,13 +2,14 @@ import { assertEquals } from "assert"
 import { Effect } from "effect"
 import { chainTag } from "./chain_tag.ts"
 import * as cons from "./cons.ts"
+import { FxObjectStepSpec } from "./object_chain_steps.ts"
 import {
     objectChain, addFxStep, makeFxStep,
     addPureStep, makePureStep,
     objectChainFxFn, provideObjectChainServiceImpl
 } from "./object_chain.ts"
 import {
-    Org, getOrgByNick, User, getUserByIds, sendPush,
+    Org, OrgServiceI, getOrgByNick, User, getUserByIds, sendPush,
     testServiceContext
 } from "./test_services.ts"
 
@@ -235,4 +236,125 @@ Deno.test("recursion with RunObjectChainFxFn", () => {
             org: { id: "foo", name: "Foo" }
         }
     })
+})
+
+Deno.test("a longer chain", () => {
+    const input: SendPushNotification = {
+        _tag: "sendPushNotification" as const,
+        data: { org_nick: "foo", user_id: "bar" }
+    }
+
+    const p0 = objectChain<SendPushNotification>()(
+        SendPushNotificationTag, cons.None)
+
+    const p1 = makeFxStep(p0,
+        "org1",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p2 = makeFxStep(p1,
+        "org2",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p3 = makeFxStep(p2,
+        "org3",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p4 = makeFxStep(p3,
+        "org4",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p5 = makeFxStep(p4,
+        "org5",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p6 = makeFxStep(p5,
+        "org6",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p7 = makeFxStep(p6,
+        "org7",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p8 = makeFxStep(p7,
+        "org8",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p9 = makeFxStep(p8,
+        "org9",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p10 = makeFxStep(p9,
+        "org10",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p11 = makeFxStep(p10,
+        "org11",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p12 = makeFxStep(p11,
+        "org12",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p13 = makeFxStep(p12,
+        "org13",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p14 = makeFxStep(p13,
+        "org14",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p15 = makeFxStep(p14,
+        "org15",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p16 = makeFxStep(p15,
+        "org16",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p17 = makeFxStep(p16,
+        "org17",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p18 = makeFxStep(p17,
+        "org18",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p19 = makeFxStep(p18,
+        "org19",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+    const p20 = makeFxStep(p19,
+        "org20",
+        (d: { data: { org_nick: string } }) => d.data.org_nick,
+        getOrgByNick)
+
+    const sendPushProgEffect = p20.program(input)
+
+    const sendPushProgRunnable =
+        Effect.provide(sendPushProgEffect, testServiceContext)
+    const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
+    assertEquals(sendPushProgResult, {
+        ...input,
+        org1: { id: "foo", name: "Foo" },
+        org2: { id: "foo", name: "Foo" },
+        org3: { id: "foo", name: "Foo" },
+        org4: { id: "foo", name: "Foo" },
+        org5: { id: "foo", name: "Foo" },
+        org6: { id: "foo", name: "Foo" },
+        org7: { id: "foo", name: "Foo" },
+        org8: { id: "foo", name: "Foo" },
+        org9: { id: "foo", name: "Foo" },
+        org10: { id: "foo", name: "Foo" },
+        org11: { id: "foo", name: "Foo" },
+        org12: { id: "foo", name: "Foo" },
+        org13: { id: "foo", name: "Foo" },
+        org14: { id: "foo", name: "Foo" },
+        org15: { id: "foo", name: "Foo" },
+        org16: { id: "foo", name: "Foo" },
+        org17: { id: "foo", name: "Foo" },
+        org18: { id: "foo", name: "Foo" },
+        org19: { id: "foo", name: "Foo" },
+        org20: { id: "foo", name: "Foo" },
+    })
+
 })
