@@ -3,35 +3,27 @@ import { UnionFromTuple } from "./object_chain_steps.ts"
 import { ChainTagged } from "./chain_tag.ts"
 import {
     UPObjectChain,
+    UPObjectChainInput,
+    UPObjectChainContextTag,
     objectChainServiceImpl
 } from "./object_chain.ts"
 
 // union of all the inputs from a tuple of chains
-export type ObjectChainInput<T extends UPObjectChain> =
-    T extends ObjectChain<infer Input, infer _Steps>
-    ? Input
-    : never
 export type ObjectChainsInputU<
     Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
-        +readonly [Index in keyof Tuple]: ObjectChainInput<Tuple[Index]>
+        +readonly [Index in keyof Tuple]: UPObjectChainInput<Tuple[Index]>
     } & { length: Tuple['length'] }>
 
-export type ObjectChainTagStr<T extends UPObjectChain> =
-    T extends ObjectChain<infer _Input, infer _Steps>
-    ? T['tagStr']
-    : never
+// union of all the tagStrs from a tuple of chains
 export type ObjectChainsTagStrU<
     Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
-        +readonly [Index in keyof Tuple]: ObjectChainTagStr<Tuple[Index]>
+        +readonly [Index in keyof Tuple]: Tuple[Index]['tagStr']
     } & { length: Tuple['length'] }>
 
-export type ObjectChainContextTagId<T extends UPObjectChain> =
-    T extends ObjectChain<infer Input, infer _Steps>
-    ? ChainTag<Input>
-    : never
+// union of all the ContextTagId from a tuple of chains
 export type ObjectChainsContextTagIdU<
     Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
-        +readonly [Index in keyof Tuple]: ObjectChainContextTagId<Tuple[Index]>
+        +readonly [Index in keyof Tuple]: UPObjectChainContextTag<Tuple[Index]>
     } & { length: Tuple['length'] }>
 
 

@@ -4,6 +4,7 @@ import {
     Org, getOrgByNick, User, getUserByIds, changeUser, sendPush,
     testServiceContext
 } from "./test_services.ts"
+import * as cons from "./cons.ts"
 import { chainTag } from "./chain_tag.ts"
 import { objectChain, objectChainFxFn } from "./object_chain.ts"
 import {
@@ -56,7 +57,8 @@ const GetOrgInputTag = chainTag<GetOrgInput>("GetOrg")
 const getOrgProg = objectChain<GetOrgInput>()(
     GetOrgInputTag,
     [getOrgObjectStepSpec,
-        pureFormatOrgOutputStepSpec
+        [pureFormatOrgOutputStepSpec,
+        cons.None]
     ] as const)
 
 //////////////////////// sendWelcomePush chain
@@ -71,9 +73,10 @@ const SendWelcomePushInputTag =
 const sendWelcomePushProg = objectChain<SendWelcomePushInput>()(
     SendWelcomePushInputTag,
     [getOrgObjectStepSpec,
-        getUserObjectStepSpec,
-        pureFormatWelcomePushStepSpec,
-        sendPusnNotificationStepSpec] as const)
+        [getUserObjectStepSpec,
+            [pureFormatWelcomePushStepSpec,
+                [sendPusnNotificationStepSpec,
+                cons.None]]]] as const)
 
 
 ////////////////////////// multiChain for getOrg and sendWelcomePush
@@ -200,7 +203,7 @@ const changeUserSetWelcomeSentStepSpec = {
 const ChangeUserSetWelcomeSentTag =
     chainTag<ChangeUserSetWelcomeSent>("ChangeUserSetWelcomeSent")
 const changeUserSetWelcomeSentSteps =
-    [changeUserSetWelcomeSentStepSpec] as const
+    [changeUserSetWelcomeSentStepSpec, cons.None] as const
 const changeUserSetWelcomeSentChain = objectChain<ChangeUserSetWelcomeSent>()(
     ChangeUserSetWelcomeSentTag,
     changeUserSetWelcomeSentSteps)
@@ -223,10 +226,11 @@ const SendWelcomePushAndUpdateUser =
     chainTag<SendWelcomePushAndUpdateUser>("SendWelcomePushAndUpdateUser")
 const sendWelcomePushAndUpdateUserSteps = [
     getOrgObjectStepSpec,
-    getUserObjectStepSpec,
-    pureFormatWelcomePushStepSpec,
-    sendPusnNotificationStepSpec,
-    runChangeUserSetWelcomeSentChainStepSpec
+    [getUserObjectStepSpec,
+        [pureFormatWelcomePushStepSpec,
+            [sendPusnNotificationStepSpec,
+                [runChangeUserSetWelcomeSentChainStepSpec,
+                cons.None]]]]
 ] as const
 
 const sendWelcomePushAndUpdateUserStepsChain =

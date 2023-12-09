@@ -5,11 +5,12 @@ import { ChainTagged, ChainTag } from "./chain_tag.ts"
 import * as ctag from "./chain_tag.ts"
 import {
     UCFxObjectStepSpec, UCPureObjectStepSpec,
+    UPFxObjectStepSpec, CastUPFxObjectStepSpec,
+    UPPureObjectStepSpec, CastUPPureObjectStepSpec,
     ObjectChainSteps, UPObjectStepSpec,
-    ObjectStepsTupleReqsU ,
-    ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg,
+    ObjectStepsTupleReqsU,
+    ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg
 } from "./object_chain_steps.ts"
-import * as steps from "./object_chain_steps.ts"
 
 // an effectful function of Input which build an Object
 export type ObjectChainProgram<Input extends ChainTagged,
@@ -55,6 +56,25 @@ export type ObjectChain<Input extends ChainTagged,
         readonly contextTag: ObjectChainServiceContextTag<Input, Steps>
     }
 
+// infer the Input type parameter from the parameterised 
+// ObjectChain corresponding to an UPObjectchain - without first
+// inferring the ObjectChain. avoids type instantiation depth 
+// issues
+export type UPObjectChainInput<T extends UPObjectChain> = 
+    T['tag'] extends ChainTag<infer Input>
+    ? Input 
+    : never
+
+// infer the ChainTag<Input> property type from the parameterised 
+// ObjectChain corresponding to an UPObjectchain (which is 
+// used to identify the Service to run a particular chain) - without 
+// first inferring the ObjectChain. avoids type instantiation depth
+// issues
+export type UPObjectChainContextTag<T extends UPObjectChain> =
+    T['tag'] extends ChainTag<infer Input>
+    ? ChainTag<Input>
+    : never
+
 // an unparameterised version of ObjectChain for typing lists
 export type UPObjectChain = {
     // deno-lint-ignore no-explicit-any
@@ -96,12 +116,12 @@ export function objectChain<Input extends ChainTagged>() {
 export function addFxStep
     <Input extends ChainTagged,
         const Steps extends cons.NRCons<UPObjectStepSpec>,
-        NewStep extends steps.UPFxObjectStepSpec>
+        NewStep extends UPFxObjectStepSpec>
 
     (chain: ObjectChain<Input, Steps>,
-        step: NewStep extends steps.CastUPFxObjectStepSpec<NewStep>
+        step: NewStep extends CastUPFxObjectStepSpec<NewStep>
             ? NewStep
-            : steps.CastUPFxObjectStepSpec<NewStep>) {
+            : CastUPFxObjectStepSpec<NewStep>) {
 
     const newSteps =
         // deno-lint-ignore no-explicit-any
@@ -138,12 +158,12 @@ export function makeFxStep
 export function addPureStep
     <Input extends ChainTagged,
         const Steps extends cons.NRCons<UPObjectStepSpec>,
-        NewStep extends steps.UPPureObjectStepSpec>
+        NewStep extends UPPureObjectStepSpec>
 
     (chain: ObjectChain<Input, Steps>,
-        step: NewStep extends steps.CastUPPureObjectStepSpec<NewStep>
+        step: NewStep extends CastUPPureObjectStepSpec<NewStep>
             ? NewStep
-            : steps.CastUPPureObjectStepSpec<NewStep>) {
+            : CastUPPureObjectStepSpec<NewStep>) {
 
     const newSteps =
         // deno-lint-ignore no-explicit-any
