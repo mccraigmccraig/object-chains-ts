@@ -111,8 +111,6 @@ export function objectChain<Input extends ChainTagged>() {
         const program = objectChainStepsProg<Input>()(steps)
         const contextTag = objectChainServiceContextTag<Input, Steps>()
 
-        // TODO find out why the parameterised as causes 
-        // too-deep type instantiation
         return {
             tag,
             tagStr,

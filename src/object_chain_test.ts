@@ -52,10 +52,10 @@ Deno.test("empty objectChain returns input", () => {
     const DoNothingTag = chainTag<DoNothing>("doNothing")
 
     const steps = cons.None
-    const prog = objectChain<DoNothing>()(DoNothingTag, steps)
+    const chain = objectChain<DoNothing>()(DoNothingTag, steps)
 
     const input = { _tag: "doNothing" as const }
-    const effect = prog.program(input)
+    const effect = chain.program(input)
     const r = Effect.runSync(effect)
 
     assertEquals(r, { _tag: "doNothing" })
@@ -76,14 +76,14 @@ const sendPushNotificationSteps =
 
 Deno.test("objectChain mixes fx and pure steps", () => {
 
-    const prog = objectChain<SendPushNotification>()(SendPushNotificationTag,
+    const chain = objectChain<SendPushNotification>()(SendPushNotificationTag,
         sendPushNotificationSteps)
 
     const input: SendPushNotification = {
         _tag: "sendPushNotification" as const,
         data: { org_nick: "foo", user_id: "bar" }
     }
-    const effect = prog.program(input)
+    const effect = chain.program(input)
     const runnable = Effect.provide(effect, testServiceContext)
     const r = Effect.runSync(runnable)
 
@@ -102,22 +102,22 @@ Deno.test("addStep lets you add steps", () => {
         data: { org_nick: "foo", user_id: "bar" }
     }
 
-    const p0 = objectChain<SendPushNotification>()(
+    const ch0 = objectChain<SendPushNotification>()(
         SendPushNotificationTag, cons.None)
-    const emptyEffect = p0.program(input)
+    const emptyEffect = ch0.program(input)
     const emptyResult = Effect.runSync(emptyEffect)
     assertEquals(emptyResult, input)
 
-    const p1 = addFxStep(p0, getOrgObjectStepSpec)
-    const p2 = addFxStep(p1, getUserObjectStepSpec)
-    const p3 = addPureStep(p2, pureFormatPushNotificationStepSpec)
-    const sendPushProg = addFxStep(p3, sendPusnNotificationStepSpec)
+    const ch1 = addFxStep(ch0, getOrgObjectStepSpec)
+    const ch2 = addFxStep(ch1, getUserObjectStepSpec)
+    const ch3 = addPureStep(ch2, pureFormatPushNotificationStepSpec)
+    const sendPushChain = addFxStep(ch3, sendPusnNotificationStepSpec)
 
-    const sendPushProgEffect = sendPushProg.program(input)
-    const sendPushProgRunnable = Effect.provide(sendPushProgEffect,
+    const sendPushChainEffect = sendPushChain.program(input)
+    const sendPushChainRunnable = Effect.provide(sendPushChainEffect,
         testServiceContext)
-    const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
-    assertEquals(sendPushProgResult, {
+    const sendPushChainResult = Effect.runSync(sendPushChainRunnable)
+    assertEquals(sendPushChainResult, {
         ...input,
         org: { id: "foo", name: "Foo" },
         user: { id: "bar", name: "Bar" },
@@ -132,38 +132,38 @@ Deno.test("makeFxStep and makePureStep add steps", () => {
         data: { org_nick: "foo", user_id: "bar" }
     }
 
-    const p0 = objectChain<SendPushNotification>()(
+    const ch0 = objectChain<SendPushNotification>()(
         SendPushNotificationTag, cons.None)
 
-    const p1 = makeFxStep(p0,
+    const ch1 = makeFxStep(ch0,
         "org",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p2 = makeFxStep(p1,
+    const ch2 = makeFxStep(ch1,
         "user",
         (d: { data: { user_id: string }, org: Org }) => {
             return { org_id: d.org.id, user_id: d.data.user_id }
         },
         getUserByIds)
-    const p3 = makePureStep(p2,
+    const ch3 = makePureStep(ch2,
         "formatPushNotification",
         (d: { org: Org, user: User }) => {
             return "Welcome " + d.user.name + " of " + d.org.name
         }
     )
-    const p4 = makeFxStep(p3,
+    const ch4 = makeFxStep(ch3,
         "sendPush",
         (d: { user: User, formatPushNotification: string }) => {
             return { user_id: d.user.id, message: d.formatPushNotification }
         },
         sendPush)
 
-    const sendPushProgEffect = p4.program(input)
+    const sendPushChainEffect = ch4.program(input)
 
-    const sendPushProgRunnable =
-        Effect.provide(sendPushProgEffect, testServiceContext)
-    const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
-    assertEquals(sendPushProgResult, {
+    const sendPushChainRunnable =
+        Effect.provide(sendPushChainEffect, testServiceContext)
+    const sendPushChainResult = Effect.runSync(sendPushChainRunnable)
+    assertEquals(sendPushChainResult, {
         ...input,
         org: { id: "foo", name: "Foo" },
         user: { id: "bar", name: "Bar" },
@@ -209,7 +209,7 @@ const sendPushNotificationAndGetOrgSteps =
                         cons.None]]]]] as const
 
 Deno.test("recursion with RunObjectChainFxFn", () => {
-    const prog = objectChain<SendPushNotificationAndGetOrg>()(
+    const chain = objectChain<SendPushNotificationAndGetOrg>()(
         SendPushNotificationAndGetOrgTag,
         sendPushNotificationAndGetOrgSteps)
 
@@ -217,7 +217,7 @@ Deno.test("recursion with RunObjectChainFxFn", () => {
         _tag: "sendPushNotificationAndGetOrg" as const,
         data: { org_nick: "foo", user_id: "bar" }
     }
-    const effect = prog.program(input)
+    const effect = chain.program(input)
     const almostRunnable = Effect.provide(effect, testServiceContext)
     const runnable = provideObjectChainServiceImpl(almostRunnable, getOrgChain)
 
@@ -243,96 +243,96 @@ Deno.test("a longer chain", () => {
         data: { org_nick: "foo", user_id: "bar" }
     }
 
-    const p0 = objectChain<SendPushNotification>()(
+    const ch0 = objectChain<SendPushNotification>()(
         SendPushNotificationTag, cons.None)
 
-    const p1 = makeFxStep(p0,
+    const ch1 = makeFxStep(ch0,
         "org1",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p2 = makeFxStep(p1,
+    const ch2 = makeFxStep(ch1,
         "org2",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p3 = makeFxStep(p2,
+    const ch3 = makeFxStep(ch2,
         "org3",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p4 = makeFxStep(p3,
+    const ch4 = makeFxStep(ch3,
         "org4",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p5 = makeFxStep(p4,
+    const ch5 = makeFxStep(ch4,
         "org5",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p6 = makeFxStep(p5,
+    const ch6 = makeFxStep(ch5,
         "org6",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p7 = makeFxStep(p6,
+    const ch7 = makeFxStep(ch6,
         "org7",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p8 = makeFxStep(p7,
+    const ch8 = makeFxStep(ch7,
         "org8",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p9 = makeFxStep(p8,
+    const ch9 = makeFxStep(ch8,
         "org9",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p10 = makeFxStep(p9,
+    const ch10 = makeFxStep(ch9,
         "org10",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p11 = makeFxStep(p10,
+    const ch11 = makeFxStep(ch10,
         "org11",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p12 = makeFxStep(p11,
+    const ch12 = makeFxStep(ch11,
         "org12",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p13 = makeFxStep(p12,
+    const ch13 = makeFxStep(ch12,
         "org13",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p14 = makeFxStep(p13,
+    const ch14 = makeFxStep(ch13,
         "org14",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p15 = makeFxStep(p14,
+    const ch15 = makeFxStep(ch14,
         "org15",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p16 = makeFxStep(p15,
+    const ch16 = makeFxStep(ch15,
         "org16",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p17 = makeFxStep(p16,
+    const ch17 = makeFxStep(ch16,
         "org17",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p18 = makeFxStep(p17,
+    const ch18 = makeFxStep(ch17,
         "org18",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p19 = makeFxStep(p18,
+    const ch19 = makeFxStep(ch18,
         "org19",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const p20 = makeFxStep(p19,
+    const ch20 = makeFxStep(ch19,
         "org20",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
 
-    const sendPushProgEffect = p20.program(input)
+    const effect = ch20.program(input)
 
-    const sendPushProgRunnable =
-        Effect.provide(sendPushProgEffect, testServiceContext)
-    const sendPushProgResult = Effect.runSync(sendPushProgRunnable)
-    assertEquals(sendPushProgResult, {
+    const runnable =
+        Effect.provide(effect, testServiceContext)
+    const r = Effect.runSync(runnable)
+    assertEquals(r, {
         ...input,
         org1: { id: "foo", name: "Foo" },
         org2: { id: "foo", name: "Foo" },
