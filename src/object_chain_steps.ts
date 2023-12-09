@@ -38,7 +38,7 @@ export type ObjectStepSpec<K extends string, A, D, R, E, V>
 
 ////////////////////// UnConstrained steps ///////////////////////////
 
-// UnConstrainted steps allow for guaranteed-successful conditional 
+// UnConstrained steps allow for guaranteed-successful conditional 
 // inference from an array of the UnParameterised steps
 
 export type UCFxObjectStepSpec<K extends string, A, D1, D2, R, E, V> = {
@@ -73,6 +73,18 @@ export type UPFxObjectStepSpec = {
     readonly fxFn: UPFxFn
 }
 
+export type UPPureObjectStepSpec = {
+    readonly k: string
+    // deno-lint-ignore no-explicit-any
+    readonly pureFn: (arg: any) => any
+}
+
+// the unparameterised type we will type all step tuples with
+export type UPObjectStepSpec = UPPureObjectStepSpec | UPFxObjectStepSpec
+
+// some casts to get the parameterised step types back from 
+// the unparameterised versions
+
 // cast an UPFxObjectStepSpec down to its fully parameterised type
 export type CastUPFxObjectStepSpec<T extends UPFxObjectStepSpec> =
     T extends UCFxObjectStepSpec<infer K, infer A, infer D1, infer D2,
@@ -80,20 +92,11 @@ export type CastUPFxObjectStepSpec<T extends UPFxObjectStepSpec> =
     ? UCFxObjectStepSpec<K, A, D1, D2, R, E, V>
     : never
 
-export type UPPureObjectStepSpec = {
-    readonly k: string
-    // deno-lint-ignore no-explicit-any
-    readonly pureFn: (arg: any) => any
-}
-
 // cast an UPPureObjectStepSpec down to its fully parameterised type
 export type CastUPPureObjectStepSpec<T extends UPPureObjectStepSpec> =
     T extends UCPureObjectStepSpec<infer K, infer A, infer V>
     ? UCPureObjectStepSpec<K, A, V>
     : never
-
-// the unparameterised type we will type all step tuples with
-export type UPObjectStepSpec = UPPureObjectStepSpec | UPFxObjectStepSpec
 
 // cast an UPObjectStepSpec down to its concrete type
 export type ConcreteObjectStepSpec<T extends UPObjectStepSpec> =
@@ -163,7 +166,8 @@ export type ExpandTuple<Tuple extends readonly [...any[]]> = {
 export type ObjectStepsTuple<Steps extends NRCons<UPObjectStepSpec>> =
     ToTuple<UPObjectStepSpec, Steps>
 
-// get a union of all the Requirements from a list of steps
+// get a union of all the Requirements from a list of steps...
+// note that only FxObjectSteps have any Requirements
 export type ObjectStepReqs<T extends UPObjectStepSpec> =
     T extends UCFxObjectStepSpec<
         infer _K, infer _A, infer _D1, infer _D2, infer R, infer _E, infer _V>
@@ -248,7 +252,7 @@ export type ObjectStepsValueTuple<
 //
 // to this end we infer UCFxObjectStepSpec/UCPureObjectStepSpec
 // which is guaranteed to be inferrable
-// from elements of an UPObjectStepSpec[] (as opposed to FxObjectStepSpec,
+// from elements of an NRCons<UPObjectStepSpec> (as opposed to FxObjectStepSpec,
 // which is *not* guaranteed to be inferrable from all UPObjectStepSpecs
 // because of the constraints).
 // we then apply the pipeline  and internal data constraints in the 

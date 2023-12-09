@@ -1,3 +1,12 @@
+// this was the previous version of object_chain_steps
+// which typed a list of steps as a tuple of steps
+//
+// it worked, but when i tried to apply an incremental 
+// interface to building a chain i ran into type instantiation
+// depth errors which i believe were because each new level
+// created a new array, in addition to the previous level, so the
+// total inference depth was proportional to n(n+1)/2
+
 import { Effect } from "effect"
 import { FxFn, UPFxFn } from "./fx_fn.ts"
 
