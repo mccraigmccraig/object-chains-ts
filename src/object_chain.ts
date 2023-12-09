@@ -56,25 +56,6 @@ export type ObjectChain<Input extends ChainTagged,
         readonly contextTag: ObjectChainServiceContextTag<Input, Steps>
     }
 
-// infer the Input type parameter from the parameterised 
-// ObjectChain corresponding to an UPObjectchain - without first
-// inferring the ObjectChain. avoids type instantiation depth 
-// issues
-export type UPObjectChainInput<T extends UPObjectChain> = 
-    T['tag'] extends ChainTag<infer Input>
-    ? Input 
-    : never
-
-// infer the ChainTag<Input> property type from the parameterised 
-// ObjectChain corresponding to an UPObjectchain (which is 
-// used to identify the Service to run a particular chain) - without 
-// first inferring the ObjectChain. avoids type instantiation depth
-// issues
-export type UPObjectChainContextTag<T extends UPObjectChain> =
-    T['tag'] extends ChainTag<infer Input>
-    ? ChainTag<Input>
-    : never
-
 // an unparameterised version of ObjectChain for typing lists
 export type UPObjectChain = {
     // deno-lint-ignore no-explicit-any
@@ -86,6 +67,36 @@ export type UPObjectChain = {
     // deno-lint-ignore no-explicit-any
     readonly contextTag: Context.Tag<any, any>
 }
+
+// some type utilities to infer parameters from a
+// UPObjectChain without first inferring the parameterised
+// ObjectChain - which avoids some type instantiation depth
+// errors 
+export type UPObjectChainInput<T extends UPObjectChain> =
+    T['tag'] extends ChainTag<infer Input>
+    ? Input
+    : never
+
+export type UPObjectChainContextTag<T extends UPObjectChain> =
+    T['tag'] extends ChainTag<infer Input>
+    ? ChainTag<Input>
+    : never
+
+export type UPObjectChainProgramReqs<T extends UPObjectChain> =
+    ReturnType<T['program']> extends Effect.Effect<infer R, infer _E, infer _V>
+    ? R
+    : never
+
+export type UPObjectChainProgramErrors<T extends UPObjectChain> =
+    ReturnType<T['program']> extends Effect.Effect<infer _R, infer E, infer _V>
+    ? E
+    : never
+
+export type UPObjectChainProgramValue<T extends UPObjectChain> =
+    ReturnType<T['program']> extends Effect.Effect<infer _R, infer _E, infer V>
+    ? V
+    : never
+
 
 // build an ObjectChain from Steps
 export function objectChain<Input extends ChainTagged>() {

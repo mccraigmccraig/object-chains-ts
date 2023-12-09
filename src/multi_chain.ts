@@ -5,6 +5,9 @@ import {
     UPObjectChain,
     UPObjectChainInput,
     UPObjectChainContextTag,
+    UPObjectChainProgramReqs,
+    UPObjectChainProgramErrors,
+    UPObjectChainProgramValue,
     objectChainServiceImpl
 } from "./object_chain.ts"
 
@@ -26,31 +29,15 @@ export type ObjectChainsContextTagIdU<
         +readonly [Index in keyof Tuple]: UPObjectChainContextTag<Tuple[Index]>
     } & { length: Tuple['length'] }>
 
-
-
-export type ProgramReqs<T extends UPObjectChain> =
-    ReturnType<T['program']> extends Effect.Effect<infer R, infer _E, infer _V>
-    ? R
-    : never
-
-export type ProgramsReqsU<Tuple extends readonly [...UPObjectChain[]]> =
+export type ObjectChainsProgramsReqsU<Tuple extends readonly [...UPObjectChain[]]> =
     UnionFromTuple<{
-        +readonly [Index in keyof Tuple]: ProgramReqs<Tuple[Index]>
+        +readonly [Index in keyof Tuple]: UPObjectChainProgramReqs<Tuple[Index]>
     } & { length: Tuple['length'] }>
 
-export type ProgramErrors<T extends UPObjectChain> =
-    ReturnType<T['program']> extends Effect.Effect<infer _R, infer E, infer _V>
-    ? E
-    : never
-export type ProgramsErrorsU<Tuple extends readonly [...UPObjectChain[]]> =
+export type ObjectChainsProgramsErrorsU<Tuple extends readonly [...UPObjectChain[]]> =
     UnionFromTuple<{
-        +readonly [Index in keyof Tuple]: ProgramErrors<Tuple[Index]>
+        +readonly [Index in keyof Tuple]: UPObjectChainProgramErrors<Tuple[Index]>
     } & { length: Tuple['length'] }>
-
-export type ProgramValue<T extends UPObjectChain> =
-    ReturnType<T['program']> extends Effect.Effect<infer _R, infer _E, infer V>
-    ? V
-    : never
 
 // this indexes a tuple by the element's tagStr property
 // https://stackoverflow.com/questions/54599480/typescript-tuple-type-to-object-type  
@@ -64,7 +51,7 @@ export type IndexObjectChainTuple<T extends ReadonlyArray<UPObjectChain>> = {
 export type DistributeObjectChainValueTypes<
     I extends ChainTagged, Chains extends readonly [...UPObjectChain[]]> =
     IndexObjectChainTuple<Chains>[I['_tag']] extends UPObjectChain
-    ? ProgramValue<IndexObjectChainTuple<Chains>[I['_tag']]>
+    ? UPObjectChainProgramValue<IndexObjectChainTuple<Chains>[I['_tag']]>
     : never
 
 // return a function of the union 
@@ -91,8 +78,8 @@ export function multiChainProgram<Chains extends readonly [...UPObjectChain[]]>
             // so prog.program should be the resolved PureWrapperProgram - but 
             // the type is dependent on the actual type of the input
             console.log("multiProg: ", i)
-            return prog.program(i) as Effect.Effect<ProgramsReqsU<Chains>,
-                ProgramsErrorsU<Chains>,
+            return prog.program(i) as Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
+                ObjectChainsProgramsErrorsU<Chains>,
                 Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
         } else
             throw "NoProgram for tag: " + i._tag
@@ -105,8 +92,8 @@ export type MultiChain<Chains extends readonly [...UPObjectChain[]]> = {
 
     readonly program:
     <Input extends ObjectChainsInputU<Chains>>
-        (i: Input) => Effect.Effect<ProgramsReqsU<Chains>,
-            ProgramsErrorsU<Chains>,
+        (i: Input) => Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
+            ObjectChainsProgramsErrorsU<Chains>,
             Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
 }
 

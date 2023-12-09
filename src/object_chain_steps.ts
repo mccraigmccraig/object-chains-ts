@@ -98,8 +98,8 @@ export type CastUPPureObjectStepSpec<T extends UPPureObjectStepSpec> =
     ? UCPureObjectStepSpec<K, A, V>
     : never
 
-// cast an UPObjectStepSpec down to its concrete type
-export type ConcreteObjectStepSpec<T extends UPObjectStepSpec> =
+// cast an UPObjectStepSpec down to its fully parameterised type
+export type CastObjectStepSpec<T extends UPObjectStepSpec> =
     T extends PureObjectStepSpec<infer K, infer A, infer V>
     ? PureObjectStepSpec<K, A, V>
     : T extends UCFxObjectStepSpec<
@@ -123,8 +123,8 @@ export type ObjectStepFnReturnEffect<Spec> =
 // exactly how that {K: V} is combined with Obj is left to the caller
 export function objectStepFn<Obj>() {
     return function <Step extends UPObjectStepSpec>
-        (step: ConcreteObjectStepSpec<Step> extends Step
-            ? Step : ConcreteObjectStepSpec<Step>) {
+        (step: CastObjectStepSpec<Step> extends Step
+            ? Step : CastObjectStepSpec<Step>) {
 
         return function (obj: Obj) {
 
