@@ -2,14 +2,13 @@ import { assertEquals } from "assert"
 import { Effect } from "effect"
 import { chainTag } from "./chain_tag.ts"
 import * as cons from "./cons.ts"
-import { FxObjectStepSpec } from "./object_chain_steps.ts"
 import {
     objectChain, addFxStep, makeFxStep,
     addPureStep, makePureStep,
     objectChainFxFn, provideObjectChainServiceImpl
 } from "./object_chain.ts"
 import {
-    Org, OrgServiceI, getOrgByNick, User, getUserByIds, sendPush,
+    Org, getOrgByNick, User, getUserByIds, sendPush,
     testServiceContext
 } from "./test_services.ts"
 
