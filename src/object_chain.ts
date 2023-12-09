@@ -43,7 +43,10 @@ export function objectChainServiceContextTag
 // Object. it can be built in a single step with objectChain, or iteratively 
 // with addSteps
 export type ObjectChain<Input extends ChainTagged,
-    Steps extends cons.NRCons<UPObjectStepSpec>> = {
+    Steps extends cons.NRCons<UPObjectStepSpec>,
+    // this param is only here so that a chain value's IntelliSense 
+    // shows the chain's return type
+    _Return = ObjectChainStepsReturn<Steps,Input>> = {
 
         readonly tag: ChainTag<Input>
         readonly tagStr: Input['_tag']
