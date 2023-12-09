@@ -4,7 +4,7 @@ import {
     Org, getOrgByNick, User, getUserByIds, changeUser, sendPush,
     testServiceContext
 } from "./test_services.ts"
-import * as cons from "./cons.ts"
+import * as cons from "./cons_list.ts"
 import { chainTag } from "./chain_tag.ts"
 import { objectChain, objectChainFxFn } from "./object_chain.ts"
 import {

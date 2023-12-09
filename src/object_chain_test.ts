@@ -1,7 +1,7 @@
 import { assertEquals } from "assert"
 import { Effect } from "effect"
 import { chainTag } from "./chain_tag.ts"
-import * as cons from "./cons.ts"
+import * as cons from "./cons_list.ts"
 import {
     objectChain, addFxStep, makeFxStep,
     addPureStep, makePureStep,

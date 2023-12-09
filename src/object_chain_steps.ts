@@ -1,6 +1,6 @@
 import { Effect } from "effect"
 import { FxFn, UPFxFn } from "./fx_fn.ts"
-import { None, NRCons, Last, ToTuple, toTuple} from "./cons.ts"
+import { None, NRCons, Last, ToTuple, toTuple} from "./cons_list.ts"
 
 // inspiration:
 // https://dev.to/ecyrbe/how-to-use-advanced-typescript-to-define-a-pipe-function-381h
