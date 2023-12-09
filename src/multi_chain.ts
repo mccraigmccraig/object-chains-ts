@@ -61,7 +61,7 @@ export type DistributeObjectChainValueTypes<
 //
 // the Effect result type will be narrowed to the union member corresponding
 // to the input type when the input is supplied
-export function multiChainProgram<Chains extends readonly [...UPObjectChain[]]>
+export function multiChainProgram<const Chains extends readonly [...UPObjectChain[]]>
 
     (chains: readonly [...Chains]) {
 
@@ -97,7 +97,7 @@ export type MultiChain<Chains extends readonly [...UPObjectChain[]]> = {
             Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
 }
 
-export function multiChain<Chains extends readonly [...UPObjectChain[]]>
+export function multiChain<const Chains extends readonly [...UPObjectChain[]]>
     (chains: Chains) {
 
     return {
@@ -109,7 +109,7 @@ export function multiChain<Chains extends readonly [...UPObjectChain[]]>
     } as MultiChain<Chains>
 }
 
-export function addChains<Chains extends readonly [...UPObjectChain[]],
+export function addChains<const Chains extends readonly [...UPObjectChain[]],
     AdditionalChains extends readonly [...UPObjectChain[]]>
     (mc: MultiChain<Chains>,
         additionalChains: AdditionalChains) {
@@ -125,7 +125,7 @@ export function addChains<Chains extends readonly [...UPObjectChain[]],
 
 // return a Context with all the ObjectChain service impls
 export function multiChainServicesContext
-    <Chains extends readonly [...UPObjectChain[]]>
+    <const Chains extends readonly [...UPObjectChain[]]>
 
     (multiChain: MultiChain<Chains>) {
 
