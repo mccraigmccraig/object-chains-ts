@@ -14,11 +14,7 @@ export function isNone(v: any): v is None {
 // it's probably a cons, but we're only checking
 // one level with this type
 // deno-lint-ignore no-explicit-any
-export type NRCons<T> = None | readonly [T, any]
-
-// unparameterised cons can be used to roughly type arrays
-// deno-lint-ignore no-explicit-any
-export type UPCons = None | readonly [any, any]
+export type NRCons<T> = None | readonly [T, None | readonly any[]]
 
 // a Cons type with limited conditional recursion
 // T is the base type for the values
