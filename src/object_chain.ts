@@ -120,7 +120,7 @@ export function objectChain<Input extends ChainTagged>() {
             steps,
             program,
             contextTag
-        } as UPObjectChain as ObjectChain<Input, Steps>
+        } as ObjectChain<Input, Steps>
     }
 }
 
