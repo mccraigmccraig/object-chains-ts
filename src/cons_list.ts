@@ -14,15 +14,15 @@ export function isNone(v: any): v is None {
 // it's probably a cons, but we're only checking
 // one level with this type
 // deno-lint-ignore no-explicit-any
-export type NRCons<T> = None | readonly [T, None | readonly any[]]
+export type NRConsList<T> = None | readonly [T, None | readonly any[]]
 
 // a Cons type with limited conditional recursion
 // T is the base type for the values
-export type Cons<T, C> =
+export type ConsList<T, C> =
     C extends None
     ? None
     : C extends readonly [infer H extends T, infer R]
-    ? readonly [H, Cons<T, R>]
+    ? readonly [H, ConsList<T, R>]
     // don't recurse when there is no match,
     // it murders the compiler
     : never
@@ -32,13 +32,13 @@ export type Cons<T, C> =
 export function cons<T>() {
     return function <V extends T, const C>(
         v: V,
-        c: C extends Cons<T, C> ? C : Cons<T, C>) {
+        c: C extends ConsList<T, C> ? C : ConsList<T, C>) {
         return [v, c] as const
     }
 }
 
 export type First<T, C> =
-    C extends Cons<T, C>
+    C extends ConsList<T, C>
     ? C extends None
     ? None
     : C extends readonly [infer H extends T, infer _R]
@@ -48,7 +48,7 @@ export type First<T, C> =
 
 // get the first element from a cons list
 export function first<T>() {
-    return function <const C>(c: C extends Cons<T, C> ? C : Cons<T, C>)
+    return function <const C>(c: C extends ConsList<T, C> ? C : ConsList<T, C>)
         : First<T, C> {
         if (isNone(c)) {
             return None as First<T, C>
@@ -59,7 +59,7 @@ export function first<T>() {
 }
 
 export type Rest<T, C> =
-    C extends Cons<T, C>
+    C extends ConsList<T, C>
     ? C extends None
     ? None
     : C extends readonly [infer _H extends T, infer R]
@@ -69,7 +69,7 @@ export type Rest<T, C> =
 
 // get the rest of a cons list
 export function rest<T>() {
-    return function <const C>(c: C extends Cons<T, C> ? C : Cons<T, C>)
+    return function <const C>(c: C extends ConsList<T, C> ? C : ConsList<T, C>)
         : Rest<T, C> {
         if (isNone(c)) {
             return c as Rest<T, C>
@@ -89,9 +89,9 @@ export type Last<T, C> =
     : never
 
 export function last<T>() {
-    return function <const C>(c: C extends Cons<T, C> ? C : Cons<T, C>) {
+    return function <const C>(c: C extends ConsList<T, C> ? C : ConsList<T, C>) {
 
-        let result: Cons<T, None> = None
+        let result: ConsList<T, None> = None
         let cursor = c
         while (!isNone(cursor)) {
             // deno-lint-ignore no-explicit-any
@@ -105,7 +105,7 @@ export function last<T>() {
 }
 
 export type Reverse<T, C, Acc = None> =
-    C extends Cons<T, C>
+    C extends ConsList<T, C>
     ? C extends None
     ? Acc
     : C extends readonly [infer F extends T, infer R]
@@ -114,9 +114,9 @@ export type Reverse<T, C, Acc = None> =
     : never
 
 export function reverse<T>() {
-    return function <const C>(c: C extends Cons<T, C> ? C : Cons<T, C>) {
+    return function <const C>(c: C extends ConsList<T, C> ? C : ConsList<T, C>) {
 
-        let result: Cons<T, None> = None
+        let result: ConsList<T, None> = None
         let cursor = c
         while (!isNone(cursor)) {
             // deno-lint-ignore no-explicit-any
@@ -139,7 +139,7 @@ export type Append<T, C, V extends T> =
 // NB: builds an entirely new cons list
 export function append<T>() {
     return function <const C, V extends T>(
-        c: C extends Cons<T, C> ? C : Cons<T, C>,
+        c: C extends ConsList<T, C> ? C : ConsList<T, C>,
         v: V) {
 
         // deno-lint-ignore no-explicit-any
@@ -159,7 +159,7 @@ export type ToTuple<T, C, Acc extends readonly T[] = []> =
 export function toTuple<T>() {
     return function
         <const C>
-        (c: C extends Cons<T, C> ? C : Cons<T, C>) {
+        (c: C extends ConsList<T, C> ? C : ConsList<T, C>) {
         
         const result = []
         let cursor = c
@@ -175,7 +175,7 @@ export function toTuple<T>() {
 export type FromTuple<T,
     // deno-lint-ignore no-explicit-any
     Tuple extends readonly [...any[]],
-    Acc extends NRCons<T> = None> =
+    Acc extends NRConsList<T> = None> =
 
     Tuple extends readonly []
     ? Acc
