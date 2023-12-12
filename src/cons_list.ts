@@ -266,6 +266,12 @@ export const appa = append<number>()(a, 100)
 export const appb = append<number>()(b, 100)
 export const appc = append<number>()(c, 100)
 
+// concatenate lists
+export const conn = concat<number>()(None, None)
+export const conna = concat<number>()(None, c)
+export const connb = concat<number>()(c, None)
+export const connc = concat<number>()(c, c)
+
 // convert to a tuple 
 export const tupn = toTuple<number>()(None)
 export const tupa = toTuple<number>()(a)
