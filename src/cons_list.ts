@@ -1,5 +1,8 @@
 
 // a None element marking an empty cons list 
+
+import { as } from "npm:effect@^2.0.0-next.50/Cause";
+
 // or the end of a cons list.
 export const NoneTag: unique symbol = Symbol("ConsNone")
 export type None = { readonly _tag: typeof NoneTag }
@@ -146,6 +149,35 @@ export function append<T>() {
         const reversed = reverse<T>()(c) as any
         const prepended = cons<T>()(v, reversed)
         return reverse<T>()(prepended) as Append<T, C, V>
+    }
+}
+
+export type Concat<T, C1, C2> =
+    C1 extends None
+    ? C2
+    : C1 extends readonly [infer F extends T, infer R]
+    ? readonly [F, Concat<T, R, C2>]
+    : never
+
+// concatenate a cons list to another cons list
+// NB: c2 is appended unchanged to the last 
+// element in a new copy of c1
+export function concat<T>() {
+    return function <const C1, const C2>(
+        c1: C1 extends ConsList<T, C1> ? C1 : ConsList<T, C1>,
+        c2: C2 extends ConsList<T, C2> ? C2 : ConsList<T, C2>) {
+        
+        let result = c2
+        // deno-lint-ignore no-explicit-any
+        let cursor = reverse<T>()(c1) as any 
+        while (!isNone(cursor)) {
+            // deno-lint-ignore no-explicit-any
+            result = [cursor[0], result] as const as any
+            // deno-lint-ignore no-explicit-any
+            cursor = cursor[1] as any
+        }
+
+        return result as Concat<T, C1, C2>
     }
 }
 

@@ -43,6 +43,16 @@ Deno.test("test append", () => {
     assertEquals(cl.append()(cl.cons()(1, cl.cons()(2, cl.None)), 3), [1, [2, [3, cl.None]]])
 })
 
+Deno.test("test concat", () => {
+    assertEquals(cl.concat()(cl.None, cl.None), cl.None)
+    assertEquals(cl.concat()(cl.None, cl.cons()(1, cl.None)), [1, cl.None])
+    assertEquals(cl.concat()(cl.cons()(1, cl.None), cl.None), [1, cl.None])
+    assertEquals(cl.concat()(cl.cons()(1, cl.None), cl.cons()(2, cl.None)), [1, [2, cl.None]])
+    assertEquals(cl.concat()(cl.cons()(1, cl.cons()(2, cl.None)), cl.None), [1, [2, cl.None]])
+    assertEquals(cl.concat()(cl.cons()(1, cl.None), cl.cons()(2, cl.cons()(3, cl.None))), [1, [2, [3, cl.None]]])
+    assertEquals(cl.concat()(cl.cons()(1, cl.cons()(2, cl.None)), cl.cons()(3, cl.cons()(4, cl.None))), [1, [2, [3, [4, cl.None]]]])
+})
+
 Deno.test("test toTuple", () => {
     assertEquals(cl.toTuple()(cl.None), [])
     assertEquals(cl.toTuple()(cl.cons()(1, cl.None)), [1])
