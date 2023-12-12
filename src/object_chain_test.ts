@@ -5,6 +5,7 @@ import * as cons from "./cons_list.ts"
 import {
     objectChain, addFxStep, makeFxStep,
     addPureStep, makePureStep,
+    concatSteps,
     objectChainFxFn, provideObjectChainServiceImpl
 } from "./object_chain.ts"
 import {
@@ -164,6 +165,38 @@ Deno.test("makeFxStep and makePureStep add steps", () => {
         Effect.provide(sendPushChainEffect, testServiceContext)
     const sendPushChainResult = Effect.runSync(sendPushChainRunnable)
     assertEquals(sendPushChainResult, {
+        ...input,
+        org: { id: "foo", name: "Foo" },
+        user: { id: "bar", name: "Bar" },
+        formatPushNotification: "Welcome Bar of Foo",
+        sendPush: "push sent OK: Welcome Bar of Foo"
+    })
+})
+
+Deno.test("concatSteps concatenates steps", () => { 
+    const firstSteps =
+        [getOrgObjectStepSpec,
+            [getUserObjectStepSpec,
+                cons.None]] as const
+
+    const moreSteps =
+        [pureFormatPushNotificationStepSpec,
+            [sendPusnNotificationStepSpec, cons.None]] as const
+
+    const shortChain = objectChain<SendPushNotification>()(SendPushNotificationTag,
+        firstSteps)
+    
+    const chain = concatSteps(shortChain, moreSteps)
+
+    const input: SendPushNotification = {
+        _tag: "sendPushNotification" as const,
+        data: { org_nick: "foo", user_id: "bar" }
+    }
+    const effect = chain.program(input)
+    const runnable = Effect.provide(effect, testServiceContext)
+    const r = Effect.runSync(runnable)
+
+    assertEquals(r, {
         ...input,
         org: { id: "foo", name: "Foo" },
         user: { id: "bar", name: "Bar" },

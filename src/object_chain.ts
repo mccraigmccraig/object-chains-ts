@@ -203,6 +203,24 @@ export function makePureStep
     return addPureStep(chain, step)
 }
 
+// return a new ObjectChain with the addSteps concatenated
+export function concatSteps
+    <Input extends ChainTagged,
+        const ChainSteps extends cons.NRConsList<UPObjectStepSpec>,
+        const NewSteps extends cons.NRConsList<UPObjectStepSpec>>
+    (chain: ObjectChain<Input, ChainSteps>,
+        addSteps: NewSteps) {
+    
+    const newSteps = 
+        // deno-lint-ignore no-explicit-any
+        cons.concat<UPObjectStepSpec>()(chain.steps as any, addSteps as any)
+    
+    // deno-lint-ignore no-explicit-any
+    return objectChain<Input>()(chain.tag, newSteps as any) as
+        ObjectChain<Input, cons.Concat<UPObjectStepSpec, ChainSteps, NewSteps>>
+
+}
+
 ////////////////////////////////// recursion support ////////////////////
 
 // idea is that a chain will have an associated service, and we use the 
