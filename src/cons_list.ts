@@ -1,8 +1,5 @@
 
 // a None element marking an empty cons list 
-
-import { as } from "npm:effect@^2.0.0-next.50/Cause";
-
 // or the end of a cons list.
 export const NoneTag: unique symbol = Symbol("ConsNone")
 export type None = { readonly _tag: typeof NoneTag }
