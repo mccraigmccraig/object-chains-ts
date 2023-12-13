@@ -85,23 +85,23 @@ export type UPObjectStepSpec = UPPureObjectStepSpec | UPFxObjectStepSpec
 // some casts to get the parameterised step types back from 
 // the unparameterised versions
 
-// cast an UPFxObjectStepSpec down to its fully parameterised type
-export type CastUPFxObjectStepSpec<T extends UPFxObjectStepSpec> =
+// cast an UPFxObjectStepSpec down to its fully parameterised UC type
+export type CastUCFxObjectStepSpec<T extends UPFxObjectStepSpec> =
     T extends UCFxObjectStepSpec<infer K, infer A, infer D1, infer D2,
         infer R, infer E, infer V>
     ? UCFxObjectStepSpec<K, A, D1, D2, R, E, V>
     : never
 
-// cast an UPPureObjectStepSpec down to its fully parameterised type
-export type CastUPPureObjectStepSpec<T extends UPPureObjectStepSpec> =
+// cast an UPPureObjectStepSpec down to its fully parameterised UC type
+export type CastUCPureObjectStepSpec<T extends UPPureObjectStepSpec> =
     T extends UCPureObjectStepSpec<infer K, infer A, infer V>
     ? UCPureObjectStepSpec<K, A, V>
     : never
 
-// cast an UPObjectStepSpec down to its fully parameterised type
-export type CastObjectStepSpec<T extends UPObjectStepSpec> =
+// cast an UPObjectStepSpec down to its fully parameterised UC type
+export type CastUCObjectStepSpec<T extends UPObjectStepSpec> =
     T extends PureObjectStepSpec<infer K, infer A, infer V>
-    ? PureObjectStepSpec<K, A, V>
+    ? UCPureObjectStepSpec<K, A, V>
     : T extends UCFxObjectStepSpec<
         infer K, infer A, infer _D1, infer D2, infer R, infer E, infer V>
     // also apply the D1==D2 constraint
@@ -123,8 +123,8 @@ export type ObjectStepFnReturnEffect<Spec> =
 // exactly how that {K: V} is combined with Obj is left to the caller
 export function objectStepFn<Obj>() {
     return function <Step extends UPObjectStepSpec>
-        (step: CastObjectStepSpec<Step> extends Step
-            ? Step : CastObjectStepSpec<Step>) {
+        (step: CastUCObjectStepSpec<Step> extends Step
+            ? Step : CastUCObjectStepSpec<Step>) {
 
         return function (obj: Obj) {
 

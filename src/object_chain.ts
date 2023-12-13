@@ -4,9 +4,10 @@ import * as cons from "./cons_list.ts"
 import { ChainTagged, ChainTag } from "./chain_tag.ts"
 import * as ctag from "./chain_tag.ts"
 import {
+    CastUCObjectStepSpec,
     UCFxObjectStepSpec, UCPureObjectStepSpec,
-    UPFxObjectStepSpec, CastUPFxObjectStepSpec,
-    UPPureObjectStepSpec, CastUPPureObjectStepSpec,
+    UPFxObjectStepSpec, CastUCFxObjectStepSpec,
+    UPPureObjectStepSpec, CastUCPureObjectStepSpec,
     ObjectChainSteps, UPObjectStepSpec,
     ObjectStepsTupleReqsU,
     ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg
@@ -124,6 +125,27 @@ export function objectChain<Input extends ChainTagged>() {
     }
 }
 
+// add a FxStep to an ObjectChain, returning a new ObjectChain
+export function addStep
+    <Input extends ChainTagged,
+        const Steps extends cons.NRConsList<UPObjectStepSpec>,
+        NewStep extends UPObjectStepSpec>
+
+    (chain: ObjectChain<Input, Steps>,
+        step: NewStep extends CastUCObjectStepSpec<NewStep>
+            ? NewStep
+            : CastUCObjectStepSpec<NewStep>) {
+
+    const newSteps =
+        // deno-lint-ignore no-explicit-any
+        cons.append<UPObjectStepSpec>()(chain.steps as any, step)
+
+    // deno-lint-ignore no-explicit-any
+    return objectChain<Input>()(chain.tag, newSteps as any) as
+        ObjectChain<Input, cons.Append<UPObjectStepSpec, Steps, NewStep>>
+}
+
+
 // add an FxStep to an ObjectChain, returning a new ObjectChain
 export function addFxStep
     <Input extends ChainTagged,
@@ -131,9 +153,9 @@ export function addFxStep
         NewStep extends UPFxObjectStepSpec>
 
     (chain: ObjectChain<Input, Steps>,
-        step: NewStep extends CastUPFxObjectStepSpec<NewStep>
+        step: NewStep extends CastUCFxObjectStepSpec<NewStep>
             ? NewStep
-            : CastUPFxObjectStepSpec<NewStep>) {
+            : CastUCFxObjectStepSpec<NewStep>) {
 
     const newSteps =
         // deno-lint-ignore no-explicit-any
@@ -173,9 +195,9 @@ export function addPureStep
         NewStep extends UPPureObjectStepSpec>
 
     (chain: ObjectChain<Input, Steps>,
-        step: NewStep extends CastUPPureObjectStepSpec<NewStep>
+        step: NewStep extends CastUCPureObjectStepSpec<NewStep>
             ? NewStep
-            : CastUPPureObjectStepSpec<NewStep>) {
+            : CastUCPureObjectStepSpec<NewStep>) {
 
     const newSteps =
         // deno-lint-ignore no-explicit-any
