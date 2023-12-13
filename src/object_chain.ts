@@ -6,8 +6,6 @@ import * as ctag from "./chain_tag.ts"
 import {
     CastUCObjectStepSpec,
     UCFxObjectStepSpec, UCPureObjectStepSpec,
-    UPFxObjectStepSpec, CastUCFxObjectStepSpec,
-    UPPureObjectStepSpec, CastUCPureObjectStepSpec,
     ObjectChainSteps, UPObjectStepSpec,
     ObjectStepsTupleReqsU,
     ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg
@@ -145,27 +143,6 @@ export function addStep
         ObjectChain<Input, cons.Append<UPObjectStepSpec, Steps, NewStep>>
 }
 
-
-// add an FxStep to an ObjectChain, returning a new ObjectChain
-export function addFxStep
-    <Input extends ChainTagged,
-        const Steps extends cons.NRConsList<UPObjectStepSpec>,
-        NewStep extends UPFxObjectStepSpec>
-
-    (chain: ObjectChain<Input, Steps>,
-        step: NewStep extends CastUCFxObjectStepSpec<NewStep>
-            ? NewStep
-            : CastUCFxObjectStepSpec<NewStep>) {
-
-    const newSteps =
-        // deno-lint-ignore no-explicit-any
-        cons.append<UPObjectStepSpec>()(chain.steps as any, step)
-
-    // deno-lint-ignore no-explicit-any
-    return objectChain<Input>()(chain.tag, newSteps as any) as
-        ObjectChain<Input, cons.Append<UPObjectStepSpec, Steps, NewStep>>
-}
-
 // make an FxStep at the end of an ObjectChain, returning a new ObjectChain
 export function makeFxStep
     <Input extends ChainTagged,
@@ -183,29 +160,9 @@ export function makeFxStep
 
     const step = { k, inFn, fxFn } as
         UCFxObjectStepSpec<K,
-            ObjectChainStepsReturn<Steps, Input>, D1, D2, R, E, V>
+            ObjectChainStepsReturn<Steps, Input>, D2, D2, R, E, V>
 
-    return addFxStep(chain, step)
-}
-
-// add a PureStep to an ObjectChain, returning a new ObjectChain
-export function addPureStep
-    <Input extends ChainTagged,
-        const Steps extends cons.NRConsList<UPObjectStepSpec>,
-        NewStep extends UPPureObjectStepSpec>
-
-    (chain: ObjectChain<Input, Steps>,
-        step: NewStep extends CastUCPureObjectStepSpec<NewStep>
-            ? NewStep
-            : CastUCPureObjectStepSpec<NewStep>) {
-
-    const newSteps =
-        // deno-lint-ignore no-explicit-any
-        cons.append<UPObjectStepSpec>()(chain.steps as any, step)
-
-    // deno-lint-ignore no-explicit-any
-    return objectChain<Input>()(chain.tag, newSteps as any) as
-        ObjectChain<Input, cons.Append<UPObjectStepSpec, Steps, NewStep>>
+    return addStep(chain, step)
 }
 
 // make a PureStep at the end of an ObjectChain, returning a new ObjectChain
@@ -222,7 +179,7 @@ export function makePureStep
         UCPureObjectStepSpec<K,
             ObjectChainStepsReturn<Steps, Input>, V>
 
-    return addPureStep(chain, step)
+    return addStep(chain, step)
 }
 
 // return a new ObjectChain with the addSteps concatenated

@@ -3,8 +3,7 @@ import { Effect } from "effect"
 import { chainTag } from "./chain_tag.ts"
 import * as cons from "./cons_list.ts"
 import {
-    objectChain, addFxStep, makeFxStep,
-    addPureStep, makePureStep,
+    objectChain, addStep, makeFxStep, makePureStep,
     concatSteps,
     objectChainFxFn, provideObjectChainServiceImpl
 } from "./object_chain.ts"
@@ -109,10 +108,10 @@ Deno.test("addStep lets you add steps", () => {
     const emptyResult = Effect.runSync(emptyEffect)
     assertEquals(emptyResult, input)
 
-    const ch1 = addFxStep(ch0, getOrgObjectStepSpec)
-    const ch2 = addFxStep(ch1, getUserObjectStepSpec)
-    const ch3 = addPureStep(ch2, pureFormatPushNotificationStepSpec)
-    const sendPushChain = addFxStep(ch3, sendPusnNotificationStepSpec)
+    const ch1 = addStep(ch0, getOrgObjectStepSpec)
+    const ch2 = addStep(ch1, getUserObjectStepSpec)
+    const ch3 = addStep(ch2, pureFormatPushNotificationStepSpec)
+    const sendPushChain = addStep(ch3, sendPusnNotificationStepSpec)
 
     const sendPushChainEffect = sendPushChain.program(input)
     const sendPushChainRunnable = Effect.provide(sendPushChainEffect,
