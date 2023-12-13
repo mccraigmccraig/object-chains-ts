@@ -123,7 +123,7 @@ export type ObjectStepFnReturnEffect<Spec> =
 // exactly how that {K: V} is combined with Obj is left to the caller
 export function objectStepFn<Obj>() {
     return function <Step extends UPObjectStepSpec>
-        (step: CastUCObjectStepSpec<Step> extends Step
+        (step: Step extends CastUCObjectStepSpec<Step>
             ? Step : CastUCObjectStepSpec<Step>) {
 
         return function (obj: Obj) {
