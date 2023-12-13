@@ -46,12 +46,12 @@ export type ObjectChain<Input extends ChainTagged,
     Steps extends cons.NRConsList<UPObjectStepSpec>,
     // this param is only here so that a chain value's IntelliSense 
     // shows the chain's return type
-    _Return = ObjectChainStepsReturn<Steps,Input>> = {
+    _Return = ObjectChainStepsReturn<Steps, Input>> = {
 
         readonly tag: ChainTag<Input>
         readonly tagStr: Input['_tag']
 
-        readonly steps: ObjectChainSteps<Steps, Input> extends Steps
+        readonly steps: Steps extends ObjectChainSteps<Steps, Input>
         ? Steps
         : ObjectChainSteps<Steps, Input>
 
@@ -207,18 +207,19 @@ export function makePureStep
 export function concatSteps
     <Input extends ChainTagged,
         const ChainSteps extends cons.NRConsList<UPObjectStepSpec>,
-        const NewSteps extends cons.NRConsList<UPObjectStepSpec>>
+        const AddSteps extends cons.NRConsList<UPObjectStepSpec>>
     (chain: ObjectChain<Input, ChainSteps>,
-        addSteps: NewSteps) {
-    
-    const newSteps = 
+        addSteps: AddSteps extends cons.ConsList<UPObjectStepSpec, AddSteps>
+            ? AddSteps
+            : cons.ConsList<UPObjectStepSpec, AddSteps>) {
+
+    const newSteps =
         // deno-lint-ignore no-explicit-any
         cons.concat<UPObjectStepSpec>()(chain.steps as any, addSteps as any)
-    
+
     // deno-lint-ignore no-explicit-any
     return objectChain<Input>()(chain.tag, newSteps as any) as
-        ObjectChain<Input, cons.Concat<UPObjectStepSpec, ChainSteps, NewSteps>>
-
+        ObjectChain<Input, cons.Concat<UPObjectStepSpec, ChainSteps, AddSteps>>
 }
 
 ////////////////////////////////// recursion support ////////////////////
