@@ -106,7 +106,7 @@ export function objectChain<Input extends ChainTagged>() {
     return function <const Steps extends cons.NRConsList<UPObjectStepSpec>>
         (tag: ChainTag<Input>,
 
-            steps: ObjectChainSteps<Steps, Input> extends Steps
+            steps: Steps extends ObjectChainSteps<Steps, Input>
                 ? Steps
                 : ObjectChainSteps<Steps, Input>) {
 

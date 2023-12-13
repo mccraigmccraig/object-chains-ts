@@ -306,7 +306,7 @@ export function objectChainStepsProg<Obj>() {
 
     return function <const Specs extends NRConsList<UPObjectStepSpec>>
         (objectStepSpecs:
-            ObjectChainSteps<Specs, Obj> extends Specs
+            Specs extends ObjectChainSteps<Specs, Obj>
             ? Specs
             : ObjectChainSteps<Specs, Obj>) {
 
