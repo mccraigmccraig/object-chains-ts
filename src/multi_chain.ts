@@ -11,30 +11,32 @@ import {
     objectChainServiceImpl
 } from "./object_chain.ts"
 
+export type ObjectChainList = readonly [...UPObjectChain[]]
+
 // union of all the inputs from a tuple of chains
 export type ObjectChainsInputU<
-    Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
+    Tuple extends ObjectChainList> = UnionFromTuple<{
         +readonly [Index in keyof Tuple]: UPObjectChainInput<Tuple[Index]>
     } & { length: Tuple['length'] }>
 
 // union of all the tagStrs from a tuple of chains
 export type ObjectChainsTagStrU<
-    Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
+    Tuple extends ObjectChainList> = UnionFromTuple<{
         +readonly [Index in keyof Tuple]: Tuple[Index]['tagStr']
     } & { length: Tuple['length'] }>
 
 // union of all the ContextTagId from a tuple of chains
 export type ObjectChainsContextTagIdU<
-    Tuple extends readonly [...UPObjectChain[]]> = UnionFromTuple<{
+    Tuple extends ObjectChainList> = UnionFromTuple<{
         +readonly [Index in keyof Tuple]: UPObjectChainContextTag<Tuple[Index]>
     } & { length: Tuple['length'] }>
 
-export type ObjectChainsProgramsReqsU<Tuple extends readonly [...UPObjectChain[]]> =
+export type ObjectChainsProgramsReqsU<Tuple extends ObjectChainList> =
     UnionFromTuple<{
         +readonly [Index in keyof Tuple]: UPObjectChainProgramReqs<Tuple[Index]>
     } & { length: Tuple['length'] }>
 
-export type ObjectChainsProgramsErrorsU<Tuple extends readonly [...UPObjectChain[]]> =
+export type ObjectChainsProgramsErrorsU<Tuple extends ObjectChainList> =
     UnionFromTuple<{
         +readonly [Index in keyof Tuple]: UPObjectChainProgramErrors<Tuple[Index]>
     } & { length: Tuple['length'] }>
@@ -49,14 +51,14 @@ export type IndexObjectChainTuple<T extends ReadonlyArray<UPObjectChain>> = {
 // union of Taggeds, resulting in a union of values!
 // https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
 export type DistributeObjectChainValueTypes<
-    I extends ChainTagged, Chains extends readonly [...UPObjectChain[]]> =
+    I extends ChainTagged, Chains extends ObjectChainList> =
     IndexObjectChainTuple<Chains>[I['_tag']] extends UPObjectChain
     ? UPObjectChainProgramValue<IndexObjectChainTuple<Chains>[I['_tag']]>
     : never
 
 // type of the Effect returned by a MultiChain's program
 export type MultiChainProgramEffect<
-    Chains extends readonly [...UPObjectChain[]],
+    Chains extends ObjectChainList,
     Input extends ObjectChainsInputU<Chains>> =
 
     Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
@@ -65,7 +67,7 @@ export type MultiChainProgramEffect<
             Chains>,
             Input>>
 
-export type MultiChainProgram<Chains extends readonly [...UPObjectChain[]]> =
+export type MultiChainProgram<Chains extends ObjectChainList> =
     <Input extends ObjectChainsInputU<Chains>>
         (i: Input) =>
         MultiChainProgramEffect<Chains, Input>
@@ -80,9 +82,9 @@ export type MultiChainProgram<Chains extends readonly [...UPObjectChain[]]> =
 //
 // the Effect result type will be narrowed to the union member corresponding
 // to the input type when the input is supplied
-export function multiChainProgram<const Chains extends readonly [...UPObjectChain[]]>
+export function multiChainProgram<const Chains extends ObjectChainList>
 
-    (chains: readonly [...Chains]) {
+    (chains: Chains) {
 
     const progsByEventTag = chains.reduce(
         (m, p) => { m[p.tagStr] = p; return m },
@@ -103,7 +105,7 @@ export function multiChainProgram<const Chains extends readonly [...UPObjectChai
     }
 }
 
-export type MultiChain<Chains extends readonly [...UPObjectChain[]]> = {
+export type MultiChain<Chains extends ObjectChainList> = {
     readonly chains: Chains
     readonly chainsByTag: { [index: string]: UPObjectChain }
 
@@ -116,7 +118,7 @@ export type MultiChain<Chains extends readonly [...UPObjectChain[]]> = {
             Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
 }
 
-export function multiChain<const Chains extends readonly [...UPObjectChain[]]>
+export function multiChain<const Chains extends ObjectChainList>
     (chains: Chains) {
 
     return {
@@ -128,8 +130,8 @@ export function multiChain<const Chains extends readonly [...UPObjectChain[]]>
     } as MultiChain<Chains>
 }
 
-export function addChains<const Chains extends readonly [...UPObjectChain[]],
-    AdditionalChains extends readonly [...UPObjectChain[]]>
+export function addChains<const Chains extends ObjectChainList,
+    AdditionalChains extends ObjectChainList>
     (mc: MultiChain<Chains>,
         additionalChains: AdditionalChains) {
 
@@ -144,7 +146,7 @@ export function addChains<const Chains extends readonly [...UPObjectChain[]],
 
 // return a Context with all the ObjectChain service impls
 export function multiChainServicesContext
-    <const Chains extends readonly [...UPObjectChain[]]>
+    <const Chains extends ObjectChainList>
 
     (multiChain: MultiChain<Chains>) {
 
@@ -163,7 +165,7 @@ export function multiChainServicesContext
 }
 
 export function multiChainFxFn
-    <const Chains extends readonly [...UPObjectChain[]]>
+    <const Chains extends ObjectChainList>
     (multiChain: MultiChain<Chains>) {
 
 
