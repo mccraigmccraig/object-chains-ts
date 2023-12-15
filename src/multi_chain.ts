@@ -96,10 +96,12 @@ export function multiChainProgram<const Chains extends ObjectChainList>
     return <Input extends ObjectChainsInputU<Chains>>(i: Input) => {
         const prog = progsByEventTag[i._tag]
         if (prog != undefined) {
-            // so prog.program should be the resolved PureWrapperProgram - but 
-            // the type is dependent on the actual type of the input
             console.log("multiProg: ", i)
-            return prog.program(i) as MultiChainProgramEffect<Chains, Input>
+            // could use MultiChainProgramEffect type here, but it leads
+            // to worse IntelliSense
+            return prog.program(i) as Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
+                ObjectChainsProgramsErrorsU<Chains>,
+                Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
         } else
             throw "NoProgram for tag: " + i._tag
     }
