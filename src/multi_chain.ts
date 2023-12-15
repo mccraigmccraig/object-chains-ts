@@ -76,13 +76,15 @@ export type MultiChainService<Chains extends ObjectChainList> = {
     readonly buildObject: MultiChainProgram<Chains>
 }
 
+const multiChainTagKey: unique symbol = Symbol()
+
 export type MultiChainTag = {
-    readonly _tag: unique symbol
+    readonly [multiChainTagKey]: unique symbol
 }
 
 export function multiChainTag() {
     return {
-        _tag: Symbol()
+        [multiChainTagKey]: Symbol()
     } as MultiChainTag
 }
 
