@@ -72,8 +72,18 @@ export type MultiChainProgram<Chains extends ObjectChainList> =
         (i: Input) =>
         MultiChainProgramEffect<Chains, Input>
 
-// export type MultiChainService
+export type MultiChainService<Chains extends ObjectChainList> = {
+    readonly buildObject: MultiChainProgram<Chains>
+}
 
+// how to identify a MultiChainService ? do we need a tag string ?
+export type MultiChainServiceContextTag<Chains extends ObjectChainList> =  
+    Context.Tag<MultiChainService<Chains>, MultiChainService<Chains>>
+    
+export function multiChainServiceContextTag
+    <Chains extends ObjectChainList>() {
+    return Context.Tag<MultiChainService<Chains>>()
+}
 
 // return a function of the union 
 // of all the input types handled by the supplied UPObjectChains,
@@ -118,6 +128,8 @@ export type MultiChain<Chains extends ObjectChainList> = {
         (i: Input) => Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
             ObjectChainsProgramsErrorsU<Chains>,
             Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
+    
+    readonly contextTag: MultiChainServiceContextTag<Chains>
 }
 
 export function multiChain<const Chains extends ObjectChainList>
@@ -125,10 +137,11 @@ export function multiChain<const Chains extends ObjectChainList>
 
     return {
         chains: chains,
-        program: multiChainProgram(chains),
         chainsByTag: chains.reduce(
             (m, p) => { m[p.tagStr] = p; return m },
-            {} as { [index: string]: UPObjectChain })
+            {} as { [index: string]: UPObjectChain }),
+        program: multiChainProgram(chains),
+        contextTag: multiChainServiceContextTag<Chains>()
     } as MultiChain<Chains>
 }
 
@@ -146,7 +159,17 @@ export function addChains<const Chains extends ObjectChainList,
 // so a MultiChain can register Service implementations for each of its
 // chains
 
-// return a Context with all the ObjectChain service impls
+export function multiChainServiceImpl
+    <const Chains extends ObjectChainList>
+    (multiChain: MultiChain<Chains>) {
+
+    return {
+        buildObject: multiChain.program
+    } as MultiChainService<Chains>
+}
+
+// return a Context with all the ObjectChain service impls and 
+// a service impl for the MultiChain itself
 export function multiChainServicesContext
     <const Chains extends ObjectChainList>
 
@@ -157,22 +180,34 @@ export function multiChainServicesContext
     const rctx = multiChain.chains.reduce(
         (ctx, ch) => {
             console.log("registering ObjectChainService for:", ch.tagStr)
-            return Context.add(ctx, ch.contextTag,
+            return Context.add(ctx,
+                ch.contextTag,
                 // deno-lint-ignore no-explicit-any
                 objectChainServiceImpl(ch as any))
         },
-        Context.empty()
+        Context.add(Context.empty(),
+            multiChain.contextTag,
+            multiChainServiceImpl(multiChain))
     )
-    return rctx as Context.Context<ObjectChainsContextTagIdU<Chains>>
+    return rctx as Context.Context<
+        ObjectChainsContextTagIdU<Chains> |
+        MultiChainService<Chains>>
 }
 
+// given a MultiChain return a FxFn to run any of its chains,
+// so can be used to recursively invoke any of the chains 
+// from any step which outputs a chain Input
 export function multiChainFxFn
     <const Chains extends ObjectChainList>
-    (multiChain: MultiChain<Chains>) {
 
+    (multiChain: MultiChain<Chains>) {
 
     return <Input extends ObjectChainsInputU<Chains>>
         (i: Input) => {
-        return undefined as unknown as MultiChainProgramEffect<Chains, Input>
+
+        return Effect.gen(function* (_) {
+            const svc = yield* _(multiChain.contextTag)
+            return yield* _(svc.buildObject(i))
+        })
     }
 }
