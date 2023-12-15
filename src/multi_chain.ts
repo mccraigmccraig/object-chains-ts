@@ -54,6 +54,25 @@ export type DistributeObjectChainValueTypes<
     ? UPObjectChainProgramValue<IndexObjectChainTuple<Chains>[I['_tag']]>
     : never
 
+// type of the Effect returned by a MultiChain's program
+export type MultiChainProgramEffect<
+    Chains extends readonly [...UPObjectChain[]],
+    Input extends ObjectChainsInputU<Chains>> =
+
+    Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
+        ObjectChainsProgramsErrorsU<Chains>,
+        Extract<DistributeObjectChainValueTypes<ObjectChainsInputU<Chains>,
+            Chains>,
+            Input>>
+
+export type MultiChainProgram<Chains extends readonly [...UPObjectChain[]]> =
+    <Input extends ObjectChainsInputU<Chains>>
+        (i: Input) =>
+        MultiChainProgramEffect<Chains, Input>
+
+// export type MultiChainService
+
+
 // return a function of the union 
 // of all the input types handled by the supplied UPObjectChains,
 // which uses a UPObjectChain to handle the input,
@@ -78,9 +97,7 @@ export function multiChainProgram<const Chains extends readonly [...UPObjectChai
             // so prog.program should be the resolved PureWrapperProgram - but 
             // the type is dependent on the actual type of the input
             console.log("multiProg: ", i)
-            return prog.program(i) as Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
-                ObjectChainsProgramsErrorsU<Chains>,
-                Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
+            return prog.program(i) as MultiChainProgramEffect<Chains, Input>
         } else
             throw "NoProgram for tag: " + i._tag
     }
@@ -90,8 +107,10 @@ export type MultiChain<Chains extends readonly [...UPObjectChain[]]> = {
     readonly chains: Chains
     readonly chainsByTag: { [index: string]: UPObjectChain }
 
-    readonly program:
-    <Input extends ObjectChainsInputU<Chains>>
+    // could use MultiChainProgram type here, but it leads 
+    // to worse IntelliSense - this way we get to the Effect 
+    // ASAP
+    readonly program: <Input extends ObjectChainsInputU<Chains>>
         (i: Input) => Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
             ObjectChainsProgramsErrorsU<Chains>,
             Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
@@ -141,4 +160,15 @@ export function multiChainServicesContext
         Context.empty()
     )
     return rctx as Context.Context<ObjectChainsContextTagIdU<Chains>>
+}
+
+export function multiChainFxFn
+    <const Chains extends readonly [...UPObjectChain[]]>
+    (multiChain: MultiChain<Chains>) {
+
+
+    return <Input extends ObjectChainsInputU<Chains>>
+        (i: Input) => {
+        return undefined as unknown as MultiChainProgramEffect<Chains, Input>
+    }
 }
