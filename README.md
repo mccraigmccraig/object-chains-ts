@@ -11,8 +11,7 @@
 
 `object-chains` helps you create data-driven programs to process messages or 
 events.  A program to process a single type of value is built from a chain
-of effectful or pure steps, and such programs can be composed and can even
-recurse. It leans heavily on the awesome power of 
+of effectful or pure steps, and programs can be composed (although cannot directly recurse) . It leans heavily on the awesome power of 
 [Effect](https://github.com/Effect-TS/effect)
 
 ```ts

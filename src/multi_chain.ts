@@ -172,7 +172,7 @@ export function addChains<Tag extends MultiChainTag,
     return multiChain([...mc.chains, ...additionalChains])
 }
 
-///////////////////////// recursion support
+///////////////////////// composition support
 
 // each chain has a ContextTag for the service which will run it
 // so a MultiChain can register Service implementations for each of its
@@ -214,7 +214,7 @@ export function multiChainServicesContext
 }
 
 // given a MultiChain return a FxFn to run any of its chains,
-// so can be used to recursively invoke any of the chains 
+// so can be used to invoke any of the chains 
 // from any step which outputs a chain Input
 export function multiChainFxFn
     <Tag extends MultiChainTag,

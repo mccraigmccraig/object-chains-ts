@@ -201,12 +201,12 @@ export function concatSteps
         ObjectChain<Input, cons.Concat<UPObjectStepSpec, ChainSteps, AddSteps>>
 }
 
-////////////////////////////////// recursion support ////////////////////
+////////////////////////////////// composition support ////////////////////
 
 // idea is that a chain will have an associated service, and we use the 
 // Tag<Input> of the chain to identify the service in a Context.Tag ... 
 // then we can create an FxFn using the Context.Tag which can be used
-// as a computation step to recurse or run any other chain as a computation
+// as a computation step to run any other chain as a computation
 // step
 
 // make an ObjectChainService impl with given which will run an ObjectChain 
