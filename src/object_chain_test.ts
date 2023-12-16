@@ -240,7 +240,7 @@ const sendPushNotificationAndGetOrgSteps =
                     [runGetOrgChainStepspec,
                         cons.None]]]]] as const
 
-Deno.test("recursion with RunObjectChainFxFn", () => {
+Deno.test("composition with RunObjectChainFxFn", () => {
     const chain = objectChain<SendPushNotificationAndGetOrg>()(
         SendPushNotificationAndGetOrgTag,
         sendPushNotificationAndGetOrgSteps)

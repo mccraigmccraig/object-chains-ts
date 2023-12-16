@@ -239,7 +239,7 @@ const sendWelcomePushAndUpdateUserStepsChain =
         sendWelcomePushAndUpdateUserSteps
     )
 
-Deno.test("recursion with multiChainServicesContext", () => {
+Deno.test("composition with multiChainServicesContext", () => {
     // both the directly invoked chain and the 
     // recursively invoked chain must be in the 
     // MultiChain
