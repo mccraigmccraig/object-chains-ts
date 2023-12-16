@@ -6,14 +6,14 @@ import * as ctag from "./chain_tag.ts"
 import {
     CastUCObjectStepSpec,
     UCFxObjectStepSpec, UCPureObjectStepSpec,
-    ObjectChainSteps, UPObjectStepSpec,
+    ObjectChainSteps, UPObjectStepSpec, ObjectStepSpecList,
     ObjectStepsTupleReqsU,
     ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg
 } from "./object_chain_steps.ts"
 
 // an effectful function of Input which build an Object
 export type ObjectChainProgram<Input extends ChainTagged,
-    Steps extends cons.NRConsList<UPObjectStepSpec>> =
+    Steps extends ObjectStepSpecList> =
     (i: Input) => Effect.Effect<
         ObjectStepsTupleReqsU<Steps>,
         ObjectStepsErrorsU<Steps>,
@@ -22,18 +22,18 @@ export type ObjectChainProgram<Input extends ChainTagged,
 
 // a type for a service which can run an ObjectChain
 export type ObjectChainService<Input extends ChainTagged,
-    Steps extends cons.NRConsList<UPObjectStepSpec>> = {
+    Steps extends ObjectStepSpecList> = {
         readonly buildObject: ObjectChainProgram<Input, Steps>
     }
 
 export type ObjectChainServiceContextTag<Input extends ChainTagged,
-    Steps extends cons.NRConsList<UPObjectStepSpec>> =
+    Steps extends ObjectStepSpecList> =
     Context.Tag<ChainTag<Input>, ObjectChainService<Input, Steps>>
 
 // get a Context.Tag for an ObjectChainService
 export function objectChainServiceContextTag
     <Input extends ChainTagged,
-        Steps extends cons.NRConsList<UPObjectStepSpec>>
+        Steps extends ObjectStepSpecList>
     () {
     return Context.Tag<ChainTag<Input>, ObjectChainService<Input, Steps>>()
 }
@@ -42,7 +42,7 @@ export function objectChainServiceContextTag
 // Object. it can be built in a single step with objectChain, or iteratively 
 // with addSteps
 export type ObjectChain<Input extends ChainTagged,
-    Steps extends cons.NRConsList<UPObjectStepSpec>,
+    Steps extends ObjectStepSpecList,
     // this param is only here so that a chain value's IntelliSense 
     // shows the chain's return type
     _Return = ObjectChainStepsReturn<Steps, Input>> = {
@@ -63,7 +63,7 @@ export type UPObjectChain = {
     // deno-lint-ignore no-explicit-any
     readonly tag: any
     readonly tagStr: string
-    readonly steps: cons.NRConsList<UPObjectStepSpec>
+    readonly steps: ObjectStepSpecList
     // deno-lint-ignore no-explicit-any
     readonly program: (i: any) => Effect.Effect<any, any, any>
     // deno-lint-ignore no-explicit-any
@@ -102,7 +102,7 @@ export type UPObjectChainProgramValue<T extends UPObjectChain> =
 
 // build an ObjectChain from Steps
 export function objectChain<Input extends ChainTagged>() {
-    return function <const Steps extends cons.NRConsList<UPObjectStepSpec>>
+    return function <const Steps extends ObjectStepSpecList>
         (tag: ChainTag<Input>,
 
             steps: Steps extends ObjectChainSteps<Steps, Input>
@@ -126,7 +126,7 @@ export function objectChain<Input extends ChainTagged>() {
 // add a FxStep to an ObjectChain, returning a new ObjectChain
 export function addStep
     <Input extends ChainTagged,
-        const Steps extends cons.NRConsList<UPObjectStepSpec>,
+        const Steps extends ObjectStepSpecList,
         NewStep extends UPObjectStepSpec>
 
     (chain: ObjectChain<Input, Steps>,
@@ -146,7 +146,7 @@ export function addStep
 // make an FxStep at the end of an ObjectChain, returning a new ObjectChain
 export function makeFxStep
     <Input extends ChainTagged,
-        const Steps extends cons.NRConsList<UPObjectStepSpec>,
+        const Steps extends ObjectStepSpecList,
         K extends string,
         A extends ObjectChainStepsReturn<Steps, Input>,
         D1 extends D2,
@@ -168,7 +168,7 @@ export function makeFxStep
 // make a PureStep at the end of an ObjectChain, returning a new ObjectChain
 export function makePureStep
     <Input extends ChainTagged,
-        const Steps extends cons.NRConsList<UPObjectStepSpec>,
+        const Steps extends ObjectStepSpecList,
         K extends string,
         A extends ObjectChainStepsReturn<Steps, Input>,
         V>(chain: ObjectChain<Input, Steps>,
@@ -185,8 +185,8 @@ export function makePureStep
 // return a new ObjectChain with the addSteps concatenated
 export function concatSteps
     <Input extends ChainTagged,
-        const ChainSteps extends cons.NRConsList<UPObjectStepSpec>,
-        const AddSteps extends cons.NRConsList<UPObjectStepSpec>>
+        const ChainSteps extends ObjectStepSpecList,
+        const AddSteps extends ObjectStepSpecList>
     (chain: ObjectChain<Input, ChainSteps>,
         addSteps: AddSteps extends cons.ConsList<UPObjectStepSpec, AddSteps>
             ? AddSteps
@@ -214,7 +214,7 @@ export function concatSteps
 export function objectChainServiceImpl
 
     <Input extends ChainTagged,
-        const Steps extends cons.NRConsList<UPObjectStepSpec>>
+        const Steps extends ObjectStepSpecList>
 
     (chain: ObjectChain<Input, Steps>) {
 
@@ -231,7 +231,7 @@ export function objectChainServiceImpl
 // to an Effect
 export function provideObjectChainServiceImpl
     <Input extends ChainTagged,
-        const Steps extends cons.NRConsList<UPObjectStepSpec>,
+        const Steps extends ObjectStepSpecList,
         InR, InE, InV>
 
     (effect: Effect.Effect<InR, InE, InV>,
@@ -248,7 +248,7 @@ export function provideObjectChainServiceImpl
 // calls it's buildObject function
 export function objectChainFxFn
     <Input extends ChainTagged,
-        const Steps extends cons.NRConsList<UPObjectStepSpec>>
+        const Steps extends ObjectStepSpecList>
 
     (chain: ObjectChain<Input, Steps>) {
 

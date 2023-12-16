@@ -146,6 +146,8 @@ export function objectStepFn<Obj>() {
     }
 }
 
+export type ObjectStepSpecList = NRConsList<UPObjectStepSpec>
+
 // utility type to get a Union from a Tuple of types
 // deno-lint-ignore no-explicit-any
 export type UnionFromTuple<Tuple extends readonly any[]> = Tuple[number]
@@ -163,7 +165,7 @@ export type ExpandTuple<Tuple extends readonly [...any[]]> = {
 } & { length: Tuple['length'] }
 
 // convert a cons list of UPObjectStepSpecs type to a Tuple type
-export type ObjectStepsTuple<Steps extends NRConsList<UPObjectStepSpec>> =
+export type ObjectStepsTuple<Steps extends ObjectStepSpecList> =
     ToTuple<UPObjectStepSpec, Steps>
 
 // get a union of all the Requirements from a list of steps...
@@ -174,12 +176,12 @@ export type ObjectStepReqs<T extends UPObjectStepSpec> =
     ? R
     : never
 export type ObjectStepsReqsU<
-    List extends NRConsList<UPObjectStepSpec>,
+    List extends ObjectStepSpecList,
     Acc = never> = 
     List extends None
     ? Acc
     : List extends readonly [infer F extends UPObjectStepSpec,
-        infer R extends NRConsList<UPObjectStepSpec>]
+        infer R extends ObjectStepSpecList]
     ? ObjectStepsReqsU<R, Acc | ObjectStepReqs<F>>
     : never
 type ObjectStepsTupleReqsUImpl<
@@ -192,7 +194,7 @@ type ObjectStepsTupleReqsUImpl<
 // setting up the recursion Service in object_chain.ts ...converting 
 // the list to a tuple before extracting the Requirements union seems 
 // to avoid that
-export type ObjectStepsTupleReqsU<Steps extends NRConsList<UPObjectStepSpec>> =
+export type ObjectStepsTupleReqsU<Steps extends ObjectStepSpecList> =
     ObjectStepsTupleReqsUImpl<ObjectStepsTuple<Steps>>
 
 // get a union of all the Errors from a list of steps
@@ -202,12 +204,12 @@ export type ObjectStepErrors<T extends UPObjectStepSpec> =
     ? E
     : never
 export type ObjectStepsErrorsU<
-    List extends NRConsList<UPObjectStepSpec>,
+    List extends ObjectStepSpecList,
     Acc = never> =
     List extends None
     ? Acc
     : List extends readonly [infer F extends UPObjectStepSpec,
-        infer R extends NRConsList<UPObjectStepSpec>]
+        infer R extends ObjectStepSpecList]
     ? ObjectStepsErrorsU<R, Acc | ObjectStepErrors<F>>
     : never
 
@@ -218,13 +220,13 @@ export type ObjectStepInput<T extends UPObjectStepSpec> =
     ? A
     : never
 export type ObjectStepsInputTuple<
-    List extends NRConsList<UPObjectStepSpec>,
+    List extends ObjectStepSpecList,
     // deno-lint-ignore no-explicit-any
     Acc extends readonly any[] = []> =
     List extends None
     ? Acc
     : List extends readonly [infer F extends UPObjectStepSpec,
-        infer R extends NRConsList<UPObjectStepSpec>]
+        infer R extends ObjectStepSpecList]
     ? ObjectStepsInputTuple<R, readonly [...Acc, ObjectStepInput<F>]>
     : never
 
@@ -235,13 +237,13 @@ export type ObjectStepValue<T extends UPObjectStepSpec> =
     ? V
     : never
 export type ObjectStepsValueTuple<
-    List extends NRConsList<UPObjectStepSpec>,
+    List extends ObjectStepSpecList,
     // deno-lint-ignore no-explicit-any
     Acc extends readonly any[] = []> =
     List extends None
     ? Acc
     : List extends readonly [infer F extends UPObjectStepSpec,
-        infer R extends NRConsList<UPObjectStepSpec>]
+        infer R extends ObjectStepSpecList]
     ? ObjectStepsValueTuple<R, readonly [...Acc, ObjectStepValue<F>]>
     : never
 
@@ -261,7 +263,7 @@ export type ObjectStepsValueTuple<
 // 2. it's safe to use never in the else branches. they will not be hit
 
 export type ObjectChainSteps<
-    Specs extends NRConsList<UPObjectStepSpec>,
+    Specs extends ObjectStepSpecList,
     ObjAcc> =
 
     // case: no more specs
@@ -270,7 +272,7 @@ export type ObjectChainSteps<
 
     // case: there are more specs - add a property to ObjAcc and recurse
     : Specs extends readonly [infer First,
-        infer Rest extends NRConsList<UPObjectStepSpec>]
+        infer Rest extends ObjectStepSpecList]
     ? First extends UCFxObjectStepSpec<
         infer FK, infer _FA, infer _FD1, infer FD2,
         infer FR, infer FE, infer FV>
@@ -285,7 +287,7 @@ export type ObjectChainSteps<
 
 // get the final Object result type from a list of ObjectStepSpecs
 export type ObjectChainStepsReturn<
-    Specs extends NRConsList<UPObjectStepSpec>,
+    Specs extends ObjectStepSpecList,
     ObjAcc> =
     Specs extends None
     ? ObjAcc // empty specs returns the input
@@ -304,7 +306,7 @@ export type ObjectChainStepsReturn<
 // other type params
 export function objectChainStepsProg<Obj>() {
 
-    return function <const Specs extends NRConsList<UPObjectStepSpec>>
+    return function <const Specs extends ObjectStepSpecList>
         (objectStepSpecs:
             Specs extends ObjectChainSteps<Specs, Obj>
             ? Specs
