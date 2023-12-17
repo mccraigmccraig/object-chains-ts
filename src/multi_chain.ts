@@ -213,9 +213,9 @@ export function multiChainServicesContext
     return rctx as Context.Context<ObjectChainsContextTagIdU<Chains> | Tag>
 }
 
-// given a MultiChain return a FxFn to run any of its chains,
-// so can be used to invoke any of the chains 
-// from any step which outputs a chain Input
+// given a MultiChain return a FxFn to run any of its chains ... 
+// with all of the chain requirements provided - so only 
+// the app service requirements are still to be provided
 export function multiChainFxFn
     <Tag extends MultiChainTag,
         const Chains extends ObjectChainList>
@@ -225,9 +225,13 @@ export function multiChainFxFn
     return <Input extends ObjectChainsInputU<Chains>>
         (i: Input) => {
 
-        return Effect.gen(function* (_) {
+        const svcEff = Effect.gen(function* (_) {
             const svc = yield* _(multiChain.contextTag)
             return yield* _(svc.buildObject(i))
         })
+
+        const multiChainEff = Effect.provide(svcEff, multiChainServicesContext(multiChain))
+
+        return multiChainEff
     }
 }

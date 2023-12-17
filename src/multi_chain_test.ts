@@ -280,7 +280,7 @@ Deno.test("composition with multiChainServicesContext", () => {
     })
 })
 
-Deno.test("composition with multiChainFxFn", () => {
+Deno.test("clean invocation with multiChainFxFn", () => {
     const mc = multiChain([
         getOrgProg,
         sendWelcomePushProg,
@@ -296,9 +296,7 @@ Deno.test("composition with multiChainFxFn", () => {
     }
 
     const prog = fxFn(input)
-    const almostRunnable = Effect.provide(prog, testServiceContext)
-    const runnable = Effect.provide(almostRunnable,
-        multiChainServicesContext(mc))
+    const runnable = Effect.provide(prog, testServiceContext)
 
     const r = Effect.runSync(runnable)
 
