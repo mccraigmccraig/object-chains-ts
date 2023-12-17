@@ -172,11 +172,11 @@ export function addChains<Tag extends MultiChainTag,
     return multiChain([...mc.chains, ...additionalChains])
 }
 
-///////////////////////// composition support
+///////////////////////// clean fn invocation
 
 // each chain has a ContextTag for the service which will run it
 // so a MultiChain can register Service implementations for each of its
-// chains
+// chains, and a Service implementation for itself
 
 export function multiChainServiceImpl
     <Tag extends MultiChainTag,

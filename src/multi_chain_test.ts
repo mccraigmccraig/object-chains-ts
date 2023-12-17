@@ -9,7 +9,7 @@ import { chainTag } from "./chain_tag.ts"
 import { objectChain, objectChainFxFn } from "./object_chain.ts"
 import {
     multiChainProgram, multiChain, addChains,
-    multiChainServicesContext
+    multiChainServicesContext, multiChainFxFn
 } from "./multi_chain.ts"
 
 //////////////////// some steps //////////////////////////////////
@@ -256,6 +256,46 @@ Deno.test("composition with multiChainServicesContext", () => {
     }
 
     const prog = mc.program(input)
+    const almostRunnable = Effect.provide(prog, testServiceContext)
+    const runnable = Effect.provide(almostRunnable,
+        multiChainServicesContext(mc))
+
+    const r = Effect.runSync(runnable)
+
+    assertEquals(r, {
+        ...input,
+        org: { id: "foo", name: "Foo" },
+        user: { id: "100", name: "Bar" },
+        formatWelcomePush: "Welcome Bar of Foo",
+        sendPush: "push sent OK: Welcome Bar of Foo",
+        runChangeUserSetWelcomeSentChain: {
+            _tag: "ChangeUserSetWelcomeSent",
+            user: { id: "100", name: "Bar" },
+            changeUserSetWelcomeSent: {
+                id: "100",
+                name: "Bar",
+                welcomeSent: true
+            }
+        }
+    })
+})
+
+Deno.test("composition with multiChainFxFn", () => {
+    const mc = multiChain([
+        getOrgProg,
+        sendWelcomePushProg,
+        sendWelcomePushAndUpdateUserStepsChain,
+        changeUserSetWelcomeSentChain
+    ])
+
+    const fxFn = multiChainFxFn(mc)
+
+    const input: SendWelcomePushAndUpdateUser = {
+        _tag: "SendWelcomePushAndUpdateUser",
+        data: { org_nick: "foo", user_id: "100" }
+    }
+
+    const prog = fxFn(input)
     const almostRunnable = Effect.provide(prog, testServiceContext)
     const runnable = Effect.provide(almostRunnable,
         multiChainServicesContext(mc))
