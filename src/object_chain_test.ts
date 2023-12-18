@@ -241,7 +241,7 @@ const sendPushNotificationAndGetOrgSteps =
                     [runGetOrgChainStepspec,
                         cons.None]]]]] as const
 
-Deno.test("composition with RunObjectChainFxFn", () => {
+Deno.test("composition with objectChainFxFn", () => {
     const chain = objectChain<SendPushNotificationAndGetOrg>()(
         SendPushNotificationAndGetOrgTag,
         sendPushNotificationAndGetOrgSteps)

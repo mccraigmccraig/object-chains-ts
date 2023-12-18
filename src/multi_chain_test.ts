@@ -286,7 +286,7 @@ Deno.test("composition with multiChainServicesContext", () => {
     })
 })
 
-Deno.test("clean invocation with multiChainFxFn", () => {
+Deno.test("run a chain from a MultiChain with multiChainFxFn", () => {
     const mc = multiChain([
         getOrgProg,
         sendWelcomePushProg,
