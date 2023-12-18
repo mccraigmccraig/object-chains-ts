@@ -27,12 +27,14 @@ type ObjectChainsContextTagIdU<
 
 type ObjectChainsProgramsReqsU<Tuple extends ObjectChainList> =
     UnionFromTuple<{
-        +readonly [Index in keyof Tuple]: UPObjectChainProgramReqs<Tuple[Index]>
+        +readonly [Index in keyof Tuple]: UPObjectChainProgramReqs<
+            Tuple[Index]>
     } & { length: Tuple['length'] }>
 
 type ObjectChainsProgramsErrorsU<Tuple extends ObjectChainList> =
     UnionFromTuple<{
-        +readonly [Index in keyof Tuple]: UPObjectChainProgramErrors<Tuple[Index]>
+        +readonly [Index in keyof Tuple]: UPObjectChainProgramErrors<
+            Tuple[Index]>
     } & { length: Tuple['length'] }>
 
 // this indexes a tuple by the element's tagStr property
@@ -117,7 +119,8 @@ export function multiChainProgram<const Chains extends ObjectChainList>
             console.log("multiProg: ", i)
             // could use MultiChainProgramEffect type here, but it leads
             // to worse IntelliSense
-            return prog.program(i) as Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
+            return prog.program(i) as Effect.Effect<
+                ObjectChainsProgramsReqsU<Chains>,
                 ObjectChainsProgramsErrorsU<Chains>,
                 Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
         } else
@@ -224,7 +227,8 @@ export function multiChainFxFn
             return yield* _(svc.buildObject(i))
         })
 
-        const multiChainEff = Effect.provide(svcEff, multiChainServicesContext(multiChain))
+        const multiChainEff = Effect.provide(svcEff,
+            multiChainServicesContext(multiChain))
 
         return multiChainEff
     }

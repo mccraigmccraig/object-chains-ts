@@ -89,7 +89,8 @@ export type Last<T, C> =
     : never
 
 export function last<T>() {
-    return function <const C>(c: C extends ConsList<T, C> ? C : ConsList<T, C>) {
+    return function <const C>(
+        c: C extends ConsList<T, C> ? C : ConsList<T, C>) {
 
         let result: ConsList<T, None> = None
         let cursor = c

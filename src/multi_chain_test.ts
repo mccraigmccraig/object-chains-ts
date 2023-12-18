@@ -232,7 +232,8 @@ Deno.test("addChains adds to a multiChain", () => {
     // note the inferred Effect value type selects the output of the 
     // getOrg chain
     const getOrgEffect = mc4.program(getOrgInput)
-    const getOrgAlmostRunnable = Effect.provide(getOrgEffect, testServiceContext)
+    const getOrgAlmostRunnable = Effect.provide(getOrgEffect,
+        testServiceContext)
     const getOrgRunnable = Effect.provide(getOrgAlmostRunnable,
         multiChainServicesContext(mc4))
     const getOrgResult = Effect.runSync(getOrgRunnable)

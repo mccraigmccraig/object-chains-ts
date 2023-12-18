@@ -182,7 +182,8 @@ Deno.test("concatSteps concatenates steps", () => {
         [pureFormatPushNotificationStepSpec,
             [sendPusnNotificationStepSpec, cons.None]] as const
 
-    const shortChain = objectChain<SendPushNotification>()(SendPushNotificationTag,
+    const shortChain = objectChain<SendPushNotification>()(
+        SendPushNotificationTag,
         firstSteps)
     
     const chain = concatSteps(shortChain, moreSteps)
