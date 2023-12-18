@@ -14,50 +14,44 @@ import {
 export type ObjectChainList = readonly [...UPObjectChain[]]
 
 // union of all the inputs from a tuple of chains
-export type ObjectChainsInputU<
+type ObjectChainsInputU<
     Tuple extends ObjectChainList> = UnionFromTuple<{
         +readonly [Index in keyof Tuple]: UPObjectChainInput<Tuple[Index]>
     } & { length: Tuple['length'] }>
 
-// union of all the tagStrs from a tuple of chains
-export type ObjectChainsTagStrU<
-    Tuple extends ObjectChainList> = UnionFromTuple<{
-        +readonly [Index in keyof Tuple]: Tuple[Index]['tagStr']
-    } & { length: Tuple['length'] }>
-
 // union of all the ContextTagId from a tuple of chains
-export type ObjectChainsContextTagIdU<
+type ObjectChainsContextTagIdU<
     Tuple extends ObjectChainList> = UnionFromTuple<{
         +readonly [Index in keyof Tuple]: UPObjectChainContextTag<Tuple[Index]>
     } & { length: Tuple['length'] }>
 
-export type ObjectChainsProgramsReqsU<Tuple extends ObjectChainList> =
+type ObjectChainsProgramsReqsU<Tuple extends ObjectChainList> =
     UnionFromTuple<{
         +readonly [Index in keyof Tuple]: UPObjectChainProgramReqs<Tuple[Index]>
     } & { length: Tuple['length'] }>
 
-export type ObjectChainsProgramsErrorsU<Tuple extends ObjectChainList> =
+type ObjectChainsProgramsErrorsU<Tuple extends ObjectChainList> =
     UnionFromTuple<{
         +readonly [Index in keyof Tuple]: UPObjectChainProgramErrors<Tuple[Index]>
     } & { length: Tuple['length'] }>
 
 // this indexes a tuple by the element's tagStr property
 // https://stackoverflow.com/questions/54599480/typescript-tuple-type-to-object-type  
-export type IndexObjectChainTuple<T extends ReadonlyArray<UPObjectChain>> = {
+type IndexObjectChainTuple<T extends ReadonlyArray<UPObjectChain>> = {
     [K in T[number]['tagStr']]: Extract<T[number], { tagStr: K }>
 }
 
 // not obvious - the conditional type distribute the value type over a 
 // union of Taggeds, resulting in a union of values!
 // https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
-export type DistributeObjectChainValueTypes<
+type DistributeObjectChainValueTypes<
     I extends ChainTagged, Chains extends ObjectChainList> =
     IndexObjectChainTuple<Chains>[I['_tag']] extends UPObjectChain
     ? UPObjectChainProgramValue<IndexObjectChainTuple<Chains>[I['_tag']]>
     : never
 
 // type of the Effect returned by a MultiChain's program
-export type MultiChainProgramEffect<
+type MultiChainProgramEffect<
     Chains extends ObjectChainList,
     Input extends ObjectChainsInputU<Chains>> =
 
@@ -78,22 +72,22 @@ export type MultiChainService<Chains extends ObjectChainList> = {
 
 const multiChainTagKey: unique symbol = Symbol()
 
-export type MultiChainTag = {
+type MultiChainTag = {
     readonly [multiChainTagKey]: unique symbol
 }
 
-export function multiChainTag() {
+function multiChainTag() {
     return {
         [multiChainTagKey]: Symbol()
     } as MultiChainTag
 }
 
 // how to identify a MultiChainService ? do we need a tag string ?
-export type MultiChainServiceContextTag<Tag extends MultiChainTag,
+type MultiChainServiceContextTag<Tag extends MultiChainTag,
     Chains extends ObjectChainList> =
     Context.Tag<Tag, MultiChainService<Chains>>
 
-export function multiChainServiceContextTag
+function multiChainServiceContextTag
     <Tag extends MultiChainTag,
         Chains extends ObjectChainList>() {
     return Context.Tag<Tag, MultiChainService<Chains>>()
