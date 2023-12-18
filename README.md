@@ -9,15 +9,24 @@
 
 ## ⭐ Getting started
 
-`object-chains` helps you create data-driven programs to process messages or 
-events.  A program to process a single type of value is built from a chain
-of effectful or pure steps, and programs can be composed (although cannot directly recurse) . It leans heavily on the awesome power of 
-[Effect](https://github.com/Effect-TS/effect)
+`object-chains` creates data-driven programs to process messages or 
+events.  
 
-```ts
+An `ObjectChain` is a program to process a single type of value, and is built from a chain of steps, into which an input object is fed. The output of each step contributes a new key/value to the object, which then constitutes the input to the next step, or the result.
 
-```
+Each step in an `ObjectChain` has is either pure (with a pure function `(arg: A) => V`) or effectful (with an `FxFn` -  `(d: D) => Effect.Effect<R, E, V>`). The input type of each step in a chain is constrained by outputs of the prior steps and the output type constrains the input of the succeeding step.
 
+`ObjectChains` can be combined into a `MultiChain`, which can then be invoked as an `FxFn`.
+
+`ObjectChains` in a `MultiChain` can invoke other `ObjectChains` in the same `MultiChain`, but direct recursion is not possible.
+
+### upcoming
+
+* step execution control - implement uniform tracing, logging and error-handling using the `ObjectStepSep` data-structures
+
+### 
+
+`object-chains` is built with [Effect](https://github.com/Effect-TS/effect) and began as a TypeScript port of [a-frame](https://github.com/yapsterapp/a-frame)
 
 ## 📄 License
 
