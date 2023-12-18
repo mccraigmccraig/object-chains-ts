@@ -164,28 +164,6 @@ Deno.test("multiChain runs chains", () => {
     })
 })
 
-Deno.test("addChains adds to a multiChain", () => {
-    const emptyMultiChain = multiChain([])
-    const mc = addChains(emptyMultiChain, [getOrgProg, sendWelcomePushProg])
-
-    const getOrgInput: GetOrgInput = {
-        _tag: "GetOrg",
-        data: { org_nick: "foo" }
-    }
-
-    // note the inferred Effect value type selects the output of the 
-    // getOrg chain
-    const getOrgEffect = mc.program(getOrgInput)
-    const getOrgRunnable = Effect.provide(getOrgEffect, testServiceContext)
-    const getOrgResult = Effect.runSync(getOrgRunnable)
-
-    assertEquals(getOrgResult, {
-        ...getOrgInput,
-        org: { id: "foo", name: "Foo" },
-        apiResponse: { org: { id: "foo", name: "Foo" } }
-    })
-})
-
 type ChangeUserSetWelcomeSent = {
     readonly _tag: "ChangeUserSetWelcomeSent"
     readonly user: User
@@ -238,6 +216,33 @@ const sendWelcomePushAndUpdateUserStepsChain =
         SendWelcomePushAndUpdateUser,
         sendWelcomePushAndUpdateUserSteps
     )
+
+Deno.test("addChains adds to a multiChain", () => {
+    const mc0 = multiChain([])
+    const mc1 = addChains(mc0, [getOrgProg])
+    const mc2 = addChains(mc1, [sendWelcomePushProg])
+    const mc3 = addChains(mc2, [sendWelcomePushAndUpdateUserStepsChain])
+    const mc4 = addChains(mc3, [changeUserSetWelcomeSentChain])
+
+    const getOrgInput: GetOrgInput = {
+        _tag: "GetOrg",
+        data: { org_nick: "foo" }
+    }
+
+    // note the inferred Effect value type selects the output of the 
+    // getOrg chain
+    const getOrgEffect = mc4.program(getOrgInput)
+    const getOrgAlmostRunnable = Effect.provide(getOrgEffect, testServiceContext)
+    const getOrgRunnable = Effect.provide(getOrgAlmostRunnable,
+        multiChainServicesContext(mc4))
+    const getOrgResult = Effect.runSync(getOrgRunnable)
+
+    assertEquals(getOrgResult, {
+        ...getOrgInput,
+        org: { id: "foo", name: "Foo" },
+        apiResponse: { org: { id: "foo", name: "Foo" } }
+    })
+})
 
 Deno.test("composition with multiChainServicesContext", () => {
     // both the directly invoked chain and the 
