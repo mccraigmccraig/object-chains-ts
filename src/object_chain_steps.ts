@@ -82,22 +82,6 @@ export type UPPureObjectStepSpec = {
 // the unparameterised type we will type all step tuples with
 export type UPObjectStepSpec = UPPureObjectStepSpec | UPFxObjectStepSpec
 
-// some casts to get the parameterised step types back from 
-// the unparameterised versions
-
-// cast an UPFxObjectStepSpec down to its fully parameterised UC type
-export type CastUCFxObjectStepSpec<T extends UPFxObjectStepSpec> =
-    T extends UCFxObjectStepSpec<infer K, infer A, infer D1, infer D2,
-        infer R, infer E, infer V>
-    ? UCFxObjectStepSpec<K, A, D1, D2, R, E, V>
-    : never
-
-// cast an UPPureObjectStepSpec down to its fully parameterised UC type
-export type CastUCPureObjectStepSpec<T extends UPPureObjectStepSpec> =
-    T extends UCPureObjectStepSpec<infer K, infer A, infer V>
-    ? UCPureObjectStepSpec<K, A, V>
-    : never
-
 // cast an UPObjectStepSpec down to its fully parameterised UC type
 export type CastUCObjectStepSpec<T extends UPObjectStepSpec> =
     T extends PureObjectStepSpec<infer K, infer A, infer V>
@@ -111,7 +95,7 @@ export type CastUCObjectStepSpec<T extends UPObjectStepSpec> =
 //////////////////////// step fn //////////////////////////////////////
 
 // the effect returned when a step is run
-export type ObjectStepFnReturnEffect<Spec> =
+type ObjectStepFnReturnEffect<Spec> =
     Spec extends PureObjectStepSpec<infer K, infer _A, infer V>
     ? Effect.Effect<never, never, { readonly [_K in K]: V }>
     : Spec extends FxObjectStepSpec<
@@ -159,23 +143,18 @@ export type Expand<T> = T extends infer O
     ? { readonly [K in keyof O]: O[K] }
     : never;
 
-// deno-lint-ignore no-explicit-any
-export type ExpandTuple<Tuple extends readonly [...any[]]> = {
-    +readonly [Index in keyof Tuple]: Expand<Tuple[Index]>
-} & { length: Tuple['length'] }
-
 // convert a cons list of UPObjectStepSpecs type to a Tuple type
 export type ObjectStepsTuple<Steps extends ObjectStepSpecList> =
     ToTuple<UPObjectStepSpec, Steps>
 
 // get a union of all the Requirements from a list of steps...
 // note that only FxObjectSteps have any Requirements
-export type ObjectStepReqs<T extends UPObjectStepSpec> =
+type ObjectStepReqs<T extends UPObjectStepSpec> =
     T extends UCFxObjectStepSpec<
         infer _K, infer _A, infer _D1, infer _D2, infer R, infer _E, infer _V>
     ? R
     : never
-export type ObjectStepsReqsU<
+type ObjectStepsReqsU<
     List extends ObjectStepSpecList,
     Acc = never> = 
     List extends None
@@ -198,7 +177,7 @@ export type ObjectStepsTupleReqsU<Steps extends ObjectStepSpecList> =
     ObjectStepsTupleReqsUImpl<ObjectStepsTuple<Steps>>
 
 // get a union of all the Errors from a list of steps
-export type ObjectStepErrors<T extends UPObjectStepSpec> =
+type ObjectStepErrors<T extends UPObjectStepSpec> =
     T extends UCFxObjectStepSpec<
         infer _K, infer _A, infer _D1, infer _D2, infer _R, infer E, infer _V>
     ? E
@@ -214,7 +193,7 @@ export type ObjectStepsErrorsU<
     : never
 
 // get a tuple of the input types from a tuple of steps
-export type ObjectStepInput<T extends UPObjectStepSpec> =
+type ObjectStepInput<T extends UPObjectStepSpec> =
     T extends UCObjectStepSpec<
         infer _K, infer A, infer _D1, infer _D2, infer _R, infer _E, infer _V>
     ? A
@@ -231,7 +210,7 @@ export type ObjectStepsInputTuple<
     : never
 
 // get a tuple of the value types from a tuple of steps
-export type ObjectStepValue<T extends UPObjectStepSpec> =
+type ObjectStepValue<T extends UPObjectStepSpec> =
     T extends UCObjectStepSpec<
         infer _K, infer _A, infer _D1, infer _D2, infer _R, infer _E, infer V>
     ? V

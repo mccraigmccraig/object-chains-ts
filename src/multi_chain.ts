@@ -61,12 +61,12 @@ type MultiChainProgramEffect<
             Chains>,
             Input>>
 
-export type MultiChainProgram<Chains extends ObjectChainList> =
+type MultiChainProgram<Chains extends ObjectChainList> =
     <Input extends ObjectChainsInputU<Chains>>
         (i: Input) =>
         MultiChainProgramEffect<Chains, Input>
 
-export type MultiChainService<Chains extends ObjectChainList> = {
+type MultiChainService<Chains extends ObjectChainList> = {
     readonly buildObject: MultiChainProgram<Chains>
 }
 

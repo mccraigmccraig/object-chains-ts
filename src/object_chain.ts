@@ -12,7 +12,7 @@ import {
 } from "./object_chain_steps.ts"
 
 // an effectful function of Input which build an Object
-export type ObjectChainProgram<Input extends ChainTagged,
+type ObjectChainProgram<Input extends ChainTagged,
     Steps extends ObjectStepSpecList> =
     (i: Input) => Effect.Effect<
         ObjectStepsTupleReqsU<Steps>,
@@ -21,17 +21,17 @@ export type ObjectChainProgram<Input extends ChainTagged,
     >
 
 // a type for a service which can run an ObjectChain
-export type ObjectChainService<Input extends ChainTagged,
+type ObjectChainService<Input extends ChainTagged,
     Steps extends ObjectStepSpecList> = {
         readonly buildObject: ObjectChainProgram<Input, Steps>
     }
 
-export type ObjectChainServiceContextTag<Input extends ChainTagged,
+type ObjectChainServiceContextTag<Input extends ChainTagged,
     Steps extends ObjectStepSpecList> =
     Context.Tag<ChainTag<Input>, ObjectChainService<Input, Steps>>
 
 // get a Context.Tag for an ObjectChainService
-export function objectChainServiceContextTag
+function objectChainServiceContextTag
     <Input extends ChainTagged,
         Steps extends ObjectStepSpecList>
     () {
