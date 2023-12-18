@@ -123,7 +123,7 @@ export function objectChain<Input extends ChainTagged>() {
     }
 }
 
-// add a FxStep to an ObjectChain, returning a new ObjectChain
+// add a step to an ObjectChain, returning a new ObjectChain
 export function addStep
     <Input extends ChainTagged,
         const Steps extends ObjectStepSpecList,
@@ -144,7 +144,7 @@ export function addStep
 }
 
 // make an FxStep at the end of an ObjectChain, returning a new ObjectChain
-export function makeFxStep
+export function addFxStep
     <Input extends ChainTagged,
         const Steps extends ObjectStepSpecList,
         K extends string,
@@ -166,7 +166,7 @@ export function makeFxStep
 }
 
 // make a PureStep at the end of an ObjectChain, returning a new ObjectChain
-export function makePureStep
+export function addPureStep
     <Input extends ChainTagged,
         const Steps extends ObjectStepSpecList,
         K extends string,

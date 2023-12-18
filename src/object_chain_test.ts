@@ -3,7 +3,7 @@ import { Effect } from "effect"
 import { chainTag } from "./chain_tag.ts"
 import * as cons from "./cons_list.ts"
 import {
-    objectChain, addStep, makeFxStep, makePureStep,
+    objectChain, addStep, addFxStep, addPureStep,
     concatSteps,
     objectChainFxFn
 } from "./object_chain.ts"
@@ -126,7 +126,7 @@ Deno.test("addStep lets you add steps", () => {
     })
 })
 
-Deno.test("makeFxStep and makePureStep add steps", () => {
+Deno.test("addFxStep and addPureStep add steps", () => {
     const input: SendPushNotification = {
         _tag: "sendPushNotification" as const,
         data: { org_nick: "foo", user_id: "bar" }
@@ -135,23 +135,23 @@ Deno.test("makeFxStep and makePureStep add steps", () => {
     const ch0 = objectChain<SendPushNotification>()(
         SendPushNotificationTag, cons.None)
 
-    const ch1 = makeFxStep(ch0,
+    const ch1 = addFxStep(ch0,
         "org",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch2 = makeFxStep(ch1,
+    const ch2 = addFxStep(ch1,
         "user",
         (d: { data: { user_id: string }, org: Org }) => {
             return { org_id: d.org.id, user_id: d.data.user_id }
         },
         getUserByIds)
-    const ch3 = makePureStep(ch2,
+    const ch3 = addPureStep(ch2,
         "formatPushNotification",
         (d: { org: Org, user: User }) => {
             return "Welcome " + d.user.name + " of " + d.org.name
         }
     )
-    const ch4 = makeFxStep(ch3,
+    const ch4 = addFxStep(ch3,
         "sendPush",
         (d: { user: User, formatPushNotification: string }) => {
             return { user_id: d.user.id, message: d.formatPushNotification }
@@ -277,83 +277,83 @@ Deno.test("a longer chain", () => {
     const ch0 = objectChain<SendPushNotification>()(
         SendPushNotificationTag, cons.None)
 
-    const ch1 = makeFxStep(ch0,
+    const ch1 = addFxStep(ch0,
         "org1",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch2 = makeFxStep(ch1,
+    const ch2 = addFxStep(ch1,
         "org2",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch3 = makeFxStep(ch2,
+    const ch3 = addFxStep(ch2,
         "org3",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch4 = makeFxStep(ch3,
+    const ch4 = addFxStep(ch3,
         "org4",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch5 = makeFxStep(ch4,
+    const ch5 = addFxStep(ch4,
         "org5",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch6 = makeFxStep(ch5,
+    const ch6 = addFxStep(ch5,
         "org6",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch7 = makeFxStep(ch6,
+    const ch7 = addFxStep(ch6,
         "org7",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch8 = makeFxStep(ch7,
+    const ch8 = addFxStep(ch7,
         "org8",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch9 = makeFxStep(ch8,
+    const ch9 = addFxStep(ch8,
         "org9",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch10 = makeFxStep(ch9,
+    const ch10 = addFxStep(ch9,
         "org10",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch11 = makeFxStep(ch10,
+    const ch11 = addFxStep(ch10,
         "org11",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch12 = makeFxStep(ch11,
+    const ch12 = addFxStep(ch11,
         "org12",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch13 = makeFxStep(ch12,
+    const ch13 = addFxStep(ch12,
         "org13",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch14 = makeFxStep(ch13,
+    const ch14 = addFxStep(ch13,
         "org14",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch15 = makeFxStep(ch14,
+    const ch15 = addFxStep(ch14,
         "org15",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch16 = makeFxStep(ch15,
+    const ch16 = addFxStep(ch15,
         "org16",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch17 = makeFxStep(ch16,
+    const ch17 = addFxStep(ch16,
         "org17",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch18 = makeFxStep(ch17,
+    const ch18 = addFxStep(ch17,
         "org18",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch19 = makeFxStep(ch18,
+    const ch19 = addFxStep(ch18,
         "org19",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
-    const ch20 = makeFxStep(ch19,
+    const ch20 = addFxStep(ch19,
         "org20",
         (d: { data: { org_nick: string } }) => d.data.org_nick,
         getOrgByNick)
