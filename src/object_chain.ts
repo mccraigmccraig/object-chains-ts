@@ -229,7 +229,7 @@ export function objectChainServiceImpl
 
 // provide an implementation of the ObjectChainService for this chain
 // to an Effect
-export function provideObjectChainServiceImpl
+function provideObjectChainServiceImpl
     <Input extends ChainTagged,
         const Steps extends ObjectStepSpecList,
         InR, InE, InV>
@@ -245,7 +245,8 @@ export function provideObjectChainServiceImpl
 
 // given an ObjectChain, returns an FxFn to invoke the chain,
 // which retrieves the ObjectChainService for the chain, and 
-// calls it's buildObject function
+// calls it's buildObject function. The ObjectChainService
+// implementation is provided to the FxFn
 export function objectChainFxFn
     <Input extends ChainTagged,
         const Steps extends ObjectStepSpecList>
@@ -253,10 +254,14 @@ export function objectChainFxFn
     (chain: ObjectChain<Input, Steps>) {
 
     return (i: Input) => {
-        return Effect.gen(function* (_) {
+        const svcEff = Effect.gen(function* (_) {
             const svc = yield* _(chain.contextTag)
             const obj = yield* _(svc.buildObject(i))
             return obj
         })
+
+        const chainEff = provideObjectChainServiceImpl(svcEff, chain)
+
+        return chainEff
     }
 }

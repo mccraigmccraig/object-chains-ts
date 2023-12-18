@@ -5,7 +5,7 @@ import * as cons from "./cons_list.ts"
 import {
     objectChain, addStep, makeFxStep, makePureStep,
     concatSteps,
-    objectChainFxFn, provideObjectChainServiceImpl
+    objectChainFxFn
 } from "./object_chain.ts"
 import {
     Org, getOrgByNick, User, getUserByIds, sendPush,
@@ -250,8 +250,7 @@ Deno.test("composition with RunObjectChainFxFn", () => {
         data: { org_nick: "foo", user_id: "bar" }
     }
     const effect = chain.program(input)
-    const almostRunnable = Effect.provide(effect, testServiceContext)
-    const runnable = provideObjectChainServiceImpl(almostRunnable, getOrgChain)
+    const runnable = Effect.provide(effect, testServiceContext)
 
     const r = Effect.runSync(runnable)
 

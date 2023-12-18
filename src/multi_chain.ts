@@ -172,7 +172,7 @@ export function addChains<Tag extends MultiChainTag,
 // so a MultiChain can register Service implementations for each of its
 // chains, and a Service implementation for itself
 
-export function multiChainServiceImpl
+function multiChainServiceImpl
     <Tag extends MultiChainTag,
         const Chains extends ObjectChainList>
     (multiChain: MultiChain<Tag, Chains>) {
