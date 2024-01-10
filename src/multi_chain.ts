@@ -2,6 +2,7 @@ import { Effect, Context } from "effect"
 import { UnionFromTuple } from "./object_chain_steps.ts"
 import { ChainTagged } from "./chain_tag.ts"
 import {
+    ExpandFn,
     UPObjectChain,
     UPObjectChainInput,
     UPObjectChainContextTag,
@@ -52,21 +53,14 @@ type DistributeObjectChainValueTypes<
     ? UPObjectChainProgramValue<IndexObjectChainTuple<Chains>[I['_tag']]>
     : never
 
-// type of the Effect returned by a MultiChain's program
-type MultiChainProgramEffect<
-    Chains extends ObjectChainList,
-    Input extends ObjectChainsInputU<Chains>> =
-
-    Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
-        ObjectChainsProgramsErrorsU<Chains>,
-        Extract<DistributeObjectChainValueTypes<ObjectChainsInputU<Chains>,
-            Chains>,
-            Input>>
-
 type MultiChainProgram<Chains extends ObjectChainList> =
     <Input extends ObjectChainsInputU<Chains>>
         (i: Input) =>
-        MultiChainProgramEffect<Chains, Input>
+        Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
+            ObjectChainsProgramsErrorsU<Chains>,
+            Extract<DistributeObjectChainValueTypes<ObjectChainsInputU<Chains>,
+                Chains>,
+                Input>>
 
 type MultiChainService<Chains extends ObjectChainList> = {
     readonly buildObject: MultiChainProgram<Chains>
@@ -137,10 +131,7 @@ export type MultiChain<Tag extends MultiChainTag,
         // could use MultiChainProgram type here, but it leads 
         // to worse IntelliSense - this way we get to the Effect 
         // ASAP
-        readonly program: <Input extends ObjectChainsInputU<Chains>>
-            (i: Input) => Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
-                ObjectChainsProgramsErrorsU<Chains>,
-                Extract<DistributeObjectChainValueTypes<Input, Chains>, Input>>
+        readonly program: ExpandFn<MultiChainProgram<Chains>>
 
         readonly contextTag: MultiChainServiceContextTag<Tag, Chains>
     }

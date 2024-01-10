@@ -11,6 +11,10 @@ import {
     ObjectStepsErrorsU, ObjectChainStepsReturn, objectChainStepsProg
 } from "./object_chain_steps.ts"
 
+export type ExpandFn<F> = F extends (i: infer In) => infer Out
+    ? (i: In) => Out
+    : never
+
 // an effectful function of Input which build an Object
 type ObjectChainProgram<Input extends ChainTagged,
     Steps extends ObjectStepSpecList> =
@@ -54,7 +58,7 @@ export type ObjectChain<Input extends ChainTagged,
         ? Steps
         : ObjectChainSteps<Steps, Input>
 
-        readonly program: ObjectChainProgram<Input, Steps>
+        readonly program: ExpandFn<ObjectChainProgram<Input, Steps>>
         readonly contextTag: ObjectChainServiceContextTag<Input, Steps>
     }
 

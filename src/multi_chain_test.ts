@@ -58,7 +58,7 @@ const getOrgProg = objectChain<GetOrgInput>()(
     GetOrgInputTag,
     [getOrgObjectStepSpec,
         [pureFormatOrgOutputStepSpec,
-        cons.None]
+            cons.None]
     ] as const)
 
 //////////////////////// sendWelcomePush chain
@@ -76,7 +76,7 @@ const sendWelcomePushProg = objectChain<SendWelcomePushInput>()(
         [getUserObjectStepSpec,
             [pureFormatWelcomePushStepSpec,
                 [sendPusnNotificationStepSpec,
-                cons.None]]]] as const)
+                    cons.None]]]] as const)
 
 
 ////////////////////////// multiChain for getOrg and sendWelcomePush
@@ -208,7 +208,7 @@ const sendWelcomePushAndUpdateUserSteps = [
         [pureFormatWelcomePushStepSpec,
             [sendPusnNotificationStepSpec,
                 [runChangeUserSetWelcomeSentChainStepSpec,
-                cons.None]]]]
+                    cons.None]]]]
 ] as const
 
 const sendWelcomePushAndUpdateUserStepsChain =
