@@ -9,24 +9,33 @@
 
 ## ⭐ Getting started
 
-`object-chains` creates data-driven programs to process messages or 
-events.  
+`object-chains` creates data-driven programs to process messages or events.  
 
-An `ObjectChain` is a program to process a single type of value, and is built from a chain of steps, into which an input object is fed. The output of each step contributes a new key/value to the object, which then constitutes the input to the next step, or the result.
+### `ObjectChain`
 
-Each step in an `ObjectChain` has is either pure (with a pure function `(arg: A) => V`) or effectful (with an `FxFn` -  `(d: D) => Effect.Effect<R, E, V>`). The input type of each step in a chain is constrained by outputs of the prior steps and the output type constrains the input of the succeeding step.
+An individual `ObjectChain` is a program to process a single type of value, and is built from a chain of steps (defined by a list of `ObjectStepSpec`s) into which an object is fed. 
 
-`ObjectChains` can be combined into a `MultiChain`, which can then be invoked as an `FxFn`.
+Each step in an `ObjectChain` has a key `K` and is either pure (having a pure function `(arg: A) => V`), or effectful (having both an input-transform `(arg: A) => D` and an `FxFn` -  `(d: D) => Effect.Effect<R, E, V>`). 
 
-`ObjectChains` in a `MultiChain` can invoke other `ObjectChains` in the same `MultiChain`, but direct recursion is not possible.
+The output value `V` from a step's function will be appended to the step's input object at key `K`, forming an output object value which extends `A & {K: V}`. Requirements and Errors of the `FxFn`s of effectful steps propagate upwards to the `ObjectChain` (or `MultiChain`).
+
+The input type `A` of each step in a chain is constrained by the output value of the prior step and the output value of a step constrains the input of the succeeding step. The output of the final step in an `ObjectChain` is returned as the result.
+
+An `ObjectChain` can be invoked as an `FxFn` i.e. `(d: D) => Effect.Effect<R, E, V>`
+
+### `MultiChain`
+
+Multiple `ObjectChains` can be combined into a `MultiChain`, which can also be invoked as an `FxFn`.
+
+`ObjectChains` in a `MultiChain` can invoke other `ObjectChains` in the same `MultiChain` (i.e. a DAG of function dependencies), but immediate recursion (i.e. cyclic function dependencies) is not possible.
 
 ### upcoming
 
-* step execution control - implement uniform tracing, logging and error-handling using the `ObjectStepSep` data-structures
+* execution control - uniform tracing, logging, and error-handling (including retry-from-failure-point) using the `ObjectStepSpec` data-structures
 
-### 
+## genesis 
 
-`object-chains` is built with [Effect](https://github.com/Effect-TS/effect) and began as a TypeScript port of [a-frame](https://github.com/yapsterapp/a-frame)
+`object-chains` is built with [Effect](https://github.com/Effect-TS/effect) and began life as an attempt to port [a-frame](https://github.com/yapsterapp/a-frame) to TypeScript
 
 ## 📄 License
 
