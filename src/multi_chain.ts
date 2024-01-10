@@ -131,7 +131,13 @@ export type MultiChain<Tag extends MultiChainTag,
         // could use MultiChainProgram type here, but it leads 
         // to worse IntelliSense - this way we get to the Effect 
         // ASAP
-        readonly program: ExpandFn<MultiChainProgram<Chains>>
+        readonly program: <Input extends ObjectChainsInputU<Chains>>
+            (i: Input) =>
+            Effect.Effect<ObjectChainsProgramsReqsU<Chains>,
+                ObjectChainsProgramsErrorsU<Chains>,
+                Extract<DistributeObjectChainValueTypes<ObjectChainsInputU<Chains>,
+                    Chains>,
+                    Input>>
 
         readonly contextTag: MultiChainServiceContextTag<Tag, Chains>
     }
